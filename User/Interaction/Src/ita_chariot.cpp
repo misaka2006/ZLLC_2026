@@ -18,7 +18,7 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
-
+float last_roll_value = 0.0f;
 /* Private function declarations ---------------------------------------------*/
 
 /* Function prototypes -------------------------------------------------------*/
@@ -435,8 +435,8 @@ void Class_Chariot::Control_Chassis()
     Chassis.Set_Target_Velocity_Y(-gimbal_velocity_x);//前x左y正
 
     //相对角度计算
-    gimbal_angle = Gimbal.Motor_Yaw.Get_Zero_Position();
-    chassis_angle = addSampleAndFilter(Gimbal.Motor_Yaw.Get_Now_Angle(),5);
+    gimbal_angle = Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle();
+    chassis_angle = addSampleAndFilter(Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle(),5);
     relative_angle = chassis_angle - gimbal_angle ;
     
     MiniPC.Set_Gimbal_Now_Relative_Angle(relative_angle);
@@ -461,7 +461,7 @@ void Class_Chariot::Control_Chassis()
         }
         case(Chassis_Control_Type_FLLOW):
         {   //随动 附有非随动和受击陀螺逻辑
-            if(Gimbal.Motor_Yaw.Get_DJI_Motor_Status() == LK_Motor_Status_DISABLE){//大yaw离线失能
+            if(Gimbal.Motor_DM_J0_Yaw.Get_DM_Motor_Status() == DM_Motor_Status_DISABLE){//大yaw离线失能
                 Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);           
             }
             else{//正常随动
@@ -477,7 +477,7 @@ void Class_Chariot::Control_Chassis()
         case(Chassis_Control_Type_SPIN):
         {
             chassis_omega = 0.75f;
-            relative_angle += Gimbal.Motor_Yaw.Get_Now_Omega_Radian() * Offset_K;
+            relative_angle += Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle() * 3.14 * Offset_K;
             chassis_velocity_x = Chassis.Get_Target_Velocity_X() * cos(relative_angle) - Chassis.Get_Target_Velocity_Y() * sin(relative_angle);
             chassis_velocity_y = Chassis.Get_Target_Velocity_X() * sin(relative_angle) + Chassis.Get_Target_Velocity_Y() * cos(relative_angle);
             if(DR16.Get_Right_Switch() == DR16_Switch_Status_DOWN &&
@@ -516,37 +516,45 @@ void Class_Chariot::Transform_Mouse_Axis(){
 #ifdef GIMBAL
 void Class_Chariot::Control_Gimbal()
 {
-        // 角度目标值
-    float tmp_gimbal_yaw, tmp_gimbal_pitch;
-    // 遥控器摇杆值
-    float dr16_y, dr16_r_y;
-
     // 排除遥控器死区
-    dr16_y = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
-    dr16_r_y = (Math_Abs(DR16.Get_Right_Y()) > DR16_Dead_Zone) ? DR16.Get_Right_Y() : 0;
+    dr16_yaw = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
+    dr16_pitch1 = (Math_Abs(DR16.Get_Right_Y()) > DR16_Dead_Zone) ? DR16.Get_Right_Y() : 0;
+    dr16_pitch2 = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
+    dr16_roll = (Math_Abs(DR16.Get_Left_X())> DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
 
     tmp_gimbal_yaw = Gimbal.Get_Target_Yaw_Angle();
-    tmp_gimbal_pitch = Gimbal.Motor_Pitch.Get_Target_Angle();
+    tmp_gimbal_pitch1 = Gimbal.Motor_DM_J1_Pitch.Get_Target_Angle();
+    tmp_gimbal_pitch2 = Gimbal.Motor_DM_J2_Pitch_2.Get_Target_Angle();
+    tmp_gimbal_roll = last_roll_value;                  //改之前为获取roll的target_angle
 
     // 遥控器操作逻辑
-    tmp_gimbal_yaw -= dr16_y * DR16_Yaw_Angle_Resolution;
-    tmp_gimbal_pitch -= dr16_r_y * DR16_Pitch_Angle_Resolution;
+    tmp_gimbal_yaw += dr16_yaw * DR16_Yaw_Angle_Resolution * 3.14 / 180;
+    tmp_gimbal_pitch1 += dr16_pitch1 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
+    tmp_gimbal_pitch2 += dr16_pitch2 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
+    tmp_gimbal_roll += dr16_roll * PI * 0.25f;         //改之前是5.0f
+    last_roll_value = tmp_gimbal_roll;                  //改之前没有这一行
+
+    Math_Constrain(&tmp_gimbal_yaw, -PI, PI);
+    Math_Constrain(&tmp_gimbal_pitch1, 0.0f, 2.0944f);
+    Math_Constrain(&tmp_gimbal_pitch2, 0.0f, 1.57f);    //暂定为90.0f，实际应该比这个大
+    Math_Constrain(&tmp_gimbal_roll, 0.0f, 300.0f);     //tmp_gimbal_roll是用来进行增量的角度，校准是逆时针校准，所以范围设置在0-300.0f
+
     // 限制角度范围 处理yaw轴180度问题
-    if ((tmp_gimbal_yaw ) > 180.0f)
-    {
-        tmp_gimbal_yaw -= (360.0f);
-    }
-    else if ((tmp_gimbal_yaw) < -180.0f)
-    {
-        tmp_gimbal_yaw += (360.0f);
-    }
+    // if ((tmp_gimbal_yaw ) > 180.0f)
+    // {
+    //     tmp_gimbal_yaw -= (360.0f);
+    // }
+    // else if ((tmp_gimbal_yaw) < -180.0f)
+    // {
+    //     tmp_gimbal_yaw += (360.0f);
+    // }
 
-    if(tmp_gimbal_pitch > 18.0f)tmp_gimbal_pitch = 18.0f;
-    if(tmp_gimbal_pitch < -25.0f)tmp_gimbal_pitch = -25.0f;
+    // if(tmp_gimbal_pitch > 18.0f)tmp_gimbal_pitch = 18.0f;
+    // if(tmp_gimbal_pitch < -25.0f)tmp_gimbal_pitch = -25.0f;
 
-    if (DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN) // 左下 上位机
+    if (DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN) // 左下 失能
     {
-        Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_MINIPC);
+        Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_DISABLE);
     }
     else // 其余位置都是遥控器控制
     {
@@ -554,8 +562,10 @@ void Class_Chariot::Control_Gimbal()
         Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
 
         // 设定角度
-        Gimbal.Set_Target_Yaw_Angle(tmp_gimbal_yaw);
-        Gimbal.Set_Target_Pitch_Angle(tmp_gimbal_pitch);
+        Gimbal.debug_j0_target_radian = tmp_gimbal_yaw;
+        Gimbal.debug_j1_target_radian = tmp_gimbal_pitch1;
+        Gimbal.debug_j2_target_radian = tmp_gimbal_pitch2;
+        Gimbal.debug_roll_target_radian = tmp_gimbal_roll;
     }
 }
 #endif
@@ -673,7 +683,9 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
                 TIM1msMod50_Gimbal_Communicate_Alive_PeriodElapsedCallback();
                 mod50_mod3 = 0;
             }
-            if(Get_Gimbal_Status() == Gimbal_Status_DISABLE){
+            if(Get_Gimbal_Status() == Gimbal_Status_DISABLE || 
+            Motor_Yaw.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE){
+                Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
                 Chassis.Set_Target_Velocity_X(0);
                 Chassis.Set_Target_Velocity_Y(0);
                 Chassis.Set_Target_Omega(0);
@@ -728,8 +740,11 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
 
             #endif
                 
-            Gimbal.Motor_Pitch.TIM_Alive_PeriodElapsedCallback();
-            Gimbal.Motor_Yaw.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_DM_J0_Yaw.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_DM_J1_Pitch.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_DM_J2_Pitch_2.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_DM_J3_Roll.TIM_Alive_PeriodElapsedCallback();
+            
             Gimbal.Boardc_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
 
             Booster.Motor_Driver.TIM_Alive_PeriodElapsedCallback();

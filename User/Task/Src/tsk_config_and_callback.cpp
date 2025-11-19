@@ -57,6 +57,11 @@ bool start_flag=0;
 //机器人控制对象
 Class_Chariot chariot;
 
+#ifdef DEBUG
+bool debug_test_enable = true;  // Debug模式下测试使能标志
+uint32_t debug_test_counter = 0;     // 测试计数器
+#endif
+
 /* Private function declarations ---------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 
@@ -142,14 +147,14 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     switch (CAN_RxMessage->Header.Identifier)
     {
 
-        case (0x208):
+        case (0x205):
         {
-            chariot.Chassis.Motor_Steer[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Chassis.Motor_Steer[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         case (0x206):
         {
-            chariot.Chassis.Motor_Steer[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Chassis.Motor_Steer[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         case (0x207):
@@ -157,11 +162,31 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
             chariot.Chassis.Motor_Steer[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
-        case (0x205):
+        case (0x208):
         {
             chariot.Chassis.Motor_Steer[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
+        case(0xD1):
+        {
+            chariot.Chassis.Motor_Steer[0].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD2):
+        {
+            chariot.Chassis.Motor_Steer[1].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD3):
+        {
+            chariot.Chassis.Motor_Steer[2].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD4):
+        {
+            chariot.Chassis.Motor_Steer[3].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;       
         case (0x67)://超电接收
         {
             chariot.Chassis.Supercap.CAN_RxCpltCallback(CAN_RxMessage->Data);
@@ -205,8 +230,31 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
+    case (0xA1): // J0 - DM4310 (Yaw)
+    {
+        chariot.Gimbal.Motor_DM_J0_Yaw.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
 
-	}
+    case (0xA2): // J1 - DM8009P (Pitch)
+    {
+        chariot.Gimbal.Motor_DM_J1_Pitch.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    case (0xA3): //J2 - 4340
+    {
+        chariot.Gimbal.Motor_DM_J2_Pitch_2.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    case (0xA4): //J3 - 2325
+    {
+        chariot.Gimbal.Motor_DM_J3_Roll.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    }
 }
 #endif
 
@@ -260,7 +308,6 @@ void Device_SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Lengt
 {
 
 }
-
 
 
 /**
@@ -439,8 +486,28 @@ void Task1ms_TIM5_Callback()
     if(start_flag==1)
     {
         #ifdef GIMBAL
-        chariot.FSM_Alive_Control.Reload_TIM_Status_PeriodElapsedCallback();
+                
+        // ============ Debug测试模式：绕过遥控器检测 ============
+        #ifdef DEBUG
+        if(debug_test_enable)
+        {
+            // 强制使能云台
+            chariot.Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
+
+            chariot.Gimbal.Motor_DM_J0_Yaw.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+            chariot.Gimbal.Motor_DM_J1_Pitch.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+            chariot.Gimbal.Motor_DM_J2_Pitch_2.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+
+            debug_test_counter++;
+        }
+        else
         #endif
+        {
+            // 正常模式：需要遥控器
+            chariot.FSM_Alive_Control.Reload_TIM_Status_PeriodElapsedCallback();
+        }
+        #endif
+        
         chariot.TIM_Calculate_PeriodElapsedCallback();
         
     /****************************** 驱动层回调函数 1ms *****************************************/ 
@@ -475,7 +542,6 @@ void Task1ms_TIM5_Callback()
             #endif
             mod68 = 0;
         }
-
     }
 }
 
@@ -520,7 +586,7 @@ extern "C" void Task_Init()
         //遥控器接收
         #ifdef USE_DR16
         UART_Init(&huart5, DR16_UART5_Callback, 18);
-		UART_Init(&huart6, Image_UART6_Callback, 40);
+		    //UART_Init(&huart6, Image_UART6_Callback, 40);
         #elif defined(USE_VT13)
         UART_Init(&huart9, VT13_UART_Callback, 30);
         #endif

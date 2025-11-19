@@ -232,6 +232,11 @@ public:
 
     void Control_Chassis();
 
+        // 角度目标值
+    float tmp_gimbal_yaw, tmp_gimbal_pitch1, tmp_gimbal_pitch2, tmp_gimbal_roll;
+    // 遥控器摇杆值
+    float dr16_yaw, dr16_pitch1, dr16_pitch2, dr16_roll;
+
 protected:
 
     //pitch控制状态 锁定和自由控制
@@ -270,9 +275,9 @@ protected:
         float DR16_Keyboard_Chassis_Speed_Resolution_Big = 0.01f;
 
         //DR16云台yaw灵敏度系数(0.001PI表示yaw速度最大时为1rad/s)
-        float DR16_Yaw_Angle_Resolution = 0.008f * PI * 57.29577951308232;
+        float DR16_Yaw_Angle_Resolution = 0.010f * PI * 57.29577951308232;
         //DR16云台pitch灵敏度系数(0.001PI表示pitch速度最大时为1rad/s)
-        float DR16_Pitch_Angle_Resolution = 0.003f * PI * 57.29577951308232;
+        float DR16_Pitch_Angle_Resolution = 0.010f * PI * 57.29577951308232;
 
         //DR16云台yaw灵敏度系数(0.001PI表示yaw速度最大时为1rad/s)
         float DR16_Yaw_Resolution = 0.003f * PI;
