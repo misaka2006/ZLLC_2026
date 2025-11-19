@@ -403,7 +403,10 @@ float Class_MiniPC::calc_distance(float x, float y, float z)
 //extern Referee_Rx_E_t CAN3_Chassis_Rx_Data_E;
 float Class_MiniPC::calc_pitch(float x, float y, float z) 
 {
+<<<<<<< HEAD
 #ifdef OLD
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
   // 根据 x、y 分量计算的平面投影的模长和 z 分量计算的反正切值，得到弧度制的俯仰角
   float pitch = atan2f(z, sqrtf(x * x + y * y));
   //使用重力加速度模型迭代更新俯仰角
@@ -427,6 +430,7 @@ float Class_MiniPC::calc_pitch(float x, float y, float z)
   pitch = -(pitch * 180 / PI); // 向上为负，向下为正
 
   return pitch;
+<<<<<<< HEAD
 #endif
 // std::由于进行了函数重载，可以根据传入数据的类型选择合适的返回值类型
     // std::hypot就是根下平方和相加，只不过多了防精度溢出机制，无法使用请替换
@@ -455,6 +459,8 @@ float Class_MiniPC::calc_pitch(float x, float y, float z)
     
     // pitch向下为正，加负号
     return 180.0f * atanf((z + 0.5 * g * t * t) / sqrtf(x * x + y * y)) / PI;
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 
 /**

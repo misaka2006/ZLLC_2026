@@ -60,7 +60,11 @@ Dma.UART5_RX.0.FIFOMode=DMA_FIFOMODE_DISABLE
 Dma.UART5_RX.0.Instance=DMA1_Stream0
 Dma.UART5_RX.0.MemDataAlignment=DMA_MDATAALIGN_BYTE
 Dma.UART5_RX.0.MemInc=DMA_MINC_ENABLE
+<<<<<<< HEAD
 Dma.UART5_RX.0.Mode=DMA_NORMAL
+=======
+Dma.UART5_RX.0.Mode=DMA_CIRCULAR
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 Dma.UART5_RX.0.PeriphDataAlignment=DMA_PDATAALIGN_BYTE
 Dma.UART5_RX.0.PeriphInc=DMA_PINC_DISABLE
 Dma.UART5_RX.0.Polarity=HAL_DMAMUX_REQ_GEN_RISING
@@ -175,7 +179,11 @@ Dma.USART10_RX.3.PeriphBurst=DMA_PBURST_SINGLE
 Dma.USART10_RX.3.PeriphDataAlignment=DMA_PDATAALIGN_BYTE
 Dma.USART10_RX.3.PeriphInc=DMA_PINC_DISABLE
 Dma.USART10_RX.3.Polarity=HAL_DMAMUX_REQ_GEN_RISING
+<<<<<<< HEAD
 Dma.USART10_RX.3.Priority=DMA_PRIORITY_VERY_HIGH
+=======
+Dma.USART10_RX.3.Priority=DMA_PRIORITY_LOW
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 Dma.USART10_RX.3.RequestNumber=1
 Dma.USART10_RX.3.RequestParameters=Instance,Direction,PeriphInc,MemInc,PeriphDataAlignment,MemDataAlignment,Mode,Priority,FIFOMode,FIFOThreshold,MemBurst,PeriphBurst,SignalID,Polarity,RequestNumber,SyncSignalID,SyncPolarity,SyncEnable,EventEnable,SyncRequestNumber
 Dma.USART10_RX.3.SignalID=NONE
@@ -393,8 +401,13 @@ Mcu.PinsNb=40
 Mcu.ThirdPartyNb=0
 Mcu.UserConstants=
 Mcu.UserName=STM32H723VGTx
+<<<<<<< HEAD
 MxCube.Version=6.15.0
 MxDb.Version=DB.6.0.150
+=======
+MxCube.Version=6.14.1
+MxDb.Version=DB.6.0.141
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 NVIC.BusFault_IRQn=true\:0\:0\:true\:false\:true\:false\:false\:false
 NVIC.DMA1_Stream0_IRQn=true\:0\:0\:true\:false\:true\:false\:true\:true
 NVIC.DMA1_Stream1_IRQn=true\:0\:0\:true\:false\:true\:false\:true\:true
@@ -531,7 +544,11 @@ PH0-OSC_IN.Mode=HSE-External-Oscillator
 PH0-OSC_IN.Signal=RCC_OSC_IN
 PH1-OSC_OUT.Mode=HSE-External-Oscillator
 PH1-OSC_OUT.Signal=RCC_OSC_OUT
+<<<<<<< HEAD
 PinOutPanel.RotationAngle=0
+=======
+PinOutPanel.RotationAngle=-90
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 ProjectManager.AskForMigrate=true
 ProjectManager.BackupPrevious=false
 ProjectManager.CompilerLinker=GCC
@@ -674,7 +691,11 @@ TIM5.Period=1000-1
 TIM5.Prescaler=240-1
 UART5.BaudRate=100000
 UART5.IPParameters=Parity,WordLength,BaudRate,StopBits,Mode
+<<<<<<< HEAD
 UART5.Mode=MODE_TX_RX
+=======
+UART5.Mode=MODE_RX
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 UART5.Parity=PARITY_EVEN
 UART5.StopBits=UART_STOPBITS_2
 UART5.WordLength=WORDLENGTH_9B

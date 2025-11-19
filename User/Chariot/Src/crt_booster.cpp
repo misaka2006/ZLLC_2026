@@ -18,8 +18,12 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
+<<<<<<< HEAD
 int shoot_num;
 int test_period = 90;
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /* Private function declarations ---------------------------------------------*/
 
 /* Function prototypes -------------------------------------------------------*/
@@ -40,6 +44,7 @@ void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
     {
         //正常状态
 
+<<<<<<< HEAD
         if (abs(Booster->Motor_Friction_Right.Get_Now_Torque()) >= Booster->Friction_Torque_Threshold)
         {
             //大扭矩->检测状态
@@ -50,13 +55,29 @@ void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
             //停机->停机状态
             Set_Status(3);
         }
+=======
+        // if (abs(Booster->Motor_Friction_Right.Get_Now_Torque()) >= Booster->Friction_Torque_Threshold)
+        // {
+        //     //大扭矩->检测状态
+        //     Set_Status(1);
+        // }
+        // else if (Booster->Booster_Control_Type == Booster_Control_Type_DISABLE)
+        // {
+        //     //停机->停机状态
+        //     Set_Status(3);
+        // }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
     break;
     case (1):
     {
         //发射嫌疑状态
 
+<<<<<<< HEAD
         if (Status[Now_Status_Serial].Time >= test_period)
+=======
+        if (Status[Now_Status_Serial].Time >= 15)
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         {
             //长时间大扭矩->确认是发射了
             Set_Status(2);
@@ -66,7 +87,11 @@ void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
     case (2):
     {
         //发射完成状态->加上热量进入下一轮检测
+<<<<<<< HEAD
         shoot_num ++;
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         Heat += 10.0f;
         Set_Status(0);
     }
@@ -75,11 +100,19 @@ void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
     {
         //停机状态
 
+<<<<<<< HEAD
         if (abs(Booster->Motor_Friction_Right.Get_Now_Omega_Radian()) >= Booster->Friction_Omega_Threshold)
         {
             //开机了->正常状态
             Set_Status(0);
         }
+=======
+        // if (abs(Booster->Motor_Friction_Right.Get_Now_Omega_Radian()) >= Booster->Friction_Omega_Threshold)
+        // {
+        //     //开机了->正常状态
+        //     Set_Status(0);
+        // }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
     break;
     }
@@ -123,9 +156,14 @@ void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
             //卡弹嫌疑状态
             Booster->Output();
 
+<<<<<<< HEAD
             if (Status[Now_Status_Serial].Time >= 100)
             {
                 //长时间大扭矩->卡弹反应状态
+=======
+            if (Status[Now_Status_Serial].Time >= 500) 
+            {
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
                 Set_Status(2);
             }
             else if (abs(Booster->Motor_Driver.Get_Now_Torque()) < Booster->Driver_Torque_Threshold)
@@ -139,9 +177,14 @@ void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
         {
             //卡弹反应状态->准备卡弹处理
             Booster->Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+<<<<<<< HEAD
             //Booster->Driver_Angle = Booster->Motor_Driver.Get_Now_Radian() + PI / 12.0f;//原版本
             Booster->Driver_Angle = Booster->Motor_Driver.Get_Now_Radian() + (2 * PI / 8.0f);
             Booster->Motor_Driver.Set_Target_Radian(Booster->Driver_Angle);
+=======
+            Booster->Drvier_Angle = Booster->Motor_Driver.Get_Now_Radian() + PI / 9.0f; 
+            Booster->Motor_Driver.Set_Target_Radian(Booster->Drvier_Angle);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
             Set_Status(3);
         }
         break;
@@ -149,6 +192,7 @@ void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
         {
             //卡弹处理状态
 
+<<<<<<< HEAD
             if (Status[Now_Status_Serial].Time >= 300)
             {
                 //长时间回拨->正常状态
@@ -157,6 +201,54 @@ void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
         }
         break;
     }
+=======
+            if (Status[Now_Status_Serial].Time >= 100)
+            {
+                Booster->Drvier_Angle = Booster->Drvier_Angle - PI / 9.0f; //前进20度
+                Booster->Motor_Driver.Set_Target_Radian(Booster->Drvier_Angle);
+                Set_Status(4);
+            }
+        }
+        break;
+        case (4):
+        {
+            if(Status[Now_Status_Serial].Time >= 50)
+			{
+				Set_Status(0);
+			}
+        }
+        break;
+        }
+}
+
+void Class_Fric_Motor::TIM_PID_PeriodElapsedCallback()
+{
+    switch (DJI_Motor_Control_Method)
+    {
+    case (DJI_Motor_Control_Method_OPENLOOP):
+    {
+        //默认开环扭矩控制
+        Out = Target_Torque / Torque_Max * Output_Max;
+    }
+    break;
+    case (DJI_Motor_Control_Method_OMEGA):
+    {
+        PID_Omega.Set_Target(Target_Omega_Rpm);
+        PID_Omega.Set_Now(Data.Now_Omega_Rpm);
+        PID_Omega.TIM_Adjust_PeriodElapsedCallback();
+
+        Out = PID_Omega.Get_Out();
+    }
+    break;
+    default:
+    {
+        Out = 0.0f;
+    }
+    break;
+    }
+    Output();
+    //发射机构代码已更新
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 
 /**
@@ -172,6 +264,7 @@ void Class_Booster::Init()
 
     //正常状态, 卡弹嫌疑状态, 卡弹反应状态, 卡弹处理状态
     FSM_Antijamming.Booster = this;
+<<<<<<< HEAD
     FSM_Antijamming.Init(4, 0);
 
     //拨弹盘电机
@@ -188,6 +281,28 @@ void Class_Booster::Init()
     Motor_Friction_Right.PID_Omega.Init(10.0f, 0.05f, 0.f, 0.0f, 2000.0f, Motor_Friction_Right.Get_Output_Max());
     Motor_Friction_Right.Init(&hfdcan2, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA, 1.0f);
 
+=======
+    FSM_Antijamming.Init(5, 0);
+
+    //拨弹盘电机
+   //拨弹盘电机(需要从新调更新参数)DJI_motor_3508 0X201
+    Motor_Driver.PID_Angle.Init(200.0f, 10.0f, 1.0f, 0.0f, 0.0f,0.0f);
+    Motor_Driver.PID_Omega.Init(3000.0f, 40.0f, 0.0f, 0.0f, 16384.0f,  16384.0f);
+    Motor_Driver.Init(&hfdcan2, DJI_Motor_ID_0x207, DJI_Motor_Control_Method_OMEGA,50.895f);
+
+    //4*摩擦轮初始化
+    Fric[0].Init(&hfdcan1, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA, 1.0f);
+    Fric[0].PID_Omega.Init(10.0f, 0.05f, 0.0f, 0.0f, 2000.0f,11000.0f);
+
+    Fric[1].Init(&hfdcan1, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_OMEGA, 1.0f);
+    Fric[1].PID_Omega.Init(10.0f, 0.05f, 0.0f, 0.0f, 2000.0f,11000.0f);
+
+    Fric[2].Init(&hfdcan1, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_OMEGA, 1.0f);
+    Fric[2].PID_Omega.Init(10.0f, 0.05f, 0.0f, 0.0f, 2000.0f,11000.0f);
+
+    Fric[3].Init(&hfdcan1, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_OMEGA, 1.0f);
+    Fric[3].PID_Omega.Init(10.0f, 0.05f, 0.0f, 0.0f, 2000.0f,11000.0f);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
 }
 
@@ -198,6 +313,7 @@ void Class_Booster::Init()
 extern Referee_Rx_B_t CAN3_Chassis_Rx_Data_B;
 void Class_Booster::Output()
 {
+<<<<<<< HEAD
     Now_Angle = Motor_Driver.Get_Now_Radian();
     Booster_Control_Type = Booster_Control_Type_CEASEFIRE;
     //控制拨弹轮
@@ -381,6 +497,73 @@ void Class_Booster::Output()
     {
         Motor_Friction_Left.Set_Target_Omega_Rpm(0.0f);
         Motor_Friction_Right.Set_Target_Omega_Rpm(0.0f);
+=======
+     switch (Booster_Control_Type)
+    {
+    case (Booster_Control_Type_DISABLE):
+    {
+        // 发射机构失能
+        Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OPENLOOP);
+        Motor_Driver.PID_Angle.Set_Integral_Error(0.0f);
+        Motor_Driver.PID_Omega.Set_Integral_Error(0.0f);
+        Motor_Driver.Set_Out(0.0f);
+
+        Drvier_Angle = Motor_Driver.Get_Now_Radian();
+
+        for (auto i = 0; i < 4; i++)
+        {
+            Fric[i].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OPENLOOP);
+            Fric[i].Set_Target_Torque(0.0f);
+        }
+
+        // 关闭摩擦轮
+        Set_Friction_Control_Type(Friction_Control_Type_DISABLE);
+    }
+    break;
+    case (Booster_Control_Type_CEASEFIRE):
+    {
+        Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+        Motor_Driver.Set_Target_Radian(Drvier_Angle);
+
+        for (auto i = 0; i < 4; i++)
+        {
+            Fric[i].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+        }
+    }
+    break;
+    case (Booster_Control_Type_SINGLE):
+    {
+        // 单发模式
+        Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+        for (auto i = 0; i < 4; i++)
+        {
+            Fric[i].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+        }
+
+        Drvier_Angle -= 2.0f * PI / 6.0f;
+        Motor_Driver.Set_Target_Radian(Drvier_Angle);
+
+        // 点一发立刻停火
+        Booster_Control_Type = Booster_Control_Type_CEASEFIRE;
+    }
+    break;
+    }
+
+     // 控制摩擦轮
+    if (Friction_Control_Type != Friction_Control_Type_DISABLE)
+    {
+        Fric[0].Set_Target_Omega_Rpm((Fric_High_Rpm + Fric_Transform_Rpm));
+        Fric[1].Set_Target_Omega_Rpm(-(Fric_High_Rpm + Fric_Transform_Rpm));
+        Fric[2].Set_Target_Omega_Rpm(-(Fric_Low_Rpm + Fric_Transform_Rpm));
+        Fric[3].Set_Target_Omega_Rpm((Fric_Low_Rpm + Fric_Transform_Rpm));
+    }
+    else
+    {
+        Fric[0].Set_Target_Omega_Rpm(0);
+        Fric[1].Set_Target_Omega_Rpm(0);
+        Fric[2].Set_Target_Omega_Rpm(0);
+        Fric[3].Set_Target_Omega_Rpm(0);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
 }
 
@@ -392,17 +575,28 @@ void Class_Booster::TIM_Calculate_PeriodElapsedCallback()
 {     
     
     //无需裁判系统的热量控制计算
+<<<<<<< HEAD
     FSM_Heat_Detect.Reload_TIM_Status_PeriodElapsedCallback();
+=======
+    //FSM_Heat_Detect.Reload_TIM_Status_PeriodElapsedCallback();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     //卡弹处理
     FSM_Antijamming.Reload_TIM_Status_PeriodElapsedCallback();
     //PID输出
     Motor_Driver.TIM_PID_PeriodElapsedCallback();
+<<<<<<< HEAD
     Motor_Friction_Left.TIM_PID_PeriodElapsedCallback();
     Motor_Friction_Right.TIM_PID_PeriodElapsedCallback();
 
     if(Referee->Get_Shoot_Speed()>0.0f && Referee->Get_Shoot_Speed()<16.0f)
     {
         Speed = Referee->Get_Shoot_Speed();
+=======
+
+     for (auto i = 0; i < 4; i++)
+    {
+        Fric[i].TIM_PID_PeriodElapsedCallback();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
 }
 

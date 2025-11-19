@@ -20,7 +20,10 @@
 #include "dvc_dwt.h"
 #include "alg_filter.h"
 
+<<<<<<< HEAD
 #include "alg_SMC_Control.h"
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -132,9 +135,12 @@ public:
     // PID扭矩环控制
     Class_PID PID_Torque;
 
+<<<<<<< HEAD
     //滑模控制算法，目前只适用于Yaw
     Class_SMC SMC_Control;
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     void Init(FDCAN_HandleTypeDef *__hcan, Enum_DJI_Motor_ID __CAN_ID, Enum_DJI_Motor_Control_Method __Control_Method = DJI_Motor_Control_Method_ANGLE, int32_t __Encoder_Offset = 0, float __Omega_Max = 320.0f * RPM_TO_RADPS);
 
     inline uint16_t Get_Output_Max();
@@ -174,7 +180,11 @@ public:
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void TIM_Alive_PeriodElapsedCallback();
     void TIM_PID_PeriodElapsedCallback();
+<<<<<<< HEAD
     void TIM_SMC_PeriodElapsedCallback();
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     float Yaw;
     float init_Yaw;
@@ -406,7 +416,11 @@ public:
 
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void TIM_Alive_PeriodElapsedCallback();
+<<<<<<< HEAD
     virtual void TIM_PID_PeriodElapsedCallback();
+=======
+    void TIM_PID_PeriodElapsedCallback();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     float v;
     float init_v = 0.0f;
@@ -477,6 +491,7 @@ protected:
     void Output();
 };
 
+<<<<<<< HEAD
 class Class_DJI_Motor_C620_Steer : public Class_DJI_Motor_C620{
 
 public:
@@ -507,6 +522,8 @@ protected :
     float Zero_Offset_Radian = 0.0f;
 };
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported function declarations --------------------------------------------*/
@@ -1225,7 +1242,10 @@ void Class_DJI_Motor_C620::Set_Target_Omega_Rpm(int16_t __Target_Omega_Rpm)
     Target_Omega_Rpm = __Target_Omega_Rpm;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /**
  * @brief 设定目标的速度, °/s
  *
@@ -1257,6 +1277,7 @@ void Class_DJI_Motor_C620::Set_Out(float __Out)
     Output();
 }
 
+<<<<<<< HEAD
 inline float Class_DJI_Motor_C620_Steer::Get_Now_Zero_Offset_Radian(){
     return Zero_Offset_Radian;
 }
@@ -1278,6 +1299,8 @@ inline void Class_DJI_Motor_C620_Steer::Set_Transform_Radian_Omega(float __Trans
     Transform_Radian_Omega = __Transform_Radian_Omega;
 }
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 #endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

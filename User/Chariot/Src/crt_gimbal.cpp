@@ -37,10 +37,13 @@ void Class_Gimbal::Init()
     Motor_Yaw.PID_Omega.Init(60.0f, 15.0f, 0.0f, 0.0f, 6000, Motor_Yaw.Get_Output_Max(), 10.f, 50.f);
     Motor_Yaw.PID_Torque.Init(0.f, 0.0f, 0.0f, 0.0f, Motor_Yaw.Get_Output_Max(), Motor_Yaw.Get_Output_Max());
     Motor_Yaw.Init(&hfdcan2, DJI_Motor_ID_0x205, DJI_Motor_Control_Method_ANGLE, 2048);
+<<<<<<< HEAD
 
     /*test_DM4310*/
     Motor_Yaw_DM4310.Init(&hfdcan1, DM_Motor_ID_0xA1, DM_Motor_Control_Method_MIT_POSITION);
     //CAN_Send_Data(&hfdcan1, DM_Motor_ID_0xA1+0xf0, DM_Motor_CAN_Message_Save_Zero, 8);
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     
     // pitch轴电机
     Motor_Pitch.PID_Angle.Init(22.f, 0.0f, 0.001f, 0.0f, 2.f, 650.f);
@@ -54,7 +57,11 @@ void Class_Gimbal::Init()
  * @brief 输出到电机
  *
  */
+<<<<<<< HEAD
 float Tmp_Target_Yaw_Angle = 0.0f,Tmp_Ture_Yaw_Angle = 0.0f;
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 void Class_Gimbal::Output()
 {
     if (Gimbal_Control_Type == Gimbal_Control_Type_DISABLE)
@@ -85,12 +92,16 @@ void Class_Gimbal::Output()
             //控制方式
             Motor_Yaw.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
             Motor_Pitch.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+<<<<<<< HEAD
             Motor_Yaw_DM4310.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
             // 限制角度
             Math_Constrain(&Target_Pitch_Angle, Min_Pitch_Angle, Max_Pitch_Angle);
             Math_Constrain(&Target_Yaw_Angle, Min_Yaw_Angle, Max_Yaw_Angle);
 
+<<<<<<< HEAD
             //处理yaw轴180度问题
             Tmp_Target_Yaw_Angle = Target_Yaw_Angle * PI / 180.0f;
             Tmp_Ture_Yaw_Angle = Motor_Yaw_DM4310.Get_Now_Angle();
@@ -112,6 +123,11 @@ void Class_Gimbal::Output()
             Motor_Yaw_DM4310.Set_Target_Torque(0.0f);
             Motor_Yaw_DM4310.Set_MIT_K_P(6.0f);
             Motor_Yaw_DM4310.Set_MIT_K_D(0.2f);
+=======
+            // 设置目标角度
+            Motor_Yaw.Set_Target_Angle(Target_Yaw_Angle);
+            Motor_Pitch.Set_Target_Angle(Target_Pitch_Angle);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         }
         else if ((Get_Gimbal_Control_Type() == Gimbal_Control_Type_MINIPC) && (MiniPC->Get_MiniPC_Status() != MiniPC_Status_DISABLE))
         {
@@ -151,6 +167,7 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
 
     //PID输出
     Motor_Yaw.TIM_PID_PeriodElapsedCallback();
+<<<<<<< HEAD
 
     //滑模控制
     // static uint8_t mod10 = 0;
@@ -166,6 +183,9 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
     Motor_Pitch.TIM_PID_PeriodElapsedCallback();
 
     Motor_Yaw_DM4310.TIM_Process_PeriodElapsedCallback();
+=======
+    Motor_Pitch.TIM_PID_PeriodElapsedCallback();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

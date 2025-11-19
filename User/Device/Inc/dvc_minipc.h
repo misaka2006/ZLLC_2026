@@ -531,7 +531,10 @@ protected:
 
     const float g = 9.8; // 重力加速度
     float bullet_v = 28.0; // 子弹速度
+<<<<<<< HEAD
 	const float a_d = 0.0595f; // 改为pitch旋转中心到摩擦轮的距离
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     // 距离
     float Distance;

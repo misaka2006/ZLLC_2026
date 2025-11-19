@@ -422,6 +422,22 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     case (DJI_Motor_Control_Method_AGV_MODE):
     {       
         
+<<<<<<< HEAD
+=======
+        PID_Angle.Set_Target(Target_Angle);
+        //PID_Angle.Set_Target(ang);
+        PID_Angle.Set_Now(t_yaw * 180.0f /PI);
+        PID_Angle.TIM_Adjust_PeriodElapsedCallback();
+        
+        Target_Omega_Angle = PID_Angle.Get_Out();;
+
+        PID_Omega.Set_Target(-Target_Omega_Angle);//逆时针速度为负，而角度逆时针为正，加负号，使速度与角度方向一致
+        //PID_Omega.Set_Target(ome);
+        PID_Omega.Set_Now(Data.Now_Omega_Angle);
+        PID_Omega.TIM_Adjust_PeriodElapsedCallback();
+
+        Out = PID_Omega.Get_Out();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
     break;
     default:
@@ -433,6 +449,7 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     Output();
 }
 
+<<<<<<< HEAD
 void Class_DJI_Motor_GM6020::TIM_SMC_PeriodElapsedCallback()
 {
     switch (DJI_Motor_Control_Method)
@@ -458,6 +475,8 @@ void Class_DJI_Motor_GM6020::TIM_SMC_PeriodElapsedCallback()
     }
 }
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /**
  * @brief 电机初始化
  *
@@ -703,8 +722,13 @@ void Class_DJI_Motor_C620::Data_Process()
     Data.Now_Radian = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 2.0f * PI / Gearbox_Rate;
     Data.Now_Angle = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 360.f / Gearbox_Rate;
     Data.Now_Omega_Radian = (float)tmp_omega * RPM_TO_RADPS / Gearbox_Rate;
+<<<<<<< HEAD
     Data.Now_Omega_Rpm = tmp_omega;
     Data.Now_Omega_Angle = (float)tmp_omega * RPM_TO_DEG / Gearbox_Rate;
+=======
+    Data.Now_Omega_Angle = (float)tmp_omega * RPM_TO_DEG / Gearbox_Rate;
+    Data.Now_Omega_Rpm = tmp_omega / Gearbox_Rate;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     Data.Now_Torque = tmp_torque;
     Data.Now_Temperature = tmp_temperature + CELSIUS_TO_KELVIN;
 
@@ -780,6 +804,7 @@ void Class_DJI_Motor_C620::TIM_PID_PeriodElapsedCallback()
     break;
     case (DJI_Motor_Control_Method_OMEGA):
     {
+<<<<<<< HEAD
         /*
         PID_Omega.Set_Target(Target_Omega_Radian);
         PID_Omega.Set_Now(Data.Now_Omega_Radian);
@@ -787,6 +812,10 @@ void Class_DJI_Motor_C620::TIM_PID_PeriodElapsedCallback()
        /*摩擦轮*/
         PID_Omega.Set_Target(Target_Omega_Rpm);
         PID_Omega.Set_Now(Data.Now_Omega_Rpm);
+=======
+        PID_Omega.Set_Target(Target_Omega_Radian);
+        PID_Omega.Set_Now(Data.Now_Omega_Radian);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
         Out = PID_Omega.Get_Out();
@@ -817,6 +846,7 @@ void Class_DJI_Motor_C620::TIM_PID_PeriodElapsedCallback()
     Output();
 }
 
+<<<<<<< HEAD
 
 
 /**
@@ -907,4 +937,6 @@ void Class_DJI_Motor_C620_Steer::MA600_Data_Process(Struct_CAN_Rx_Buffer *CAN_Rx
 }
 
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

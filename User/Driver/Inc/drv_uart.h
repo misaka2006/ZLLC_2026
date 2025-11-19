@@ -18,7 +18,17 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 
+<<<<<<< HEAD
 #include "stm32h7xx_hal.h" 
+=======
+#ifdef STM32H723xx 
+#include "stm32h7xx_hal.h"
+#endif  
+#ifdef STM32F407xx
+#include "stm32f4xx_hal.h"
+#endif   
+  
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 #include "usart.h"
 
   
@@ -82,8 +92,11 @@ uint8_t UART_Send_Data(UART_HandleTypeDef *huart, uint8_t *Data, uint16_t Length
 
 void TIM_UART_PeriodElapsedCallback();
 
+<<<<<<< HEAD
 void UART_Cleanup(UART_HandleTypeDef *huart);
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 #ifdef __cplusplus
 }
 #endif

@@ -55,7 +55,11 @@ void MX_UART5_Init(void)
   huart5.Init.WordLength = UART_WORDLENGTH_9B;
   huart5.Init.StopBits = UART_STOPBITS_2;
   huart5.Init.Parity = UART_PARITY_EVEN;
+<<<<<<< HEAD
   huart5.Init.Mode = UART_MODE_TX_RX;
+=======
+  huart5.Init.Mode = UART_MODE_RX;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
   huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
   huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
@@ -353,7 +357,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_uart5_rx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_uart5_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_uart5_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+<<<<<<< HEAD
     hdma_uart5_rx.Init.Mode = DMA_NORMAL;
+=======
+    hdma_uart5_rx.Init.Mode = DMA_CIRCULAR;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     hdma_uart5_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     hdma_uart5_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_uart5_rx) != HAL_OK)
@@ -677,7 +685,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_usart10_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_usart10_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     hdma_usart10_rx.Init.Mode = DMA_CIRCULAR;
+<<<<<<< HEAD
     hdma_usart10_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+=======
+    hdma_usart10_rx.Init.Priority = DMA_PRIORITY_LOW;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     hdma_usart10_rx.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
     hdma_usart10_rx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     hdma_usart10_rx.Init.MemBurst = DMA_MBURST_SINGLE;

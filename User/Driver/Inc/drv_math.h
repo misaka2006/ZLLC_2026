@@ -63,8 +63,11 @@ float Math_Sinc(float x);
 
 int32_t Math_Float_To_Int(float x, float Float_Min, float Float_Max, int32_t Int_Min, int32_t Int_Max);
 float Math_Int_To_Float(int32_t x, int32_t Int_Min, int32_t Int_Max, float Float_Min, float Float_Max);
+<<<<<<< HEAD
 float Normalize_Angle_Radian_0_to_2PI(float Angle_Radian);
 float Normalize_Angle_Radian_PI_to_PI(float Angle_Radian);
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
 /**
  * @brief 限幅函数
@@ -100,10 +103,13 @@ Type Math_Abs(Type x)
     return ((x > 0) ? x : -x);
 }
 
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 #endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

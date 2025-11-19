@@ -185,6 +185,7 @@ float Math_Int_To_Float(int32_t x, int32_t Int_Min, int32_t Int_Max, float Float
     return (out);
 }
 
+<<<<<<< HEAD
 /**
  * @brief 将任意角度归一化到 -PI 到 PI  可用于处理-180于180的突变 Rad
  * @param Angle_Radian 
@@ -211,4 +212,6 @@ float Normalize_Angle_Radian_0_to_2PI(float Angle_Radian){
     return Angle_Radian;
 }
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

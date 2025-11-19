@@ -18,8 +18,12 @@
 #include "dvc_minipc.h"
 #include "dvc_imu.h"
 #include "dvc_lkmotor.h"
+<<<<<<< HEAD
 #include "alg_fsm.h"
 #include "dvc_dmmotor.h"
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -232,7 +236,11 @@ public:
 
     // yaw轴电机
     Class_DJI_Motor_GM6020 Motor_Yaw;
+<<<<<<< HEAD
     Class_DM_Motor_J4310 Motor_Yaw_DM4310;
+=======
+
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     // pitch轴电机
     Class_DJI_Motor_GM6020 Motor_Pitch;
 
@@ -258,10 +266,15 @@ protected:
     float CRUISE_SPEED_PITCH = 70.f;
     // yaw轴最小值
     float Min_Yaw_Angle = - 180.0f;
+<<<<<<< HEAD
     float Min_Yaw_Angle_Radian = - PI;
     // yaw轴最大值
     float Max_Yaw_Angle = 180.0f;
     float Max_Yaw_Angle_Radian = PI;
+=======
+    // yaw轴最大值
+    float Max_Yaw_Angle = 180.0f;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     //yaw总角度
     float Yaw_Total_Angle;

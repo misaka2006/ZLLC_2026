@@ -76,6 +76,10 @@ enum Enum_Chassis_Control_Type :uint8_t
     Chassis_Control_Type_DISABLE = 0,
     Chassis_Control_Type_FLLOW,
     Chassis_Control_Type_SPIN,
+<<<<<<< HEAD
+=======
+    Chassis_Control_Mode_NORMAL_SPIN,  // 不随动+受击打小陀螺
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 };
 
 /**
@@ -105,7 +109,11 @@ public:
 
     //下方转动电机
     Class_DJI_Motor_C620 Motor_Wheel[4];
+<<<<<<< HEAD
     Class_DJI_Motor_C620_Steer Motor_Steer[4];
+=======
+    Class_DJI_Motor_GM6020 Motor_Steer[4];
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     //随动环
     Class_PID Chassis_Follow_PID_Angle;
@@ -142,6 +150,12 @@ public:
     inline void Set_Velocity_X_Max(float __Velocity_X_Max);
 
     void TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Status __Sprint_Status);
+<<<<<<< HEAD
+=======
+    void Axis_Transform();
+    void Vector_Plus();
+    void Control_Update();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     void Power_Limit_Update();
 
 protected:
@@ -240,9 +254,12 @@ const float HALF_WIDTH = 0.281f;
 //底盘半长 单位m
 const float HALF_LENGTH = 0.281f;	
 
+<<<<<<< HEAD
 //底盘中心到每个轮子轴心投影距离
 const float CHASSIS_RADIUS = sqrt(HALF_LENGTH * HALF_LENGTH + HALF_WIDTH * HALF_WIDTH);
 
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 //线速度转角速度 rad/s
 const float VEL2RAD = 1.0f/(WHELL_DIAMETER/2.0f);
 

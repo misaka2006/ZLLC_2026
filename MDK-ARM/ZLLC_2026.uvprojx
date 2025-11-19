@@ -10,13 +10,21 @@
       <TargetName>ZLLC_2026</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+<<<<<<< HEAD
       <pCCUsed>6220000::V6.22::ARMCLANG</pCCUsed>
+=======
+      <pCCUsed>6210000::V6.21::ARMCLANG</pCCUsed>
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32H723VGTx</Device>
           <Vendor>STMicroelectronics</Vendor>
+<<<<<<< HEAD
           <PackID>Keil.STM32H7xx_DFP.4.1.2</PackID>
+=======
+          <PackID>Keil.STM32H7xx_DFP.4.0.0</PackID>
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
           <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x2001FFFF) IRAM2(0x24000000-0x2401FFFF) IROM(0x8000000-0x80FFFFF) CLOCK(12000000) FPU3(DFPU) CPUTYPE("Cortex-M7") ELITTLE TZ</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -48,7 +56,11 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
+<<<<<<< HEAD
           <OutputDirectory>.\ZLLC_2026\</OutputDirectory>
+=======
+          <OutputDirectory>.\output\</OutputDirectory>
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
           <OutputName>ZLLC_2026</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
@@ -81,7 +93,11 @@
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
+<<<<<<< HEAD
             <RunUserProg2>1</RunUserProg2>
+=======
+            <RunUserProg2>0</RunUserProg2>
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
             <UserProg1Name></UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
@@ -619,11 +635,14 @@
               <FileType>8</FileType>
               <FilePath>..\User\Algorithm\Src\user_lib.cpp</FilePath>
             </File>
+<<<<<<< HEAD
             <File>
               <FileName>alg_SMC_Control.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Algorithm\Src\alg_SMC_Control.cpp</FilePath>
             </File>
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
           </Files>
         </Group>
         <Group>
@@ -706,6 +725,14 @@
               </FileOption>
             </File>
             <File>
+<<<<<<< HEAD
+=======
+              <FileName>memorymap.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/memorymap.c</FilePath>
+            </File>
+            <File>
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
               <FileName>spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/spi.c</FilePath>
