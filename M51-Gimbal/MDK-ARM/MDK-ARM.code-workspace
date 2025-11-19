@@ -1,0 +1,16 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "config.h": "c",
+            "limits": "cpp",
+            "tsk_config_and_callback.h": "c",
+            "main.h": "c"
+        }
+    },
+    "extensions": {}
+}
