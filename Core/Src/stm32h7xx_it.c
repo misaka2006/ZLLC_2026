@@ -437,7 +437,11 @@ void TIM5_IRQHandler(void)
 void UART5_IRQHandler(void)
 {
   /* USER CODE BEGIN UART5_IRQn 0 */
+<<<<<<< HEAD
+  
+=======
 		UART_IDLEHandler();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
   /* USER CODE END UART5_IRQn 0 */
   HAL_UART_IRQHandler(&huart5);
   /* USER CODE BEGIN UART5_IRQn 1 */
@@ -535,7 +539,10 @@ void UART9_IRQHandler(void)
 void USART10_IRQHandler(void)
 {
   /* USER CODE BEGIN USART10_IRQn 0 */
+<<<<<<< HEAD
+=======
   UART_IDLEHandler();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
   
   /* USER CODE END USART10_IRQn 0 */
   HAL_UART_IRQHandler(&huart10);
@@ -559,6 +566,8 @@ void FDCAN3_IT0_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+<<<<<<< HEAD
+=======
 #define BUFFER_SIZE 18
 static uint8_t CurrentIndex = 0;
 uint8_t RxBuff[BUFFER_SIZE];
@@ -606,17 +615,22 @@ void UART_IDLEHandler(void)
 
 }
 
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
 	if (huart->Instance == UART5)
     {
+<<<<<<< HEAD
+
+=======
       if(__HAL_UART_GET_FLAG(huart,UART_FLAG_ORE) != RESET) 
 			{
         __HAL_UART_CLEAR_OREFLAG(huart);
 				HAL_UART_Receive_DMA(huart, RxBuff, 18);
 			}
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 		}
 }
 

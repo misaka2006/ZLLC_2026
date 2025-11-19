@@ -357,9 +357,16 @@ void TIM_CAN_PeriodElapsedCallback()
     }
     #elif defined (GIMBAL)
 
+<<<<<<< HEAD
+    static uint8_t mod5 = 0,mod4 = 0,mod3 = 0,mod20 = 0;
+    mod5++;
+    mod4++;
+		mod3++;
+=======
     static uint8_t mod5 = 0,mod4 = 0,mod20 = 0;
     mod5++;
     mod4++;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     mod20++;
     
     if(mod5 == 5)
@@ -376,6 +383,14 @@ void TIM_CAN_PeriodElapsedCallback()
     if(mod4 == 4)
     {
         mod4 = 0;
+<<<<<<< HEAD
+    }
+    if(mod3 == 3)
+    {
+        CAN_Send_Data(&hfdcan2, 0x200, CAN2_0x200_Tx_Data, 8); // 摩擦轮*3
+        mod3 = 0;
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }   
     if (mod20 == 20) //50Hz
     {

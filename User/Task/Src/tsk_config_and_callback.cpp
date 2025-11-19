@@ -142,14 +142,24 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     switch (CAN_RxMessage->Header.Identifier)
     {
 
+<<<<<<< HEAD
+        case (0x205):
+        {
+            chariot.Chassis.Motor_Steer[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+=======
         case (0x208):
         {
             chariot.Chassis.Motor_Steer[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         }
         break;
         case (0x206):
         {
+<<<<<<< HEAD
+            chariot.Chassis.Motor_Steer[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+=======
             chariot.Chassis.Motor_Steer[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         }
         break;
         case (0x207):
@@ -157,11 +167,38 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
             chariot.Chassis.Motor_Steer[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
+<<<<<<< HEAD
+        case (0x208):
+=======
         case (0x205):
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         {
             chariot.Chassis.Motor_Steer[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
+<<<<<<< HEAD
+        case(0xD1):
+        {
+            chariot.Chassis.Motor_Steer[0].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD2):
+        {
+            chariot.Chassis.Motor_Steer[1].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD3):
+        {
+            chariot.Chassis.Motor_Steer[2].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;
+        case(0xD4):
+        {
+            chariot.Chassis.Motor_Steer[3].MA600_Data_Process(CAN_RxMessage);
+        }
+        break;       
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         case (0x67)://超电接收
         {
             chariot.Chassis.Supercap.CAN_RxCpltCallback(CAN_RxMessage->Data);
@@ -205,7 +242,15 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
+<<<<<<< HEAD
+    case (0x10):
+    {
+        chariot.Gimbal.Motor_Yaw_DM4310.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+=======
 
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 	}
 }
 #endif
@@ -220,7 +265,20 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
+<<<<<<< HEAD
+    case (0x201):
+    {
+        chariot.Booster.Motor_Friction_Right.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x203):
+    {
+        chariot.Booster.Motor_Friction_Left.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+=======
 
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
 		
 }
@@ -273,12 +331,17 @@ void Device_SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Lengt
 void DR16_UART5_Callback(uint8_t *Buffer, uint16_t Length)
 {
     chariot.DR16.DR16_UART_RxCpltCallback(Buffer);
+<<<<<<< HEAD
+    //底盘 云台 发射机构 的控制策略
+    chariot.TIM_Control_Callback();
+=======
 
     // 底盘 云台 发射机构 的控制策略
     if (chariot.DR16.Get_Image_Status() == Image_Status_DISABLE)
     {
         chariot.TIM_Control_Callback();
     }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 #endif
 /**
@@ -298,6 +361,8 @@ void VT13_UART_Callback(uint8_t *Buffer, uint16_t Length)
 #endif
 
 /**
+<<<<<<< HEAD
+=======
  * @brief UART9图传回调函数
  *
  * @param Buffer UART9收到的消息
@@ -318,6 +383,7 @@ void Image_UART9_Callback(uint8_t *Buffer, uint16_t Length)
 #endif
 
 /**
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
  * @brief IIC磁力计回调函数
  *
  * @param Buffer IIC收到的消息
@@ -340,6 +406,15 @@ void Referee_UART10_Callback(uint8_t *Buffer, uint16_t Length)
     chariot.Referee.UART_RxCpltCallback(Buffer,Length);
 }
 #endif
+<<<<<<< HEAD
+#ifdef GIMBAL
+void Referee_UART10_Callback(uint8_t *Buffer, uint16_t Length)
+{
+    chariot.Referee.UART_RxCpltCallback(Buffer,Length);
+}
+#endif
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /**
  * @brief UART1超电回调函数
  *
@@ -544,7 +619,11 @@ extern "C" void Task_Init()
         //遥控器接收
         #ifdef USE_DR16
         UART_Init(&huart5, DR16_UART5_Callback, 18);
+<<<<<<< HEAD
+		    //UART_Init(&huart6, Image_UART6_Callback, 40);
+=======
 		UART_Init(&huart9, Image_UART9_Callback, 40);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
         #elif defined(USE_VT13)
         UART_Init(&huart9, VT13_UART_Callback, 30);
         #endif
@@ -553,6 +632,12 @@ extern "C" void Task_Init()
         //上位机串口
         UART_Init(&huart8, MiniPC_UART_Callback, 56);
 
+<<<<<<< HEAD
+        //裁判系统
+        UART_Init(&huart10, Referee_UART10_Callback, 128);
+
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     #endif
 
     //定时器循环任务

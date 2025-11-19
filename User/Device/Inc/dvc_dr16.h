@@ -17,7 +17,11 @@
 #include <limits.h>
 #include <string.h>
 #include "drv_uart.h"
+<<<<<<< HEAD
+
+=======
 #include "dvc_VT13.h"
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /* Exported macros -----------------------------------------------------------*/
 
 //拨动开关位置
@@ -68,6 +72,8 @@ enum Enum_DR16_Updata_Status
     DR16_Status_DisUpdata = 0,
     DR16_Status_Updata,
 };
+<<<<<<< HEAD
+=======
 /**
  * @brief image存活状态
  *
@@ -86,6 +92,7 @@ enum Enum_DT7_Status
     DT7_Status_DISABLE,
     DT7_Status_ENABLE,
 };
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
 /**
  * @brief 拨动开关状态
@@ -109,16 +116,33 @@ enum Enum_DR16_Switch_Status
 enum Enum_DR16_Key_Status
 {
     DR16_Key_Status_FREE = 0,           //松开状态
+<<<<<<< HEAD
+    DR16_Key_Status_TRIG_FREE_PRESSED,  //松开到按下的突变状态
+    DR16_Key_Status_TRIG_PRESSED_FREE,  //按下到松开的突变状态
+    DR16_Key_Status_PRESSED,            //按下状态
+};
+
+=======
     DR16_Key_Status_PRESSED,            //按下状态
     DR16_Key_Status_TRIG_FREE_PRESSED,  //松开到按下的突变状态
     DR16_Key_Status_TRIG_PRESSED_FREE,  //按下到松开的突变状态
 };
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 /**
  * @brief 图传键鼠源数据
  *
  */
 struct Struct_Image_UART_Data
 { 
+<<<<<<< HEAD
+    int16_t Mouse_X;
+    int16_t Mouse_Y;
+    int16_t Mouse_Z;
+    int8_t Mouse_Left_Key;
+    int8_t Mouse_Right_Key;
+    uint16_t Keyboard_Key; 
+    uint16_t reserved;
+=======
     uint8_t sof_1;                    //帧头1
     uint8_t sof_2;                    //帧头2
     uint64_t ch_0:11;                 //右X
@@ -140,6 +164,7 @@ struct Struct_Image_UART_Data
     uint8_t mouse_middle:2;
     uint16_t key;
     uint16_t crc16;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 } __attribute__((packed)); 
 
 /**
@@ -196,8 +221,11 @@ public:
 
     inline Enum_DR16_Status Get_DR16_Status();
     inline Enum_DR16_Updata_Status Get_DR16_Updata_Status();
+<<<<<<< HEAD
+=======
     inline Enum_Image_Status Get_Image_Status() {return (Image_Status);};
     inline Enum_DT7_Status Get_DT7_Status() {return (DT7_Status);};
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     inline float Get_Right_X();
     inline float Get_Right_Y();
     inline float Get_Left_X();
@@ -284,10 +312,13 @@ protected:
 
     //遥控器状态
     Enum_DR16_Status DR16_Status = DR16_Status_DISABLE;
+<<<<<<< HEAD
+=======
     //图传存活状态
     Enum_Image_Status Image_Status = Image_Status_DISABLE;
     //dt7存活状态
     Enum_DT7_Status DT7_Status = DT7_Status_DISABLE;
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     //遥控器数据更新状态
     Enum_DR16_Updata_Status DR16_Updata_Status = DR16_Status_DisUpdata;
     // DR16对外接口信息

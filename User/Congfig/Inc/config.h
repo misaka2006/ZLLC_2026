@@ -17,7 +17,11 @@
 /* Exported macros -----------------------------------------------------------*/
 
 //底盘或云台状态
+<<<<<<< HEAD
+//#define CHASSIS
+=======
 // #define CHASSIS
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 #define GIMBAL
 
 //调试或比赛状态
@@ -32,8 +36,13 @@
 #define USE_DR16
 
 /* 兵种/底盘类型选择*/
+<<<<<<< HEAD
+#define AGV      //舵轮底盘
+//#define OMNI_WHEEL //全向轮底盘
+=======
 //#define AGV      //舵轮底盘
 #define OMNI_WHEEL //全向轮底盘
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
 //#define INFANTRY //步兵
 //#define HERO  //英雄

@@ -112,7 +112,11 @@ protected:
 class Class_Filter_Kalman
 {
 public:
+<<<<<<< HEAD
+    void Init(float __Error_Measure = 1.0f, float __Error_Estimate = 1.0f, float __X = 0.0f, float __P = 1.0f);
+=======
     void Init(float __Error_Measure = 1.0f, float __Now = 0.0f, float __Error_Estimate = 1.0f);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     inline float Get_Out();
 
@@ -123,6 +127,23 @@ public:
 protected:
     //初始化相关常量
 
+<<<<<<< HEAD
+    //常量
+    float P;                    //协方差矩阵
+    float P_hat;                //先验协方差
+
+    float H = 1.0f;                    //观测转移矩阵
+    float A = 1.0f;                    //状态转移矩阵
+
+    //内部变量
+
+    //测量误差(观测噪声)   可以看作传感器的正态分布噪声
+    float Error_Measure = 1.0f;
+    //估计误差(过程噪声)   可以看作基于模型下，模型存在的正态分布噪声
+    float Error_Estimate = 1.0f;
+    //增益
+    float Kalman_Gain = 0.0f;
+=======
     //测量误差
     float Error_Measure;
 
@@ -135,11 +156,18 @@ protected:
     //增益
     float Kalman_Gain = 0.0f;
 
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     //读变量
 
     //输出值
     float Out = 0.0f;
 
+<<<<<<< HEAD
+    float X_hat;            //先验估计值
+    float X;                //最终估计值
+
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     //写变量
 
     //当前值
@@ -194,9 +222,15 @@ float Class_Filter_Kalman::Get_Out()
 }
 
 /**
+<<<<<<< HEAD
+ * @brief 设定观测值
+ *
+ * @param __Now 观测值
+=======
  * @brief 设定当前值
  *
  * @param __Now 当前值
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
  */
 void Class_Filter_Kalman::Set_Now(float __Now)
 {

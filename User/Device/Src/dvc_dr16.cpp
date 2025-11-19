@@ -250,6 +250,22 @@ void Class_DR16::DR16_Data_Process()
     Judge_Switch(&Data.Left_Switch, tmp_buffer->Switch_1, Pre_UART_Rx_Data.Switch_1);
     Judge_Switch(&Data.Right_Switch, tmp_buffer->Switch_2, Pre_UART_Rx_Data.Switch_2);
 
+<<<<<<< HEAD
+    // //鼠标信息
+    // Data.Mouse_X = tmp_buffer->Mouse_X / 32768.0f;
+    // Data.Mouse_Y = tmp_buffer->Mouse_Y / 32768.0f;
+    // Data.Mouse_Z = tmp_buffer->Mouse_Z / 32768.0f;
+
+    // //判断鼠标触发
+    // Judge_Key(&Data.Mouse_Left_Key, tmp_buffer->Mouse_Left_Key, Pre_UART_Rx_Data.Mouse_Left_Key);
+    // Judge_Key(&Data.Mouse_Right_Key, tmp_buffer->Mouse_Right_Key, Pre_UART_Rx_Data.Mouse_Right_Key);
+
+    // //判断键盘触发
+    // for (int i = 0; i < 16; i++)
+    // {
+    //     Judge_Key(&Data.Keyboard_Key[i], ((tmp_buffer->Keyboard_Key) >> i) & 0x1, ((Pre_UART_Rx_Data.Keyboard_Key) >> i) & 0x1);
+    // }
+=======
     // 图传离线采用dt7的键鼠数据源
     if(Get_Image_Status()==Image_Status_DISABLE)
     {
@@ -268,6 +284,7 @@ void Class_DR16::DR16_Data_Process()
             Judge_Key(&Data.Keyboard_Key[i], ((tmp_buffer->Keyboard_Key) >> i) & 0x1, ((Pre_UART_Rx_Data.Keyboard_Key) >> i) & 0x1);
         }        
     }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     //左前轮信息
     Data.Yaw = (tmp_buffer->Channel_Yaw - Rocker_Offset) / Rocker_Num;
@@ -287,6 +304,18 @@ void Class_DR16::Image_Data_Process(uint8_t* __rx_buffer)
     Struct_Image_UART_Data *tmp_buffer = (Struct_Image_UART_Data *)__rx_buffer;
 
     /*源数据转为对外数据*/
+<<<<<<< HEAD
+
+    //鼠标信息
+    Data.Mouse_X = tmp_buffer->Mouse_X / 32768.0f;
+    Data.Mouse_Y = tmp_buffer->Mouse_Y / 32768.0f;
+    Data.Mouse_Z = tmp_buffer->Mouse_Z / 32768.0f;
+
+
+    //判断鼠标触发
+    Judge_Key(&Data.Mouse_Left_Key, tmp_buffer->Mouse_Left_Key, Pre_UART_Image_Rx_Data.Mouse_Left_Key);
+    Judge_Key(&Data.Mouse_Right_Key, tmp_buffer->Mouse_Right_Key, Pre_UART_Image_Rx_Data.Mouse_Right_Key);
+=======
     //鼠标信息
     Data.Mouse_X = tmp_buffer->mouse_x / 32768.0f;
     Data.Mouse_Y = tmp_buffer->mouse_y / 32768.0f;
@@ -296,11 +325,16 @@ void Class_DR16::Image_Data_Process(uint8_t* __rx_buffer)
     //判断鼠标触发
     Judge_Key(&Data.Mouse_Left_Key, tmp_buffer->mouse_left, Pre_UART_Image_Rx_Data.mouse_left);
     Judge_Key(&Data.Mouse_Right_Key, tmp_buffer->mouse_right, Pre_UART_Image_Rx_Data.mouse_right);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
     //判断键盘触发
     for (int i = 0; i < 16; i++)
     {
+<<<<<<< HEAD
+        Judge_Key(&Data.Keyboard_Key[i], ((tmp_buffer->Keyboard_Key) >> i) & 0x1, ((Pre_UART_Image_Rx_Data.Keyboard_Key) >> i) & 0x1);
+=======
         Judge_Key(&Data.Keyboard_Key[i], ((tmp_buffer->key) >> i) & 0x1, ((Pre_UART_Image_Rx_Data.key) >> i) & 0x1);
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     }
 }
 
@@ -334,6 +368,17 @@ void Class_DR16::Image_UART_RxCpltCallback(uint8_t *Rx_Data)
         cmd_id=(cmd_id<<8)|Rx_Data[5];  
         data_length=Rx_Data[2]&0xff;
         data_length=(data_length<<8)|Rx_Data[1];
+<<<<<<< HEAD
+        if(cmd_id == 0x0304 && data_length == 12)
+        {
+            //滑动窗口, 判断遥控器是否在线
+            Image_Flag += 1;
+            Image_Data_Process(&Rx_Data[7]);
+            //保留上一次数据
+            memcpy(&Pre_UART_Image_Rx_Data, &Rx_Data[7], sizeof(Struct_Image_UART_Data));            
+        }
+    }
+=======
         if(cmd_id == 0x0302 && data_length == 30)
         {
           //处理图传链路数据
@@ -351,6 +396,7 @@ void Class_DR16::Image_UART_RxCpltCallback(uint8_t *Rx_Data)
         memcpy(&Pre_UART_Image_Rx_Data, Rx_Data, sizeof(Struct_Image_UART_Data));
       }
     }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 
 /**
@@ -359,7 +405,11 @@ void Class_DR16::Image_UART_RxCpltCallback(uint8_t *Rx_Data)
  */
 void Class_DR16::TIM1msMod50_Alive_PeriodElapsedCallback()
 {
+<<<<<<< HEAD
+    //判断该时间段内是否接收过遥控器数据
+=======
      //判断该时间段内是否接收过遥控器数据
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     if (DR16_Flag == Pre_DR16_Flag && Image_Flag == Pre_Image_Flag)
     {
         //遥控器断开连接
@@ -371,6 +421,8 @@ void Class_DR16::TIM1msMod50_Alive_PeriodElapsedCallback()
         //遥控器保持连接
         DR16_Status = DR16_Status_ENABLE;
     }
+<<<<<<< HEAD
+=======
 
      //图传
     if(Image_Flag == Pre_Image_Flag)
@@ -383,6 +435,7 @@ void Class_DR16::TIM1msMod50_Alive_PeriodElapsedCallback()
     else
         DT7_Status = DT7_Status_ENABLE;
 
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     Pre_DR16_Flag = DR16_Flag;
     Pre_Image_Flag = Image_Flag;
 }

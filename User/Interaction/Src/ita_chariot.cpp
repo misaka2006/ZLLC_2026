@@ -68,6 +68,13 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
         //发射机构
         Booster.Init();
         Booster.MiniPC = &MiniPC;
+<<<<<<< HEAD
+        Booster.Referee = &Referee;
+
+        //裁判系统
+        Referee.Init(&huart10);
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 				
         //上位机
         MiniPC.Init(&MiniPC_USB_Manage_Object,&UART8_Manage_Object,&CAN3_Manage_Object);
@@ -567,6 +574,24 @@ int Booster_Sign = 0;
 #ifdef GIMBAL
 void Class_Chariot::Control_Booster()
 {
+<<<<<<< HEAD
+    static uint8_t booster_sign = 0;
+    volatile int DR16_Left_Switch_Status = DR16.Get_Left_Switch();
+    switch(DR16_Left_Switch_Status){
+        case(DR16_Switch_Status_MIDDLE): // 左中 失能
+        {
+            Booster.Set_Booster_Control_Type(Booster_Control_Type_DISABLE);
+            Booster.Set_Friction_Control_Type(Friction_Control_Type_DISABLE);
+            break;
+        }
+        case(DR16_Switch_Status_DOWN):  // 左下 上位机
+        {
+            
+        }
+    }
+
+
+=======
 
     if (Get_DR16_Control_Type() == DR16_Control_Type_REMOTE)
     {
@@ -621,6 +646,7 @@ void Class_Chariot::Control_Booster()
             }
         }
     }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 #endif
 
@@ -667,6 +693,9 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
 #ifdef GIMBAL
 void Class_Chariot::Judge_DR16_Control_Type()
 {
+<<<<<<< HEAD
+    DR16_Control_Type = DR16_Control_Type_REMOTE;
+=======
     if (DR16.Get_Left_X() != 0 ||
         DR16.Get_Left_Y() != 0 ||
         DR16.Get_Right_X() != 0 ||
@@ -695,6 +724,7 @@ void Class_Chariot::Judge_DR16_Control_Type()
     {
         DR16_Control_Type = DR16_Control_Type_KEYBOARD;
     }
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 }
 #endif
 /**
@@ -738,7 +768,13 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
                 TIM1msMod50_Gimbal_Communicate_Alive_PeriodElapsedCallback();
                 mod50_mod3 = 0;
             }
+<<<<<<< HEAD
+            if(Get_Gimbal_Status() == Gimbal_Status_DISABLE || 
+            Motor_Yaw.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE){
+                Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+=======
             if(Get_Gimbal_Status() == Gimbal_Status_DISABLE){
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
                 Chassis.Set_Target_Velocity_X(0);
                 Chassis.Set_Target_Velocity_Y(0);
                 Chassis.Set_Target_Omega(0);
@@ -795,6 +831,17 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
                 
             Gimbal.Motor_Pitch.TIM_Alive_PeriodElapsedCallback();
             Gimbal.Motor_Yaw.TIM_Alive_PeriodElapsedCallback();
+<<<<<<< HEAD
+            Gimbal.Motor_Yaw_DM4310.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Boardc_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
+
+            Booster.Motor_Driver.TIM_Alive_PeriodElapsedCallback();
+            Booster.Motor_Friction_Left.TIM_Alive_PeriodElapsedCallback();
+            Booster.Motor_Friction_Right.TIM_Alive_PeriodElapsedCallback();
+						
+			MiniPC.TIM1msMod50_Alive_PeriodElapsedCallback();
+            Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
+=======
             Gimbal.Boardc_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
 
             Booster.Motor_Driver.TIM_Alive_PeriodElapsedCallback();
@@ -805,6 +852,7 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             
 						
 			MiniPC.TIM1msMod50_Alive_PeriodElapsedCallback();
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
 
         #endif
 

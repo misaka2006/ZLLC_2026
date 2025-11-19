@@ -94,6 +94,10 @@ struct Struct_DM_Motor_Rx_Data
 {
     Enum_DM_Motor_ID CAN_ID;
     float Now_Angle;
+<<<<<<< HEAD
+    float Now_Angle_DEG;
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     float Now_Omega;
     float Now_Torque;
     float Now_MOS_Temperature;
@@ -160,6 +164,11 @@ protected:
 
     //常量
     
+<<<<<<< HEAD
+    //PMAX映射(由上位机设置的参数/3.1415可得)
+    uint8_t Transform_To_True_Angle = 4;
+=======
+>>>>>>> d28e22f2ed8b8045d8d1979d840f7161714beda0
     //一圈位置刻度
     uint32_t Position_Max = 65536;
 
