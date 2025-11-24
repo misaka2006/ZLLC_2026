@@ -57,7 +57,7 @@ bool start_flag=0;
 //机器人控制对象
 Class_Chariot chariot;
 
-#ifdef DEBUG
+#ifdef MY_DEBUG
 bool debug_test_enable = true;  // Debug模式下测试使能标志
 uint32_t debug_test_counter = 0;     // 测试计数器
 #endif
@@ -254,6 +254,11 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     }
     break;
 
+    case (0xA5): //J4 - 4340
+    {
+        chariot.Gimbal.Motor_DM_J4_Pitch_3.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+
     }
 }
 #endif
@@ -268,7 +273,14 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
-
+        case (0x205):
+        {
+            chariot.Gimbal.Motor_6020_J5_Roll_2.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        }
+        case (0x206):
+        {
+            chariot.Gimbal.Motor_C610_Gripper.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        }
     }
 		
 }
@@ -475,7 +487,7 @@ void Task1ms_TIM5_Callback()
 {
     init_finished++;
     if(init_finished>2000)
-    start_flag=1;
+        start_flag=1;
 
     /************ 判断设备在线状态判断 50ms (所有device:电机，遥控器，裁判系统等) ***************/
     
@@ -488,7 +500,7 @@ void Task1ms_TIM5_Callback()
         #ifdef GIMBAL
                 
         // ============ Debug测试模式：绕过遥控器检测 ============
-        #ifdef DEBUG
+        #ifdef MY_DEBUG
         if(debug_test_enable)
         {
             // 强制使能云台
@@ -497,6 +509,7 @@ void Task1ms_TIM5_Callback()
             chariot.Gimbal.Motor_DM_J0_Yaw.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
             chariot.Gimbal.Motor_DM_J1_Pitch.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
             chariot.Gimbal.Motor_DM_J2_Pitch_2.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+            chariot.Gimbal.Motor_DM_J4_Pitch_3.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
 
             debug_test_counter++;
         }

@@ -19,7 +19,7 @@
 #include "alg_power_limit.h"
 #include "dvc_dwt.h"
 #include "alg_filter.h"
-
+#include "kalman_filter.h"
 #include "alg_SMC_Control.h"
 /* Exported macros -----------------------------------------------------------*/
 
@@ -130,6 +130,8 @@ public:
     Class_PID PID_Omega;
     // PID扭矩环控制
     Class_PID PID_Torque;
+    //用于角速度的卡尔曼滤波
+    KalmanFilter Kf_Omega;
 
     //滑模控制算法，目前只适用于Yaw
     Class_SMC SMC_Control;

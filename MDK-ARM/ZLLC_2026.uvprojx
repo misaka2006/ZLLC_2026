@@ -403,17 +403,15 @@
         </Group>
         <Group>
           <GroupName>Interaction</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Chariot</GroupName>
           <Files>
             <File>
               <FileName>ita_chariot.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Interaction\Src\ita_chariot.cpp</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Chariot</GroupName>
-          <Files>
             <File>
               <FileName>crt_booster.cpp</FileName>
               <FileType>8</FileType>

@@ -233,9 +233,9 @@ public:
     void Control_Chassis();
 
         // 角度目标值
-    float tmp_gimbal_yaw, tmp_gimbal_pitch1, tmp_gimbal_pitch2, tmp_gimbal_roll;
+    float tmp_arm_yaw, tmp_arm_pitch1, tmp_arm_pitch2, tmp_arm_pitch3, tmp_arm_roll, tmp_arm_roll_2, tmp_gripper_radian;
     // 遥控器摇杆值
-    float dr16_yaw, dr16_pitch1, dr16_pitch2, dr16_roll;
+    float dr16_right_x, dr16_right_y, dr16_left_x, dr16_left_y, dr16_yaw;
 
 protected:
 
@@ -279,10 +279,21 @@ protected:
         //DR16云台pitch灵敏度系数(0.001PI表示pitch速度最大时为1rad/s)
         float DR16_Pitch_Angle_Resolution = 0.010f * PI * 57.29577951308232;
 
-        //DR16云台yaw灵敏度系数(0.001PI表示yaw速度最大时为1rad/s)
-        float DR16_Yaw_Resolution = 0.003f * PI;
-        //DR16云台pitch灵敏度系数(0.001PI表示pitch速度最大时为1rad/s)
-        float DR16_Pitch_Resolution = 0.003f * PI;
+        //DR16机械臂yaw灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
+        float DR16_Yaw_Resolution = 0.0015f * PI;
+        //DR16机械臂pitch_1灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
+        float DR16_Pitch_1_Resolution = 0.0015f * PI;
+        //DR16机械臂pitch_2灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
+        float DR16_Pitch_2_Resolution = 0.0015f * PI;
+        //DR16机械臂Pitch3灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
+        float DR16_Pitch_3_Resolution = 0.0015f * PI;
+        //DR16机械臂roll_1灵敏度系数，对应的系数和输出轴的转动速度待测，这里用的是之前测试时相对稳定（缓慢）的数据
+        float DR16_Roll_Resolution = 0.10f * PI;
+        //DR16机械臂roll_2灵敏度系数，还没测，暂时给到0
+        float DR16_Roll_2_Resolution = 0.0f;
+
+        //DR16控制夹爪的速度，因为夹爪可移动范围是0.0 rad - 0.95 rad，所以现在给到0.05rad/s，
+        float DR16_Gripper_Resolution = 0.005f * PI;
 
         //DR16鼠标云台yaw灵敏度系数, 不同鼠标不同参数
         float DR16_Mouse_Yaw_Angle_Resolution = 57.8*4.0f;

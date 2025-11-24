@@ -19,6 +19,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 float last_roll_value = 0.0f;
+float last_gripper_value = 0.0f;
 /* Private function declarations ---------------------------------------------*/
 
 /* Function prototypes -------------------------------------------------------*/
@@ -517,36 +518,38 @@ void Class_Chariot::Transform_Mouse_Axis(){
 void Class_Chariot::Control_Gimbal()
 {
     // 排除遥控器死区
-    dr16_yaw = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
-    dr16_pitch1 = (Math_Abs(DR16.Get_Right_Y()) > DR16_Dead_Zone) ? DR16.Get_Right_Y() : 0;
-    dr16_pitch2 = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
-    dr16_roll = (Math_Abs(DR16.Get_Left_X())> DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
+    dr16_right_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
+    dr16_right_y = (Math_Abs(DR16.Get_Right_Y()) > DR16_Dead_Zone) ? DR16.Get_Right_Y() : 0;
+    dr16_left_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
+    dr16_left_x = (Math_Abs(DR16.Get_Left_X())> DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
+    //dr16左上角的滑杆，用来控制夹爪，不要被名字迷惑了
+    dr16_yaw = (Math_Abs(DR16.Get_Yaw()) > DR16_Dead_Zone) ? DR16.Get_Yaw() : 0;
 
-    tmp_gimbal_yaw = Gimbal.Get_Target_Yaw_Angle();
-    tmp_gimbal_pitch1 = Gimbal.Motor_DM_J1_Pitch.Get_Target_Angle();
-    tmp_gimbal_pitch2 = Gimbal.Motor_DM_J2_Pitch_2.Get_Target_Angle();
-    tmp_gimbal_roll = last_roll_value;                  //改之前为获取roll的target_angle
+    /*获取当前各个关节的角度值，用来给使用遥控器控制关节时计算目标角度*/
+    tmp_arm_yaw = Gimbal.Get_Target_Yaw_Radian();
+    /*以下除了roll以外的关节改之前为调用电机对象的Get_Target_Angle函数，但是我认为使用云台类中各个关节的目标角度应该也一样，待测*/
+    tmp_arm_pitch1 = Gimbal.Get_Target_Pitch_Radian();
+    tmp_arm_pitch2 = Gimbal.Get_Target_Pitch_2_Radian();
+    tmp_arm_pitch3 = Gimbal.Get_Target_Pitch_3_Radian();
+    tmp_arm_roll = last_roll_value;                  //改之前为获取roll的target_angle，由于roll轴的Set函数自己会加Offset，所以用Target_Angle来赋值会导致Offset叠加，这里给一个新变量来存
+    tmp_arm_roll_2 = Gimbal.Get_Target_Roll_2_Radian();  //统一使用弧度制
 
-    // 遥控器操作逻辑
-    tmp_gimbal_yaw += dr16_yaw * DR16_Yaw_Angle_Resolution * 3.14 / 180;
-    tmp_gimbal_pitch1 += dr16_pitch1 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
-    tmp_gimbal_pitch2 += dr16_pitch2 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
-    tmp_gimbal_roll += dr16_roll * PI * 0.25f;         //改之前是5.0f
-    last_roll_value = tmp_gimbal_roll;                  //改之前没有这一行
+    tmp_gripper_radian = last_gripper_value;         //
 
-    Math_Constrain(&tmp_gimbal_yaw, -PI, PI);
-    Math_Constrain(&tmp_gimbal_pitch1, 0.0f, 2.0944f);
-    Math_Constrain(&tmp_gimbal_pitch2, 0.0f, 1.57f);    //暂定为90.0f，实际应该比这个大
-    Math_Constrain(&tmp_gimbal_roll, 0.0f, 300.0f);     //tmp_gimbal_roll是用来进行增量的角度，校准是逆时针校准，所以范围设置在0-300.0f
+    // // 遥控器操作逻辑
+    // tmp_arm_yaw += dr16_yaw * DR16_Yaw_Angle_Resolution * 3.14 / 180;
+    // tmp_arm_pitch1 += dr16_pitch1 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
+    // tmp_arm_pitch2 += dr16_pitch2 * DR16_Pitch_Angle_Resolution * 3.14 / 180;
+    // tmp_arm_roll += dr16_roll * PI * 0.25f;         //改之前是5.0f
 
     // 限制角度范围 处理yaw轴180度问题
-    // if ((tmp_gimbal_yaw ) > 180.0f)
+    // if ((tmp_arm_yaw ) > 180.0f)
     // {
-    //     tmp_gimbal_yaw -= (360.0f);
+    //     tmp_arm_yaw -= (360.0f);
     // }
-    // else if ((tmp_gimbal_yaw) < -180.0f)
+    // else if ((tmp_arm_yaw) < -180.0f)
     // {
-    //     tmp_gimbal_yaw += (360.0f);
+    //     tmp_arm_yaw += (360.0f);
     // }
 
     // if(tmp_gimbal_pitch > 18.0f)tmp_gimbal_pitch = 18.0f;
@@ -556,17 +559,59 @@ void Class_Chariot::Control_Gimbal()
     {
         Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_DISABLE);
     }
-    else // 其余位置都是遥控器控制
+    // 其余位置都是遥控器控制
+    else if(DR16.Get_Left_Switch() == DR16_Switch_Status_UP)//左上，摇杆控制机械臂
     {
-        // 中间遥控模式
         Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
 
-        // 设定角度
-        Gimbal.debug_j0_target_radian = tmp_gimbal_yaw;
-        Gimbal.debug_j1_target_radian = tmp_gimbal_pitch1;
-        Gimbal.debug_j2_target_radian = tmp_gimbal_pitch2;
-        Gimbal.debug_roll_target_radian = tmp_gimbal_roll;
+        if(DR16.Get_Right_Switch() == DR16_Switch_Status_UP)
+        //右上，左摇杆y轴控制pitch_2，x轴控制roll_1，右摇杆y轴控制pitch_3，x轴控制roll_2
+        {
+            tmp_arm_pitch2 += dr16_left_y * DR16_Pitch_2_Resolution;
+            tmp_arm_roll += dr16_left_x * DR16_Roll_Resolution;
+            tmp_arm_pitch3 -= dr16_right_y * DR16_Pitch_3_Resolution;   // 由于装配上的设计，Pitch3角度减小是关节上抬，增大是关节下抬，这里让遥控器直观控制关节的运动
+            tmp_arm_roll_2 += dr16_right_x * DR16_Roll_Resolution;
+        }
+        else if(DR16.Get_Right_Switch() == DR16_Switch_Status_MIDDLE)
+        //右中，左摇杆y轴控制pitch_1，x轴控制yaw，右摇杆y轴控制pitch_2，x轴控制roll_1
+        {
+            tmp_arm_yaw += dr16_left_x * DR16_Yaw_Angle_Resolution;
+            tmp_arm_pitch1 += dr16_left_y * DR16_Pitch_1_Resolution;
+            tmp_arm_roll += dr16_right_x * DR16_Roll_Resolution;
+            tmp_arm_pitch2 += dr16_right_y * DR16_Pitch_2_Resolution;
+            last_roll_value = tmp_arm_roll;                  // 存储现在的roll值
+        }
+        else
+        //右下，暂时定为控制末端机构的平动和垂直运动
+        {
+
+        }
+
+        Math_Constrain(&tmp_arm_yaw, -PI, PI);
+        Math_Constrain(&tmp_arm_pitch1, 0.0f, 2.0944f);
+        Math_Constrain(&tmp_arm_pitch2, 0.0f, 1.57f);
+        Math_Constrain(&tmp_arm_pitch3, -2.56f, 0.0f);
+        Math_Constrain(&tmp_arm_roll, 0.0f, 300.0f);     //tmp_arm_roll是用来进行增量的角度，校准是逆时针校准，所以范围设置在0-300.0f
+
+        //给各个关节赋角度
+        Gimbal.Set_Target_Yaw_Radian(tmp_arm_yaw);
+        Gimbal.Set_Target_Pitch_Radian(tmp_arm_pitch1);
+        Gimbal.Set_Target_Pitch_2_Radian(tmp_arm_pitch2);
+        Gimbal.Set_Target_Pitch_3_Radian(tmp_arm_pitch3);
+        Gimbal.Set_Target_Roll_Radian(tmp_arm_roll);
+        Gimbal.Set_Target_Roll_2_Radian(tmp_arm_roll_2);
     }
+    else                                                    //左中，摇杆控制底盘，机械臂保持原来的姿态
+    {
+        Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
+    }
+
+    //夹爪控制函数，任何模式下都可以控制夹爪
+    tmp_gripper_radian += dr16_yaw * DR16_Gripper_Resolution;
+    Math_Constrain(&tmp_gripper_radian, 0.0f, 0.90f);
+    last_gripper_value = tmp_gripper_radian;
+    //云台对象中夹爪赋值
+    Gimbal.Set_Target_Gripper_Radian(tmp_gripper_radian);
 }
 #endif
 /**
@@ -739,11 +784,14 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
                 #endif
 
             #endif
-                
+            
             Gimbal.Motor_DM_J0_Yaw.TIM_Alive_PeriodElapsedCallback();
             Gimbal.Motor_DM_J1_Pitch.TIM_Alive_PeriodElapsedCallback();
             Gimbal.Motor_DM_J2_Pitch_2.TIM_Alive_PeriodElapsedCallback();
             Gimbal.Motor_DM_J3_Roll.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_DM_J4_Pitch_3.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_6020_J5_Roll_2.TIM_Alive_PeriodElapsedCallback();
+            Gimbal.Motor_C610_Gripper.TIM_Alive_PeriodElapsedCallback();
             
             Gimbal.Boardc_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
 

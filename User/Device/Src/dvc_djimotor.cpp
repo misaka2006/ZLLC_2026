@@ -17,8 +17,8 @@
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private variables ---------------------------------------------------------*/
-
+/* Private variables -----------------------------------------/*debug用*/
+float raw_value;
 /* Private function declarations ---------------------------------------------*/
 
 /* Function prototypes -------------------------------------------------------*/
@@ -121,22 +121,22 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID)
         break;
         case (DJI_Motor_ID_0x205):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[0]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[0]);
         }
         break;
         case (DJI_Motor_ID_0x206):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[2]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[2]);
         }
         break;
         case (DJI_Motor_ID_0x207):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[4]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[4]);
         }
         break;
         case (DJI_Motor_ID_0x208):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[6]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[6]);
         }
         break;
         case (DJI_Motor_ID_0x209):
@@ -182,22 +182,22 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID)
         break;
         case (DJI_Motor_ID_0x205):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[0]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[0]);
         }
         break;
         case (DJI_Motor_ID_0x206):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[2]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[2]);
         }
         break;
         case (DJI_Motor_ID_0x207):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[4]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[4]);
         }
         break;
         case (DJI_Motor_ID_0x208):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[6]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[6]);
         }
         break;
         case (DJI_Motor_ID_0x209):
@@ -249,6 +249,8 @@ void Class_DJI_Motor_GM6020::Init(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID _
     Omega_Max = __Omega_Max;
     CAN_Tx_Data = allocate_tx_data(hcan, __CAN_ID);
     init_filter(&filter,WINDOW_SIZE);
+    
+    kalman_init(&Kf_Omega, 0.0f);
 }
 /**
  * @brief 数据处理过程
@@ -292,8 +294,10 @@ void Class_DJI_Motor_GM6020::Data_Process()
     Data.Now_Angle = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 360.0f;
     Data.Now_Radian = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 2.0f * PI;
     // Data.Now_Omega_Angle = (float)(Data.Total_Encoder - Data.Pre_Total_Encoder)/8191.0f*60.0f*1000.0f;  //rpm
-    Data.Now_Omega_Radian = (float)tmp_omega * RPM_TO_RADPS;
-    Data.Now_Omega_Angle = (float)tmp_omega * RPM_TO_DEG;  
+    kalman_update(&Kf_Omega, (float)tmp_omega);
+    raw_value = (float)tmp_omega * RPM_TO_DEG;
+    Data.Now_Omega_Radian = (float)Kf_Omega.x * RPM_TO_RADPS;
+    Data.Now_Omega_Angle = (float)Kf_Omega.x * RPM_TO_DEG;  
     Data.Now_Torque = tmp_torque;
     Data.Now_Temperature = tmp_temperature + CELSIUS_TO_KELVIN;			
     float temp_yaw;
@@ -398,7 +402,7 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     {
         PID_Omega.Set_Target(Target_Omega_Angle);
         //PID_Omega.Set_Target(ome);
-        PID_Omega.Set_Now(Transform_Omega);
+        PID_Omega.Set_Now(Data.Now_Omega_Angle);
         PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
         Out = PID_Omega.Get_Out();
@@ -407,13 +411,13 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     case (DJI_Motor_Control_Method_ANGLE):
     {
         PID_Angle.Set_Target(Target_Angle);
-        PID_Angle.Set_Now(Transform_Angle);//转换后的角度，右手螺旋定律，标准坐标系
+        PID_Angle.Set_Now(Data.Now_Angle);//转换后的角度，右手螺旋定律，标准坐标系
         PID_Angle.TIM_Adjust_PeriodElapsedCallback();
 
         Target_Omega_Angle = PID_Angle.Get_Out();
 
         PID_Omega.Set_Target(Target_Omega_Angle);
-        PID_Omega.Set_Now(Transform_Omega);
+        PID_Omega.Set_Now(Data.Now_Omega_Angle);
         PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
         Out = PID_Omega.Get_Out();
