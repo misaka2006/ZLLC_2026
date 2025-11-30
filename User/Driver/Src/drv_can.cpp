@@ -49,6 +49,7 @@ uint8_t CAN2_0xxf5_Tx_Data[8];
 uint8_t CAN2_0xxf6_Tx_Data[8];
 uint8_t CAN2_0xxf7_Tx_Data[8];
 uint8_t CAN2_0xxf8_Tx_Data[8];
+uint8_t CAN2_Chassis_Tx_Gimbal_Data[8];
 
 uint8_t CAN3_0x1ff_Tx_Data[8];
 uint8_t CAN3_0x1fe_Tx_Data[8];
@@ -106,6 +107,8 @@ uint8_t CAN3_0x146_Tx_Data[8];
 uint8_t CAN3_0x147_Tx_Data[8];
 uint8_t CAN3_0x148_Tx_Data[8];
 
+
+uint8_t CAN2_0x03_test[8]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
 /* Private function declarations ---------------------------------------------*/
 
 /* function prototypes -------------------------------------------------------*/
@@ -329,28 +332,27 @@ void TIM_CAN_PeriodElapsedCallback()
     if (mod5 == 5)  //200Hz
     {
         mod5 = 0;
-        //3508    
-        CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8);
-        #ifdef AGV
-        //6020
-        CAN_Send_Data(&hfdcan2, 0x1fe, CAN2_0x1fe_Tx_Data, 8);
-        #endif
+        //轮向 3508    
+        CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8);		
+//        //舵向 3508
+        CAN_Send_Data(&hfdcan1, 0x1ff, CAN1_0x1ff_Tx_Data, 8);		
     }
-    
+		
     if (mod100 == 10) //10Hz
     {
-        CAN_Send_Data(&hfdcan3, 0x191, CAN3_Chassis_Tx_Data_G, 8);
+        CAN_Send_Data(&hfdcan2, 0x88, CAN2_Chassis_Tx_Gimbal_Data, 8);			
+//        CAN_Send_Data(&hfdcan3, 0x191, CAN3_Chassis_Tx_Data_G, 8);
         mod100 = 0;
     }
     if (mod20 == 20) //50Hz
     {
         //上板
-        CAN_Send_Data(&hfdcan3, 0x188, CAN3_Chassis_Tx_Data_A, 8);
-        CAN_Send_Data(&hfdcan3, 0x199, CAN3_Chassis_Tx_Data_B, 8);
-        CAN_Send_Data(&hfdcan3, 0x178, CAN3_Chassis_Tx_Data_C, 8);      
-        CAN_Send_Data(&hfdcan3, 0x197, CAN3_Chassis_Tx_Data_E, 8);
-        CAN_Send_Data(&hfdcan3, 0x198, CAN3_Chassis_Tx_Data_D, 8);
-        CAN_Send_Data(&hfdcan3, 0x196, CAN3_Chassis_Tx_Data_F, 8);
+        //CAN_Send_Data(&hfdcan2, 0x188, CAN3_Chassis_Tx_Data_A, 8);
+//        CAN_Send_Data(&hfdcan3, 0x199, CAN3_Chassis_Tx_Data_B, 8);
+//        CAN_Send_Data(&hfdcan3, 0x178, CAN3_Chassis_Tx_Data_C, 8);      
+//        CAN_Send_Data(&hfdcan3, 0x197, CAN3_Chassis_Tx_Data_E, 8);
+//        CAN_Send_Data(&hfdcan3, 0x198, CAN3_Chassis_Tx_Data_D, 8);
+//        CAN_Send_Data(&hfdcan3, 0x196, CAN3_Chassis_Tx_Data_F, 8);
         //超电
         CAN_Send_Data(&hfdcan2, 0x66, CAN_Supercap_Tx_Data, 8);
         mod20 = 0;
@@ -445,4 +447,6 @@ void HAL_FDCAN_TxBufferCompleteCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t Bu
            the HAL_FDCAN_TxBufferCompleteCallback could be implemented in the user file
    */
 }
+
+
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

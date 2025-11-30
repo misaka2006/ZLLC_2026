@@ -17,23 +17,26 @@
 /* Exported macros -----------------------------------------------------------*/
 
 //底盘或云台状态
-// #define CHASSIS
-#define GIMBAL
+#define CHASSIS
+//#define GIMBAL
+//#define TEST
 
 //调试或比赛状态
 #define DEBUG
+//#define BATTLE
 
 //功率控制相关
+#define POWER_LIMIT_JH
 #define POWER_CONTROL 1 //启用功率控制
 //#define BUFFER_LOOP
 
 //遥控器选择
-#define USE_VT13
-//#define USE_DR16
+//#define USE_VT13
+#define USE_DR16
 
 /* 兵种/底盘类型选择*/
-//#define AGV      //舵轮底盘
-#define OMNI_WHEEL //全向轮底盘
+#define AGV      //舵轮底盘
+//#define OMNI_WHEEL //全向轮底盘
 
 //#define INFANTRY //步兵
 //#define HERO  //英雄

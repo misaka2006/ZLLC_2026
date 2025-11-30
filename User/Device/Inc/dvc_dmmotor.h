@@ -48,6 +48,18 @@ enum Enum_DM_Motor_ID : uint8_t
     DM_Motor_ID_0xA8,
 };
 
+enum Enum_DM_Motor_ErrorCode : uint8_t
+{
+    ERROR_OverVoltage = 8,
+    ERROR_UnderVoltage,
+    ERROR_OverCurrent,
+    ERROR_MOS_OverTemp,
+    ERROR_Motor_OverTemp,
+    ERROR_LossCAN,
+    ERROR_OverLoad,
+};
+
+
 /**
  * @brief 达妙电机控制状态
  *
@@ -69,6 +81,7 @@ enum Enum_DM_Motor_Control_Method
     DM_Motor_Control_Method_MIT_TORQUE,
     DM_Motor_Control_Method_POSITION_OMEGA,
     DM_Motor_Control_Method_OMEGA,
+		DM_Motor_Control_Method_MIT_IMU_Angle,
 };
 
 /**
@@ -93,14 +106,20 @@ struct Struct_DM_Motor_CAN_Rx_Data
 struct Struct_DM_Motor_Rx_Data
 {
     Enum_DM_Motor_ID CAN_ID;
+    Enum_DM_Motor_ErrorCode ErrorCode;
     float Now_Angle;
-    float Now_Omega;
+    float Now_Radian;
+    float Now_Omega_Angle;
+    float Now_Omega_Radian;
     float Now_Torque;
-    float Now_MOS_Temperature;
-    float Now_Rotor_Temperature;
+    float Now_MOS_Temperature; //驱动MOS的平均温度
+    float Now_Rotor_Temperature; // 电机内部线圈的平均温度
     uint16_t Pre_Position;
     int32_t Total_Position;
+    int32_t Pre_Total_Position;
     int32_t Total_Round;
+    uint8_t Now_Motor_Coil_Temperature; //电机线圈温度
+    uint8_t Now_PCB_Temperature; //达妙板子上的PCB板温度
 };
 
 /**
@@ -119,6 +138,7 @@ public:
     inline Enum_DM_Motor_Control_Status Get_DM_Motor_Control_Status();
     inline Enum_DM_Motor_Status Get_DM_Motor_Status();
     inline float Get_Now_Angle();
+    inline float Get_Now_Radian();
     inline float Get_Now_Omega();
     inline float Get_Now_Torque();
     inline float Get_Now_MOS_Temperature();
@@ -198,7 +218,7 @@ protected:
 
     //内部函数
 
-    void Data_Process();
+    void Data_Process(uint8_t* Rx_Data);
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -225,6 +245,18 @@ float Class_DM_Motor_J4310::Get_Now_Angle()
     return (Data.Now_Angle);
 }
 
+
+/**
+ * @brief 获取当前的角度, rad
+ *
+ * @return float 当前的角度, rad
+ */
+float Class_DM_Motor_J4310::Get_Now_Radian()
+{
+    return (Data.Now_Radian);
+}
+
+
 /**
  * @brief 获取当前的速度, rad/s
  *
@@ -232,7 +264,7 @@ float Class_DM_Motor_J4310::Get_Now_Angle()
  */
 float Class_DM_Motor_J4310::Get_Now_Omega()
 {
-    return (Data.Now_Omega);
+    return (Data.Now_Omega_Radian);
 }
 
 /**

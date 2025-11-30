@@ -1,0 +1,99 @@
+[2025-10-26 04:30:38]	[info] incremental build: 87 source files changed
+These source files will be recompiled
+---
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\dma.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\fdcan.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\gpio.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\iwdg.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\main.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\spi.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\stm32h7xx_hal_msp.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\stm32h7xx_it.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\system_stm32h7xx.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\tim.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Core\Src\usart.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_cortex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_dma.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_dma_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_exti.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_fdcan.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_flash.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_flash_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_gpio.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_hsem.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_i2c.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_i2c_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_iwdg.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_mdma.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_pcd.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_pcd_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_pwr.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_pwr_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_rcc.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_rcc_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_spi.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_spi_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_tim.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_tim_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_uart.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_uart_ex.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_ll_usb.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_core.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ctlreq.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ioreq.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\USB_DEVICE\App\usb_device.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\USB_DEVICE\App\usbd_cdc_if.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\USB_DEVICE\App\usbd_desc.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\USB_DEVICE\Target\usbd_conf.c': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\PID.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\QuaternionEKF.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\alg_MahonyAHRS.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\alg_filter.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\alg_fsm.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\alg_pid.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\alg_slope.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\kalman_filter.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Algorithm\Src\user_lib.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Chariot\Src\crt_booster.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Chariot\Src\crt_chassis.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Chariot\Src\crt_gimbal.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Congfig\Src\config.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_GraphicsSendTask.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_TensionMeter.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_VT13.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_boardc_bmi088.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_buzzer.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_djimotor.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_dmmotor.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_dr16.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_dwt.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_imu.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_lkmotor.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_minipc.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_referee.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_servo.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Device\Src\dvc_supercap.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_adc.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_bsp-boarda.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_can.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_dwt.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_i2c.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_math.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_spi.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_tim.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_uart.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Driver\Src\drv_usb.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Interaction\Src\ita_chariot.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\User\Task\Src\tsk_config_and_callback.cpp': object (.o) file not exist
+'c:\Users\HLlll\Desktop\AGV-Infantry\Chassis\MDK-ARM\startup_stm32h723xx.s': object (.o) file not exist
+
+[2025-10-26 04:30:42]	link failed !, exit code: 1
+   at unify_builder.Program.Main(String[] args_)
+---
+Error: L6218E: Undefined symbol Class_Power_Limit::Power_Task(Struct_Power_Management&) (referred from crt_chassis.o).
+Not enough information to list image symbols.
+Finished: 1 information, 0 warning and 1 error messages.
+
+

@@ -357,20 +357,7 @@ void Class_Referee::TIM1msMod50_Alive_PeriodElapsedCallback()
 extern Struct_CAN_Referee_Rx_Data_t CAN_Referee_Rx_Data;
 void Class_Referee::TIM_UART_Tx_PeriodElapsedCallback()
 {
-    //雷达发送
-    Sentry_To_Radar.Sender = Get_ID();
-    if(Get_ID() == Referee_Data_Robots_ID_RED_SENTRY_7)
-    {
-        Sentry_To_Radar.Receiver = Referee_Data_Robots_ID_RED_RADAR_9;
-    }
-    else if (Get_ID() == Referee_Data_Robots_ID_BLUE_SENTRY_7)
-    {
-        Sentry_To_Radar.Receiver = Referee_Data_Robots_ID_BLUE_RADAR_9;
-    }
-    Sentry_To_Radar.Robot_Position_X = CAN_Referee_Rx_Data.Robot_Position_X;
-    Sentry_To_Radar.Robot_Position_Y = CAN_Referee_Rx_Data.Robot_Position_Y;
-    Referee_UI_Packed_Data(&Sentry_To_Radar);
-    HAL_UART_Transmit(UART_Manage_Object->UART_Handler, UART_Manage_Object->Tx_Buffer, UART_Manage_Object->Tx_Length,10);
+    
 }
 void Class_Referee::Sentry_Auto_cmd_Transmit()
 {
@@ -469,3 +456,24 @@ void Append_CRC16_Check_Sum(uint8_t * pchMessage,uint32_t dwLength)
 	pchMessage[dwLength-1] = (uint8_t)((wCRC >> 8)& 0x00ff);
 }
 
+// void Class_Referee::UART_Tx_Referee_UI(uint8_t __String_Index)
+// {
+//     // static uint8_t String_Index;
+//     // String_Index++;
+//     // if (String_Index == 4)
+//     //     String_Index = 0;
+//     // Referee_UI_Draw_String(0, Get_ID(), Referee_UI_One, 0, 0x02, 0, 20, 2, 500, 300, "Chassis", (sizeof("Chassis") - 1), Referee_UI_ADD);
+//     // Referee_UI_Draw_String(1, Get_ID(), Referee_UI_One, 0, 0x01, 0, 20, 2, 500, 350, "Gimbal", (sizeof("Gimbal") - 1), Referee_UI_ADD);
+//     // Referee_UI_Draw_String(2, Get_ID(), Referee_UI_Zero, 0, 0x00, 0, 20, 2, 500, 400, "Fric  ", (sizeof("Fric  ") - 1), Referee_UI_ADD);
+//     // Referee_UI_Draw_Line(Get_ID(), Referee_UI_Zero, 1, 0x03, 2, 3, 900, 500, 1000, 500, Referee_UI_ADD);
+//     // Referee_UI_Draw_Line(Get_ID(), Referee_UI_One, 1, 0x04, 2, 3, 950, 450, 950, 550, Referee_UI_ADD);
+    
+//     if (__String_Index < 15)
+//         Referee_UI_Packed_Data(&Interaction_Graphic_String[__String_Index]); // 打包字符数据
+//     else if(__String_Index >=15 && __String_Index< 16)
+//         Referee_UI_Packed_Data(&Interaction_Graphic_7); // 打包图形数据
+//     else
+//         Referee_UI_Packed_Data(&Interaction_Graphic_5);
+    
+//     UART_Send_Data(UART_Manage_Object->UART_Handler, UART_Manage_Object->Tx_Buffer, UART_Manage_Object->Tx_Length);
+// }

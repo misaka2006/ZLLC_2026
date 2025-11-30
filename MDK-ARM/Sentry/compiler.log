@@ -1,0 +1,9 @@
+>>> cc
+
+
+
+>>> ld
+
+Error: L6218E: Undefined symbol Class_Power_Limit::Power_Task(Struct_Power_Management&) (referred from crt_chassis.o).
+Not enough information to list image symbols.
+Finished: 1 information, 0 warning and 1 error messages.

@@ -59,22 +59,22 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID)
         break;
         case (DJI_Motor_ID_0x205):
         {
-            tmp_tx_data_ptr = &(CAN1_0x1fe_Tx_Data[0]);
+            tmp_tx_data_ptr = &(CAN1_0x1ff_Tx_Data[0]);
         }
         break;
         case (DJI_Motor_ID_0x206):
         {
-            tmp_tx_data_ptr = &(CAN1_0x1fe_Tx_Data[2]);
+            tmp_tx_data_ptr = &(CAN1_0x1ff_Tx_Data[2]);
         }
         break;
         case (DJI_Motor_ID_0x207):
         {
-            tmp_tx_data_ptr = &(CAN1_0x1fe_Tx_Data[4]);
+            tmp_tx_data_ptr = &(CAN1_0x1ff_Tx_Data[4]);
         }
         break;
         case (DJI_Motor_ID_0x208):
         {
-            tmp_tx_data_ptr = &(CAN1_0x1fe_Tx_Data[6]);
+            tmp_tx_data_ptr = &(CAN1_0x1ff_Tx_Data[6]);
         }
         break;
         case (DJI_Motor_ID_0x209):
@@ -121,22 +121,22 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID)
         break;
         case (DJI_Motor_ID_0x205):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[0]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[0]);
         }
         break;
         case (DJI_Motor_ID_0x206):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[2]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[2]);
         }
         break;
         case (DJI_Motor_ID_0x207):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[4]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[4]);
         }
         break;
         case (DJI_Motor_ID_0x208):
         {
-            tmp_tx_data_ptr = &(CAN2_0x1fe_Tx_Data[6]);
+            tmp_tx_data_ptr = &(CAN2_0x1ff_Tx_Data[6]);
         }
         break;
         case (DJI_Motor_ID_0x209):
@@ -182,22 +182,22 @@ uint8_t *allocate_tx_data(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID)
         break;
         case (DJI_Motor_ID_0x205):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[0]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[0]);
         }
         break;
         case (DJI_Motor_ID_0x206):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[2]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[2]);
         }
         break;
         case (DJI_Motor_ID_0x207):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[4]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[4]);
         }
         break;
         case (DJI_Motor_ID_0x208):
         {
-            tmp_tx_data_ptr = &(CAN3_0x1fe_Tx_Data[6]);
+            tmp_tx_data_ptr = &(CAN3_0x1ff_Tx_Data[6]);
         }
         break;
         case (DJI_Motor_ID_0x209):
@@ -745,6 +745,7 @@ void Class_DJI_Motor_C620::TIM_Alive_PeriodElapsedCallback()
     Pre_Flag = Flag;
 }
 
+float test_angle=0.785;
 /**
  * @brief TIM定时器中断计算回调函数
  *
@@ -789,14 +790,90 @@ void Class_DJI_Motor_C620::TIM_PID_PeriodElapsedCallback()
         Out = PID_Omega.Get_Out();
     }
     break;
+    case(DJI_Motor_Control_Method_AGV_MODE):
+    {               //注意，直接用大疆电机的数据和用磁编的数据角度范围什么的是不一样的
+        PID_Angle.Set_Target(Target_Radian);
+        #ifdef TEST
+        #endif
+        PID_Angle.Set_Now(Transform_Radian);
+        PID_Angle.TIM_Adjust_PeriodElapsedCallback();
+
+        Target_Omega_Radian = PID_Angle.Get_Out();
+
+        //大疆电机速度作为反馈，避免直接差分，速度算不准
+        PID_Omega.Set_Target(Target_Omega_Radian);
+        PID_Omega.Set_Now(Data.Now_Omega_Radian);
+        PID_Omega.TIM_Adjust_PeriodElapsedCallback();
+
+        Out = PID_Omega.Get_Out();
+		}
+    break;
     default:
     {
         Out = 0.0f;
     }
     break;
-    }
-    //Out = 0.0f;//test
-    Output();
+	}
+	  Output();	
+}
+void Class_DJI_Motor_C620_Steer::CAN_MA_RxCpltCallback(uint8_t *Rx_Data)
+{
+    // MA_Flag++;
+
+    // MA600_Data_Process();
 }
 
+
+void Class_DJI_Motor_C620_Steer::TIM_Alive_PeriodElapsedCallback_MA600()
+{
+        //判断该时间段内是否接收过磁编数据
+    if (MA_Flag == MA_Pre_Flag)
+    {
+        //电机断开连接
+        MA600_Status = MA600_Status_DISABLE;
+        PID_Angle.Set_Integral_Error(0.0f);
+        PID_Omega.Set_Integral_Error(0.0f);
+    }
+    else
+    {
+        //电机保持连接
+        MA600_Status = MA600_Status_ENABLE;
+    }
+    MA_Pre_Flag = MA_Flag;
+}
+// void Class_DJI_Motor_C620_Steer::MA600_Data_Process(Struct_CAN_Rx_Buffer *CAN_RxMessage)
+// {
+//      if(Verify_CRC16_Check_Sum(CAN_RxMessage->Data, CAN_RxMessage->Header.DataLength) == 0){
+//         return;
+//     }
+//     int16_t temp_Single_Radian = CAN_RxMessage->Data[2] << 8 | CAN_RxMessage->Data[1];
+//     int16_t temp_Multi_Radian  = CAN_RxMessage->Data[4] << 8 | CAN_RxMessage->Data[3];
+//     int16_t temp_Omega         = CAN_RxMessage->Data[6] << 8 | CAN_RxMessage->Data[5];//1ms采一次，不适合单纯测速 
+
+//     MA600_Data.Single_Radian = -temp_Single_Radian / 100.0f;
+//     MA600_Data.Multi_Radian  = -temp_Multi_Radian  / 100.0f;
+//     MA600_Data.Omega         = -temp_Omega         / 100.0f;
+
+//     float delta_rad = MA600_Data.Single_Radian - Zero_Position;
+//     Zero_Offset_Radian = Normalize_Angle_Radian_PI_to_PI(delta_rad); 
+// }
+
+void Class_DJI_Motor_C620_Steer::MA600_Data_Process(Struct_CAN_Rx_Buffer *CAN_RxMessage)
+{
+		
+		MA_Flag++;
+
+    int16_t temp_Single_Radian = CAN_RxMessage->Data[2] << 8 | CAN_RxMessage->Data[1];
+    int16_t temp_Multi_Radian  = CAN_RxMessage->Data[4] << 8 | CAN_RxMessage->Data[3];
+    int16_t temp_Omega         = CAN_RxMessage->Data[6] << 8 | CAN_RxMessage->Data[5];//1ms采一次，不适合单纯测速   
+
+
+    MA600_Data.Single_Radian=-temp_Single_Radian/100.0f;
+    MA600_Data.Multi_Radian=-temp_Multi_Radian/100.0f;
+    MA600_Data.Omega=-temp_Omega/100.0f;
+
+    float delta_rad = MA600_Data.Single_Radian - Zero_Position;//进行坐标系统一
+    Zero_Offset_Radian = Normalize_Angle_Radian_PI_to_PI(delta_rad);//当前的偏移量    
+      
+}
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

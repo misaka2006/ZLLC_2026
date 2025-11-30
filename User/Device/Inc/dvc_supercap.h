@@ -264,7 +264,7 @@ Enum_Supercap_Mode Class_Supercap::Get_Supercap_Mode()
 }
 uint16_t Class_Supercap::Get_Buffer_Power()
 {
-    return(CAN_Supercap_Rx_Data_Normal.Buffer_Power);
+    return(CAN_Supercap_Rx_Data_Normal.Buffer_Power/100);
 }
 uint8_t Class_Supercap::Get_Supercap_Proportion()
 {

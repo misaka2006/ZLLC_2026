@@ -202,12 +202,22 @@ typedef struct
 	uint8_t robot_id;
 	uint8_t Chassis_Control_Type;
 	uint8_t Bullet_Status;
-	uint8_t Minipc_Satus;
+	uint8_t Minipc_Status;
 	uint8_t MiniPC_Aim_Status;
 	uint8_t Fric_Status;
 	uint8_t Supercap_Energy;
-	uint8_t Supercap_Voltage;
+	uint8_t Supercap_State;
+	uint8_t Radar_Double_Damage_Flag;
+	uint8_t Minipc_Mode;
+	uint8_t Antispin_Type;
+	uint8_t Gimbal_Control_Type; // 添加云台控制状态字段
+	uint8_t Booster_User_Control_Type;
+	uint16_t booster_fric_omega_left;
+	uint16_t booster_fric_omega_right;
+	uint16_t Booster_bullet_num;
+	float Supercap_Voltage;
 	float Pitch_Angle;
+	float Chassis_Gimbal_Diff;	
 } JudgeReceive_t;
 
 void JudgementDataSend(void);
@@ -226,6 +236,7 @@ graphic_data_struct_t* Line_Draw(uint8_t layer,int Op_Type,uint16_t startx,uint1
 graphic_data_struct_t* Rectangle_Draw(uint8_t layer,int Op_Type,uint16_t startx,uint16_t starty,uint16_t endx,uint16_t endy, uint16_t line_width, int color,uint8_t name[]);
 graphic_data_struct_t* FloatData_Draw(uint8_t layer,int Op_Type,uint16_t startx,uint16_t starty, float data_f, uint8_t size ,uint8_t valid_bit, uint16_t line_width, int color,uint8_t name[]);
 graphic_data_struct_t* CharGraphic_Draw(uint8_t layer,int Op_Type,uint16_t startx,uint16_t starty, uint8_t size, uint8_t len, uint16_t line_width, int color,uint8_t name[]);
+graphic_data_struct_t *Arc_Draw(uint8_t layer, int Op_Type, uint16_t startx, uint16_t starty, uint16_t start_angle, uint16_t end_angle, uint32_t x_len, uint32_t y_len, uint16_t line_width, int color, uint8_t name[]);
 
 extern F405_typedef F405;
 
@@ -234,6 +245,12 @@ void Char_Init(void);
 void CarPosture_Change(short Yaw_100 ,uint8_t Init_Cnt);
 void PitchUI_Change(float Pitch ,uint8_t Init_Cnt);
 void CharChange(uint8_t Init_Flag);
+void Antispin_Draw(uint8_t Init_Cnt);
+void MiniPCMode_Draw(uint8_t Init_Cnt);
+void BoosterMode_Draw(uint8_t Init_Cnt);
+void GimbalStatus_Draw(uint8_t Init_Cnt);
+void RadarDoubleDamage_Draw(uint8_t Init_Cnt);
+void BulletNum_Draw(uint16_t bullet_num, uint8_t Init_Cnt);
 
 void Char_Draw(uint8_t layer, int Op_Type, uint16_t startx, uint16_t starty, uint8_t size, uint8_t len, uint16_t line_width, int color, uint8_t name[], uint8_t *str_data);
 
