@@ -1,4 +1,0 @@
-arm-none-eabi-objcopy --update-section ER_IROM1="C:\Users\a\AppData\Local\Temp\\infantry_HH/FntIr.bin" "d:\.Download\RMUC-2025-M56-Drone\RMUC-2025-M56-Drone\MDK-ARM\..\MDK-ARM\infantry\infantry.axf" "d:\.Download\RMUC-2025-M56-Drone\RMUC-2025-M56-Drone\MDK-ARM\..\MDK-ARM\infantry\infantry.elf"
-
-arm-none-eabi-objcopy: d:\.Download\RMUC-2025-M56-Drone\RMUC-2025-M56-Drone\MDK-ARM\..\MDK-ARM\infantry\infantry.elf: warning: allocated section `RW_IRAM1' not in segment
-

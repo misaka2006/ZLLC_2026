@@ -1,6 +1,0 @@
-tool: AC6
-fileName: 'infantry.map'
-elfName: 'infantry.axf'
-compilerName: 'ARM Compiler'
-compilerFullName: 'Component: ARM Compiler 6.7'
-compilerPath: 'D:\keil_v5\ARM\ARMCLANG\bin\armclang.exe'
