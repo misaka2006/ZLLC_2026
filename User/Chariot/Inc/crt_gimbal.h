@@ -287,12 +287,14 @@ public:
 
     inline float Get_Target_Roll_Angle();
     inline float Get_Target_Roll_Radian();
+    inline float Get_Roll_Min_Radian();
 
     inline float Get_Target_Roll_2_Angle();
     inline float Get_Target_Roll_2_Radian();
 
     inline float Get_Target_Gripper_Angle();
     inline float Get_Target_Gripper_Radian();
+    inline float Get_Gripper_Min_Radian();
 
     inline Enum_Gimbal_Control_Type Get_Gimbal_Control_Type();
 
@@ -315,6 +317,7 @@ public:
 
     inline void Set_Target_Roll_2_Angle(float __Target_Roll_2_Angle);
     inline void Set_Target_Roll_2_Radian(float __Target_Roll_2_Radian);
+    inline void Set_Target_Roll_2_Radian_Single(float Target_Roll_2_Radian_Single);
 
     inline void Set_Target_Gripper_Angle(float __Target_Gripper_Angle);
     inline void Set_Target_Gripper_Radian(float __Target_Gripper_Radian);
@@ -370,24 +373,20 @@ protected:
     float Min_Yaw_Radian = -PI;
     float Max_Yaw_Radian = PI;
 
-    // yaw总角度，框架代码，暂时没用上
-    float Yaw_Total_Angle;
-    float Yaw_Half_Turns;
-
     // pitch轴最小值
     float Min_Pitch_Angle = 0.0f; // 角度，非弧度
     // pitch轴最大值
-    float Max_Pitch_Angle = 120.0f; // 角度，非弧度
+    float Max_Pitch_Angle = 109.0f; // 角度，非弧度
     // rad
     float Min_Pitch_Radian = 0.0f;
-    float Max_Pitch_Radian = 2.095f;
+    float Max_Pitch_Radian = 1.90f;
 
     // pitch2轴最小值与最大值，degree
     float Min_Pitch_2_Angle = 0.0f;
-    float Max_Pitch_2_Angle = 90.0f;
+    float Max_Pitch_2_Angle = 110.0f;
     // rad
     float Min_Pitch_2_Radian = 0.0f;
-    float Max_Pitch_2_Radian = 1.57f;
+    float Max_Pitch_2_Radian = 1.92f;
 
     // pitch3轴最小值与最大值，degree
     float Min_Pitch_3_Angle = -146.75f;
@@ -421,37 +420,36 @@ protected:
     // yaw轴角度 degree & yaw轴角速度 rad/s
     float Target_Yaw_Angle = 0.0f;
     float Target_Yaw_Radian = 0.0f;
-    float Target_Yaw_Omega = 1.0f;
-
+    float Target_Yaw_Omega = 0.5f * PI; //作为和基座相连接的yaw，你还是动得慢一点比较好
     // pitch轴角度 degree
     float Target_Pitch_Angle = 0.0f;
     float Target_Pitch_Radian = 0.0f;
-    float Target_Pitch_Omega = 1.0f;
+    float Target_Pitch_Omega = 0.5f * PI;
 
     // pitch_2角度 degree
     float Target_Pitch_2_Angle = 0.0f;
     float Target_Pitch_2_Radian = 0.0f;
-    float Target_Pitch_2_Omega = 1.0f;
+    float Target_Pitch_2_Omega = 0.5f * PI;
 
     // pitch_3角度 degree
     float Target_Pitch_3_Angle = 0.0f;
     float Target_Pitch_3_Radian = 0.0f;
-    float Target_Pitch_3_Omega = 1.0f;
+    float Target_Pitch_3_Omega = 0.5f * PI;
 
     // roll角度 degree & radian
     float Target_Roll_Angle = 0.0f;
     float Target_Roll_Radian = 0.0f;
-    float Target_Roll_Omega = 1.0f;
+    float Target_Roll_Omega = 0.5f * PI;
 
     //roll_2角度 degree
     float Target_Roll_2_Angle = 0.0f;
     float Target_Roll_2_Radian = 0.0f;
-    float Target_Roll_2_Omega = 1.0f;
+    float Target_Roll_2_Omega = 1.5f * PI;
 
     //夹爪角度，degree
     float Target_Gripper_Angle = 0.0f;
     float Target_Gripper_Radian = 0.0f;
-    float Target_Gripper_Omega = 0.0f;
+    float Target_Gripper_Omega = 0.75f;
 
     // 内部函数
     void Output();
@@ -533,6 +531,16 @@ float Class_Gimbal::Get_Target_Roll_Radian()
 }
 
 /**
+ * @brief 获取roll轴Min_Radian，可以用于在Roll轴校准后的零点上作增量计算
+ *
+ * @return float roll轴校准后的零点
+ */
+float Class_Gimbal::Get_Roll_Min_Radian()
+{
+    return (Min_Roll_Radian);
+}
+
+/**
  * @brief 获取roll_2轴角度
  *
  * @return float roll_2轴角度
@@ -558,6 +566,16 @@ float Class_Gimbal::Get_Target_Gripper_Angle()
 float Class_Gimbal::Get_Target_Gripper_Radian()
 {
     return (Target_Gripper_Radian);
+}
+
+/**
+ * @brief 获取夹爪的Min_Radian，可以用于在夹爪校准后的零点上作增量计算（比较规范的写法和用法）
+ *
+ * @return float 夹爪校准后的零点
+ */
+float Class_Gimbal::Get_Gripper_Min_Radian()
+{
+    return (Min_gripper_Radian);
 }
 
 /**
@@ -650,14 +668,14 @@ void Class_Gimbal::Set_Target_Roll_Angle(float __Target_Roll_Angle)
     Set_Target_Roll_Radian(motor_rad);
 }
 void Class_Gimbal::Set_Target_Roll_Radian(float __Target_Roll_Radian)
-//设置2325的目标角度，使用Target_Radian赋值给电机，控制的是**转子端**的角度，这里函数声明里的Target_Roll_Radian不用手动加偏移，在函数会自己加
+//设置2325的目标角度，使用Target_Radian赋值给电机，控制的是**转子端**的角度，这里传入函数的Target_Roll_Radian不用手动加偏移，在函数里会自己加
 {
     Target_Roll_Radian = __Target_Roll_Radian + Min_Roll_Radian;
     Math_Constrain(&Target_Roll_Radian, Min_Roll_Radian, Max_Roll_Radian);
 }
 
 /**
- * @brief 设定roll_2角度
+ * @brief 设定roll_2总角度
  *
  */
 void Class_Gimbal::Set_Target_Roll_2_Angle(float __Target_Roll_2_Angle)
@@ -668,6 +686,39 @@ void Class_Gimbal::Set_Target_Roll_2_Angle(float __Target_Roll_2_Angle)
 void Class_Gimbal::Set_Target_Roll_2_Radian(float __Target_Roll_2_Radian)
 {
     Target_Roll_2_Radian = __Target_Roll_2_Radian;
+}
+/**
+ * @brief 设定roll_2单圈角度，会自动计算出正转还是倒转，传入的角度必须要是0.0f - 2PI单圈值
+ *
+ */
+void Class_Gimbal::Set_Target_Roll_2_Radian_Single(float Target_Roll_2_Radian_Single)
+{
+    //电机对象传回的总角度，可能为负数
+    float current_total_radian = Motor_6020_J5_Roll_2.Get_Now_Radian();
+    //先对2PI取模
+    float current_single_radian = fmod(current_total_radian, 2.0f * PI);
+
+    if(current_single_radian < 0.0f)
+    //如果是负数的话转成正数，这样就转成了单圈角度
+    {
+        current_single_radian += 2.0f * PI;
+    }
+
+    //偏差值，加到总圈数上进行设置
+    float delta = Target_Roll_2_Radian_Single - current_single_radian;
+
+    if(delta > PI)
+    {
+        delta -= 2.0f * PI;
+    }
+    else if(delta < -PI)
+    {
+        delta += 2.0f * PI;
+    }
+
+    float __Target_Roll_2_Radian = current_total_radian + delta;
+
+    Set_Target_Roll_2_Radian(__Target_Roll_2_Radian);
 }
 
 bool Class_FSM_Calibration::Get_roll_cali_status()

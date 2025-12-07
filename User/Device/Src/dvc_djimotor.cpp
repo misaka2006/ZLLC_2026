@@ -289,10 +289,10 @@ void Class_DJI_Motor_GM6020::Data_Process()
     Data.Total_Encoder = Data.Total_Round * Encoder_Num_Per_Round + tmp_encoder + Encoder_Offset;
 
     //计算电机本身信息
-    // Data.Now_Angle = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 360.0f;
-    // Data.Now_Radian = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 2.0f * PI;
-    Data.Now_Angle = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 360.0f;
-    Data.Now_Radian = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 2.0f * PI;
+    Data.Now_Angle = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 360.0f;
+    Data.Now_Radian = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 2.0f * PI;
+    // Data.Now_Angle = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 360.0f;
+    // Data.Now_Radian = (float)tmp_encoder / (float)Encoder_Num_Per_Round * 2.0f * PI;
     // Data.Now_Omega_Angle = (float)(Data.Total_Encoder - Data.Pre_Total_Encoder)/8191.0f*60.0f*1000.0f;  //rpm
     kalman_update(&Kf_Omega, (float)tmp_omega);
     raw_value = (float)tmp_omega * RPM_TO_DEG;
@@ -400,9 +400,9 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     break;
     case (DJI_Motor_Control_Method_OMEGA):
     {
-        PID_Omega.Set_Target(Target_Omega_Angle);
+        PID_Omega.Set_Target(Target_Omega_Radian);
         //PID_Omega.Set_Target(ome);
-        PID_Omega.Set_Now(Data.Now_Omega_Angle);
+        PID_Omega.Set_Now(Data.Now_Omega_Radian);
         PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
         Out = PID_Omega.Get_Out();
@@ -410,14 +410,13 @@ void Class_DJI_Motor_GM6020::TIM_PID_PeriodElapsedCallback()
     break;
     case (DJI_Motor_Control_Method_ANGLE):
     {
-        PID_Angle.Set_Target(Target_Angle);
-        PID_Angle.Set_Now(Data.Now_Angle);//转换后的角度，右手螺旋定律，标准坐标系
+        PID_Angle.Set_Target(Target_Radian);
+        PID_Angle.Set_Now(Data.Now_Radian);//转换后的角度，右手螺旋定律，标准坐标系
         PID_Angle.TIM_Adjust_PeriodElapsedCallback();
 
-        Target_Omega_Angle = PID_Angle.Get_Out();
-
-        PID_Omega.Set_Target(Target_Omega_Angle);
-        PID_Omega.Set_Now(Data.Now_Omega_Angle);
+        Target_Omega_Radian = PID_Angle.Get_Out();
+        PID_Omega.Set_Target(Target_Omega_Radian);
+        PID_Omega.Set_Now(Data.Now_Omega_Radian);
         PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
         Out = PID_Omega.Get_Out();

@@ -262,8 +262,10 @@ protected:
     #endif
 
     #ifdef GIMBAL
+        //机械臂在线状态，当所有电机全掉线时视为机械臂掉线，需要重新arm_init
+        bool is_arm_online = true;
         //遥控器拨动的死区, 0~1
-        float DR16_Dead_Zone;
+        float DR16_Dead_Zone = 0.3f;
         //常量
         //键鼠模式按住shift 最大速度缩放系数
         float DR16_Mouse_Chassis_Shift = 2.0f;
@@ -280,17 +282,17 @@ protected:
         float DR16_Pitch_Angle_Resolution = 0.010f * PI * 57.29577951308232;
 
         //DR16机械臂yaw灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
-        float DR16_Yaw_Resolution = 0.0015f * PI;
+        float DR16_Yaw_Resolution = 0.0025f * PI;
         //DR16机械臂pitch_1灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
         float DR16_Pitch_1_Resolution = 0.0015f * PI;
         //DR16机械臂pitch_2灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
         float DR16_Pitch_2_Resolution = 0.0015f * PI;
         //DR16机械臂Pitch3灵敏度系数(0.001PI表示每秒抬高1rad，这里暂时给到1/3rad)
-        float DR16_Pitch_3_Resolution = 0.0015f * PI;
+        float DR16_Pitch_3_Resolution = 0.0020f * PI;
         //DR16机械臂roll_1灵敏度系数，对应的系数和输出轴的转动速度待测，这里用的是之前测试时相对稳定（缓慢）的数据
         float DR16_Roll_Resolution = 0.10f * PI;
         //DR16机械臂roll_2灵敏度系数，还没测，暂时给到0
-        float DR16_Roll_2_Resolution = 0.0f;
+        float DR16_Roll_2_Resolution = 0.004f * PI;
 
         //DR16控制夹爪的速度，因为夹爪可移动范围是0.0 rad - 0.95 rad，所以现在给到0.05rad/s，
         float DR16_Gripper_Resolution = 0.005f * PI;
