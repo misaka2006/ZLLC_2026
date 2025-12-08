@@ -70,16 +70,9 @@ void SystemClock_Config(void);
   * @retval int
   */
 int main(void)
-<<<<<<< HEAD
-
-{
-
-  /* USER CODE BEGIN 1 */
-=======
 {
 
   /* USER CODE BEGIN 1 */	
->>>>>>> 7dcf0d5 ([更新DR16控制底盘的代码])
 
   /* USER CODE END 1 */
 

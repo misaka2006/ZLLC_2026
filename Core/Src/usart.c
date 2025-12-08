@@ -53,11 +53,7 @@ void MX_UART5_Init(void)
   huart5.Instance = UART5;
   huart5.Init.BaudRate = 100000;
   huart5.Init.WordLength = UART_WORDLENGTH_9B;
-<<<<<<< HEAD
-  huart5.Init.StopBits = UART_STOPBITS_2;
-=======
   huart5.Init.StopBits = UART_STOPBITS_1;
->>>>>>> 7dcf0d5 ([更新DR16控制底盘的代码])
   huart5.Init.Parity = UART_PARITY_EVEN;
   huart5.Init.Mode = UART_MODE_RX;
   huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
@@ -357,11 +353,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_uart5_rx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_uart5_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_uart5_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-<<<<<<< HEAD
-    hdma_uart5_rx.Init.Mode = DMA_CIRCULAR;
-=======
     hdma_uart5_rx.Init.Mode = DMA_NORMAL;
->>>>>>> 7dcf0d5 ([更新DR16控制底盘的代码])
     hdma_uart5_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     hdma_uart5_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_uart5_rx) != HAL_OK)

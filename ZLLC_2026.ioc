@@ -60,11 +60,7 @@ Dma.UART5_RX.0.FIFOMode=DMA_FIFOMODE_DISABLE
 Dma.UART5_RX.0.Instance=DMA1_Stream0
 Dma.UART5_RX.0.MemDataAlignment=DMA_MDATAALIGN_BYTE
 Dma.UART5_RX.0.MemInc=DMA_MINC_ENABLE
-<<<<<<< HEAD
-Dma.UART5_RX.0.Mode=DMA_CIRCULAR
-=======
 Dma.UART5_RX.0.Mode=DMA_NORMAL
->>>>>>> 7dcf0d5 ([更新DR16控制底盘的代码])
 Dma.UART5_RX.0.PeriphDataAlignment=DMA_PDATAALIGN_BYTE
 Dma.UART5_RX.0.PeriphInc=DMA_PINC_DISABLE
 Dma.UART5_RX.0.Polarity=HAL_DMAMUX_REQ_GEN_RISING
@@ -680,11 +676,7 @@ UART5.BaudRate=100000
 UART5.IPParameters=Parity,WordLength,BaudRate,StopBits,Mode
 UART5.Mode=MODE_RX
 UART5.Parity=PARITY_EVEN
-<<<<<<< HEAD
-UART5.StopBits=UART_STOPBITS_2
-=======
 UART5.StopBits=UART_STOPBITS_1
->>>>>>> 7dcf0d5 ([更新DR16控制底盘的代码])
 UART5.WordLength=WORDLENGTH_9B
 USART1.IPParameters=VirtualMode-Asynchronous
 USART1.VirtualMode-Asynchronous=VM_ASYNC
