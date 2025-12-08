@@ -329,7 +329,7 @@ void TIM_CAN_PeriodElapsedCallback()
     #ifdef CHASSIS
     static uint8_t mod5 = 0,mod100 = 0,mod20 = 0;
     mod5++, mod100++,mod20++;
-    if (mod5 == 5)  //200Hz
+    if (mod5 % 5 == 0)  //200Hz
     {
         mod5 = 0;
         //轮向 3508    

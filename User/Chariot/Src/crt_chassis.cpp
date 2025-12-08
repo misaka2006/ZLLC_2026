@@ -241,7 +241,7 @@ void Class_Tricycle_Chassis::Speed_Resolution()
                 temp_Target_Omega = temp_Target_Omega / WHEEL_RADIUS;//从线速度到角速度，速控底盘
 
                 //计算目标角度
-                if(fabs(temp_Target_Omega) < 0.0001)
+                if(fabs(temp_Target_Omega) < 0.0001 && True_Vy[i] == 0.0f && True_Vx[i] == 0.0f)
                 {            //避免X =0 ；Y = 0的情况
                     True_Target_Angle_Radian[i] = Motor_Steer[i].Get_Now_Zero_Offset_Radian();
                 }
@@ -502,7 +502,7 @@ void Class_Tricycle_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Sta
     }
     else{
         //裁判系统离线限制功率
-        Power_Management.Max_Power = 80.0f;
+        Power_Management.Max_Power = 60.0f;
         Chassis_Buffer = 0.0f;
     }
     
@@ -561,6 +561,7 @@ void Class_Tricycle_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Sta
     }
     else{
         Supercap.Set_Limit_Power(70.0f);
+        Supercap.Set_Working_Status(Working_Status_OFF);
     }
     //Supercap.TIM_Supercap_PeriodElapsedCallback();          //向超电发送信息
     #endif

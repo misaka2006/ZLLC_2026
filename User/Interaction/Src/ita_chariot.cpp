@@ -386,7 +386,7 @@ float target[2];
 void Class_Chariot::Control_Chassis_Test()
 {
     //遥控器摇杆值
-    float dr16_l_x = 0, dr16_l_y = 0;
+    float dr16_l_x = 0, dr16_l_y = 0,dr16_r_x = 0;
 
     //底盘坐标系速度目标值 float
     float chassis_velocity_x = 0, chassis_velocity_y = 0;
@@ -399,11 +399,10 @@ void Class_Chariot::Control_Chassis_Test()
     //排除遥控器死区
     dr16_l_x = (Math_Abs(DR16.Get_Left_X()) > DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
     dr16_l_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;    
-    
+    dr16_r_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
 	// 设定矩形到圆形映射进行控制，因为遥控器理想是圆，但实际数据是正方形，如果45°移动，将会是1.414倍，所以要映射
 	gimbal_velocity_x = dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
     gimbal_velocity_y = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();	
-	
 	//    //统一一下，进行限幅，但我感觉不太需要		因为初始化变量里面有一个值进行限制
 //        if(chassis_velocity_x>4.0f)
 //        {
@@ -427,6 +426,7 @@ void Class_Chariot::Control_Chassis_Test()
         {
             // 底盘随动
             chassis_control_type=Chassis_Control_Type_FLLOW;
+            chassis_omega = -dr16_r_x * Chassis.Get_Omega_Max();	
         }
         if (DR16.Get_Left_Switch() == DR16_Switch_Status_UP) // 左上 小陀螺模式
         {
@@ -449,7 +449,7 @@ void Class_Chariot::Control_Chassis_Test()
 //        {
 //            chassis_omega=-4.0f;
 //        }
-
+        #ifdef OLD
 
         //获取云台坐标系和底盘坐标系的夹角（弧度制）
         //角速度前馈，保证小陀螺时走直线
@@ -478,7 +478,7 @@ void Class_Chariot::Control_Chassis_Test()
     gimbal_velocity_y = 1.0f * ((float)(gimbal_velocity_y * sin(derta_angle) + gimbal_velocity_y * cos(derta_angle)));
     if(chassis_omega < 0.5f && chassis_omega > -0.5f)chassis_omega = 0;//限幅
     //小陀螺行进，我感觉一般不会进入这个判断
-
+    #endif
     chassis_velocity_x=gimbal_velocity_y;
     chassis_velocity_y=-gimbal_velocity_x;
 
@@ -682,6 +682,7 @@ void Class_Chariot::Control_Booster()
 void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
 {
 #ifdef CHASSIS
+#ifdef OLD
         // 底盘给云台发消息
         CAN_Chassis_Tx_Gimbal_Callback();
 
@@ -732,8 +733,6 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
         if(Get_Gimbal_Status() == DR16_Status_ENABLE || Referee.Get_Game_Stage() == Referee_Game_Status_Stage_BATTLE)		
         #endif
 
-	
-        #ifdef DEBUG
 		// if(Get_Gimbal_Status() == DR16_Status_ENABLE)
         if(Get_Gimbal_Status()==Gimbal_Status_ENABLE)
         //if(DR16.Get_DR16_Status()==DR16_Status_ENABLE)
@@ -750,7 +749,9 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
 				}
         }
         //DWT_SysTimeUpdate();
-				
+        #endif
+        Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);//还有飞坡前馈没写
+        Chassis.Supercap.Set_Working_Status(Working_Status_OFF);
     #elif defined(GIMBAL)
 
         //各个模块的分别解算
@@ -762,7 +763,7 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
         CAN_Gimbal_Tx_Chassis_Callback();
     #endif
 
-#endif				
+			
 }
 
 /**

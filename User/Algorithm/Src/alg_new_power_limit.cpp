@@ -193,7 +193,7 @@ float solution2;
 float test_cal;
 float Class_Power_Limit::Calculate_Toque(float omega, float power, float torque, uint8_t motor_index)
 {
-
+    #ifdef OLD
     omega = rpm2av(omega);
     float newTorqueCurrent = 0.0f;
 
@@ -231,6 +231,47 @@ float Class_Power_Limit::Calculate_Toque(float omega, float power, float torque,
             test_flag=3;
         }
     }
+    return newTorqueCurrent;
+    #endif
+     omega = rpm2av(omega);
+    float newTorqueCurrent = 0.0f;
+
+    float delta = omega * omega - 4 * (k1 * fabs(omega) + k3 - power) * k2;
+
+    if(delta < 0.0f)
+    {
+        newTorqueCurrent = 0.0f; //-omega / (2.0f * k2);
+    }
+    else 
+    {
+        float solution1 = (-omega + sqrtf(delta)) / (2.0f * k2);
+        float solution2 = (-omega - sqrtf(delta)) / (2.0f * k2);
+        if ((solution1 > 0.0f && solution2 < 0.0f) || (solution1 < 0.0f && solution2 > 0.0f))
+        {
+            if ((torque > 0.0f && solution1 > 0.0f) || (torque < 0.0f && solution1 < 0.0f))
+            {
+                newTorqueCurrent = solution1;
+            }
+            else
+            {
+                newTorqueCurrent = solution2;
+            }
+        }
+        else
+        {
+            if (Math_Abs(solution1) < Math_Abs(solution2))
+            {
+                newTorqueCurrent = solution1;
+            }
+            else
+            {
+                newTorqueCurrent = solution2;
+            }
+        }
+
+        // newTorqueCurrent = (torque > 0) ? solution1 : solution2;
+    }
+
     return newTorqueCurrent;
 }
 
