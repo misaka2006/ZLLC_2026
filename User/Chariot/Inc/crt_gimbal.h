@@ -329,6 +329,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
+    /*dh建模和解算相关变量，后期移到arm_model类中*/
     float target_pos[3] = {5.2006f, 2.9150f, 77.7629f};      //目标xyz
     float target_rpy[3] = {1.5704f, 0.6867f, 0.1338f};      //目标欧拉角
     Matrixf<6, 1> solutions[8];     //解析法求解的8组解
@@ -337,6 +338,16 @@ public:
     uint8_t solution_index = 0;      //当前采用的解的索引
     float control_result[6] = {0};  //转换得到的用于电机控制的角度，调用Set_Target_Radian实现
     float model_result[6] = {0};    //正解算结果，用于和目标位置对比
+    float pos_move_result[3] = {0.0f};  //平移后的目标xyz
+    uint8_t axis = 0;               //平移的轴选择，0-x,1-y,2-z 
+    float s = 0.0f;                 //平移距离，单位mm
+
+    #ifdef MY_DEBUG
+    uint8_t move_test_flag = 0; //用于测试平移功能的标志位
+    float q_solution[600][6];        // 逆解结果数组，测试用
+    float move_init_control_angle[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f}; //用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
+    uint32_t valid_solution_cnt = 0; // 有效解的数量
+    #endif
 #ifdef MOTOR_TEST
 
     float debug_j0_target_angle = 0.0f; // J0目标角度（角度）
@@ -369,6 +380,9 @@ public:
     float debug_roll_target_radian = 0.0f; // roll目标位置，弧度制，用于在校准后角度的基础上进行增量，顺时针方向为正，电机校准的方向是逆时针，所以需要加角度
 #endif
 protected:
+    // 电机CAN通信优先级变量
+    static inline uint32_t can_priority_cnt = 0;     // 电机CAN通信优先级计数器，前面写inline是为了能保持变量是类内部静态变量的同时可以自动初始化
+
     // 初始化相关常量
     float Gimbal_Head_Angle;
     // 常量
@@ -465,7 +479,7 @@ protected:
     float Target_Gripper_Omega = 0.75f;
 
     //建模解算测试用
-    float model_angle[6] = {0};
+    float model_angle[6] = {-1.41763484f, -0.7515257f, 1.16897726f, 2.37824893f, -0.335987657f, 0.612869143f};
     float model_degree[6];
     float control_angle[6] = {0};
     float xyz_rpy[6] = {0};      //正解算结果

@@ -299,207 +299,57 @@
           <WinNumber>1</WinNumber>
           <ItemText>sol_count</ItemText>
         </Ww>
+        <Ww>
+          <count>30</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>valid_solution_cnt,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>31</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>calculate_cnt,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>32</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>valid_solution_cnt</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>
           <count>0</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.roll_cali_status</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.model_result</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.locked_cnt</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.xyz_rpy</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Target_Angle</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.model_angle</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Target_Omega</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.model_degree</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Target_Torque</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.axis</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.DM_Motor_Control_Status</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.s</ItemText>
         </Ww>
         <Ww>
           <count>6</count>
           <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.DM_Motor_Control_Method</ItemText>
-        </Ww>
-        <Ww>
-          <count>7</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.Cali_Offset</ItemText>
-        </Ww>
-        <Ww>
-          <count>8</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Data.Now_Torque</ItemText>
-        </Ww>
-        <Ww>
-          <count>9</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.roll_cali_status</ItemText>
-        </Ww>
-        <Ww>
-          <count>10</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Data.Now_Angle</ItemText>
-        </Ww>
-        <Ww>
-          <count>11</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_kp</ItemText>
-        </Ww>
-        <Ww>
-          <count>12</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Chariot/Src/crt_gimbal.cpp\debug_roll_target_omega</ItemText>
-        </Ww>
-        <Ww>
-          <count>13</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Chariot/Src/crt_gimbal.cpp\roll_MIT_Mode</ItemText>
-        </Ww>
-        <Ww>
-          <count>14</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Chariot/Src/crt_gimbal.cpp\debug_roll_target_radian</ItemText>
-        </Ww>
-        <Ww>
-          <count>15</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Chariot/Src/crt_gimbal.cpp\set_roll_output_enable</ItemText>
-        </Ww>
-        <Ww>
-          <count>16</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.roll_cali_status</ItemText>
-        </Ww>
-        <Ww>
-          <count>17</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Data.Now_Torque</ItemText>
-        </Ww>
-        <Ww>
-          <count>18</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.DM_Motor_Control_Status</ItemText>
-        </Ww>
-        <Ww>
-          <count>19</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Target_Angle</ItemText>
-        </Ww>
-        <Ww>
-          <count>20</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Data.Now_Angle</ItemText>
-        </Ww>
-        <Ww>
-          <count>21</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Chariot/Src/crt_gimbal.cpp\set_roll_cali_enable</ItemText>
-        </Ww>
-        <Ww>
-          <count>22</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>chariot</ItemText>
-        </Ww>
-        <Ww>
-          <count>23</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_c610_mode</ItemText>
-        </Ww>
-        <Ww>
-          <count>24</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_c610_omega_kp</ItemText>
-        </Ww>
-        <Ww>
-          <count>25</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_c610_omega_ki</ItemText>
-        </Ww>
-        <Ww>
-          <count>26</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>CAN2_0x1ff_Tx_Data</ItemText>
-        </Ww>
-        <Ww>
-          <count>27</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_6020_angle_kp</ItemText>
-        </Ww>
-        <Ww>
-          <count>28</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_6020_angle_ki</ItemText>
-        </Ww>
-        <Ww>
-          <count>29</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_c610_angle_kp</ItemText>
-        </Ww>
-        <Ww>
-          <count>30</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>debug_c610_angle_ki</ItemText>
-        </Ww>
-        <Ww>
-          <count>31</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.roll_cali_status</ItemText>
-        </Ww>
-        <Ww>
-          <count>32</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Calibration_FSM.roll_cali_status</ItemText>
-        </Ww>
-        <Ww>
-          <count>33</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.Motor_DM_J3_Roll.Data.Now_Angle</ItemText>
-        </Ww>
-        <Ww>
-          <count>34</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.model_angle[3]</ItemText>
-        </Ww>
-        <Ww>
-          <count>35</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.model_degree[3]</ItemText>
-        </Ww>
-        <Ww>
-          <count>36</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.debug_radian[3]</ItemText>
-        </Ww>
-        <Ww>
-          <count>37</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.roll_cali_offset</ItemText>
-        </Ww>
-        <Ww>
-          <count>38</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.control_result</ItemText>
-        </Ww>
-        <Ww>
-          <count>39</count>
-          <WinNumber>2</WinNumber>
-          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.debug_radian</ItemText>
+          <ItemText>\\ZLLC_2026\../User/Task/Src/tsk_config_and_callback.cpp\chariot.Gimbal.pos_move_result</ItemText>
         </Ww>
       </WatchWindow2>
       <MemoryWindow4>

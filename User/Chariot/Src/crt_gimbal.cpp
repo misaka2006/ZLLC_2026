@@ -79,8 +79,8 @@ void Class_Gimbal::Init()
     // 2325需要校准，所以设置成速度环
     Motor_DM_J3_Roll.Init(&hfdcan1, DM_Motor_ID_0xA4, DM_Motor_Control_Method_POSITION_OMEGA, 0, 20.0f, 10.0f);
 
-    Motor_6020_J5_Roll_2.PID_Angle.Init(20.0f, 0.0f, 0.0f, 0.0f, 500, 500, 500);
-    Motor_6020_J5_Roll_2.PID_Omega.Init(800.0f, 2.5f, 0.0f, 0.0f, 6000, Motor_6020_J5_Roll_2.Get_Output_Max(), 10.f, 50.f);
+    Motor_6020_J5_Roll_2.PID_Angle.Init(25.0f, 0.0f, 0.0f, 0.0f, 500, 500, 500);
+    Motor_6020_J5_Roll_2.PID_Omega.Init(300.0f, 2.5f, 0.0f, 0.0f, 6000, Motor_6020_J5_Roll_2.Get_Output_Max(), 10.f, 50.f);
     Motor_6020_J5_Roll_2.PID_Torque.Init(0.0f, 0.0f, 0.0f, 0.0f, Motor_6020_J5_Roll_2.Get_Output_Max(), Motor_6020_J5_Roll_2.Get_Output_Max());
     Motor_6020_J5_Roll_2.Init(&hfdcan2, DJI_Motor_ID_0x205, DJI_Motor_Control_Method_ANGLE, 0);
 
@@ -91,8 +91,8 @@ void Class_Gimbal::Init()
     Calibration_FSM.Gimbal = this;
 
     /*给MIT模式的电机设置的MIT参数*/
-    //Motor_DM_J0_Yaw.Set_MIT_K_P(5.0f);
-    //Motor_DM_J0_Yaw.Set_MIT_K_D(2.0f);
+    // Motor_DM_J0_Yaw.Set_MIT_K_P(5.0f);
+    // Motor_DM_J0_Yaw.Set_MIT_K_D(2.0f);
 }
 
 /**
@@ -232,6 +232,71 @@ void Class_Gimbal::Output()
                 Set_Target_Roll_Radian(debug_roll_target_radian);
 #endif
 #ifdef MY_DEBUG
+                /**
+                 * 平动测试用，标志位move_test_flag，用于更改debug_radian的数值来完成测试
+                 * 0: 不更改debug_radian，可以自行在debug模式下修改debug_radian来测试
+                 * 1: 将debug_radian赋为平动测试的初始角度
+                 * 2: 使用计算出的平动中机械臂角度来控制机械臂
+                 * default: 急停，机械臂角度保持在当前角度
+                 */
+                switch (move_test_flag)
+                {
+                case 0:
+                    break;
+
+                case 1:
+                {
+                    for (int i = 0; i < 6; i++)
+                    {
+                        debug_radian[i] = move_init_control_angle[i];
+                    }
+                }
+
+                case 2:
+                {
+                    static uint32_t point_cnt = 0;    // 平动轨迹点计数器
+                    // 每4ms填入下一个目标角度，在4ms中也分优先级发送
+                    switch (can_priority_cnt % 5)
+                    {
+                    case (1):
+                    {
+                        debug_radian[0] = q_solution[point_cnt][0];
+                        debug_radian[4] = q_solution[point_cnt][4];
+                        break;
+                    }
+                    case (2):
+                    {
+                        debug_radian[1] = q_solution[point_cnt][1];
+                        debug_radian[5] = q_solution[point_cnt][5];
+                        break;
+                    }
+                    case (3):
+                    {
+                        debug_radian[2] = q_solution[point_cnt][2];
+                        break;
+                    }
+                    case (4):
+                        debug_radian[3] = q_solution[point_cnt][3];
+                        break;
+                    case (0):   //不在这清零，执行完Output后TIM_Process_PeriodElapsedCallback里清零，如果清零两次的话电机更新目标角度和电机通信不同步
+                    {
+                        if(point_cnt < valid_solution_cnt)
+                        {
+                            point_cnt++;
+                        }
+                        else
+                        {
+                            point_cnt = valid_solution_cnt - 1;
+                        }
+                        break;
+                    }
+                    }
+                }
+
+                default:
+                    break;
+                }
+
                 Set_Target_Yaw_Radian(debug_radian[0]);
                 Set_Target_Pitch_Radian(debug_radian[1]);
                 Set_Target_Pitch_2_Radian(debug_radian[2]);
@@ -266,7 +331,6 @@ void Class_Gimbal::Output()
                     Motor_C610_Gripper.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE); // 用Motor_Test调试时删这一行，因为上面Motor_Test的代码块里写了标志位用于使能和失能
                     Motor_C610_Gripper.Set_Target_Radian(Target_Gripper_Radian);
                 }
-
             }
             else if ((Get_Gimbal_Control_Type() == Gimbal_Control_Type_MINIPC) && (MiniPC->Get_MiniPC_Status() != MiniPC_Status_DISABLE))
             {
@@ -324,7 +388,7 @@ void Class_Gimbal::Output()
             Motor_DM_J4_Pitch_3.Set_Target_Omega(0.5f);
             Motor_DM_J4_Pitch_3.Set_Target_Angle(0.0f); // Radian 0
 
-            //6020每次断电重连时，电机内部保存的圈数会清零，所以直接让转到0即可
+            // 6020每次断电重连时，电机内部保存的圈数会清零，所以直接让转到0即可
             Motor_6020_J5_Roll_2.Set_Target_Omega_Radian(1.0f * PI);
             Motor_6020_J5_Roll_2.Set_Target_Radian(0.0f); // Radian 0
 
@@ -339,12 +403,11 @@ void Class_Gimbal::Output()
  */
 void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
 {
-    static uint16_t can_1_cnt = 0;
-    static uint16_t can_2_cnt = 0;
-    can_1_cnt++;
-    can_2_cnt++;
     // 控制模式，用于设置电机的转动模式，转动的目标速度和角度
     Output();
+
+    // 电机优先级计数器
+    can_priority_cnt++;
 
     // 单编码器电机校准状态机回调函数
     if (arm_init)
@@ -352,25 +415,35 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
         Calibration_FSM.Reload_TIM_Status_PeriodElapsedCallback();
     }
     // 发送控制帧
-    switch(can_1_cnt % 5)
+    switch (can_priority_cnt % 5)
     {
-    case (1): Motor_DM_J0_Yaw.TIM_Process_PeriodElapsedCallback();break;
-    case (2): Motor_DM_J1_Pitch.TIM_Process_PeriodElapsedCallback();break;
-    case (3): Motor_DM_J2_Pitch_2.TIM_Process_PeriodElapsedCallback();break;
-    case (4): Motor_DM_J3_Roll.TIM_Process_PeriodElapsedCallback();break;
-    case (0): can_1_cnt = 0;break;
+    case (1):
+    {
+        Motor_DM_J0_Yaw.TIM_Process_PeriodElapsedCallback();
+        Motor_DM_J4_Pitch_3.TIM_Process_PeriodElapsedCallback();
+        break;
     }
-    switch(can_2_cnt % 4)
+    case (2):
     {
-    case (1): Motor_DM_J4_Pitch_3.TIM_Process_PeriodElapsedCallback();break;
-    /*6020 output*/
-    case (2): Motor_6020_J5_Roll_2.TIM_PID_PeriodElapsedCallback();break;
-    /*C610 output*/
-    case (3): Motor_C610_Gripper.TIM_PID_PeriodElapsedCallback();break;
-    case (0): can_2_cnt = 0;break;
+        Motor_DM_J1_Pitch.TIM_Process_PeriodElapsedCallback();
+        Motor_6020_J5_Roll_2.TIM_PID_PeriodElapsedCallback();
+        break;
+    }
+    case (3):
+    {
+        Motor_DM_J2_Pitch_2.TIM_Process_PeriodElapsedCallback();
+        Motor_C610_Gripper.TIM_PID_PeriodElapsedCallback();
+        break;
+    }
+    case (4):
+        Motor_DM_J3_Roll.TIM_Process_PeriodElapsedCallback();
+        break;
+    case (0):
+        can_priority_cnt = 0;
+        break;
     }
 
-    //建模测试用
+    // 测试用，用于查看当前机械臂位置
     control_angle[0] = Motor_DM_J0_Yaw.Get_Now_Angle();
     control_angle[1] = Motor_DM_J1_Pitch.Get_Now_Angle();
     control_angle[2] = Motor_DM_J2_Pitch_2.Get_Now_Angle();
@@ -378,18 +451,18 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
     control_angle[4] = Motor_DM_J4_Pitch_3.Get_Now_Angle();
     control_angle[5] = multi_to_single(Motor_6020_J5_Roll_2.Get_Now_Radian());
 
-    motor_to_model(control_angle, model_angle, roll_cali_offset);
-    for(int i = 0; i <6; i++)
+    // motor_to_model(control_angle, model_angle, roll_cali_offset);
+    for (int i = 0; i < 6; i++)
     {
         model_degree[i] = model_angle[i] * 180.0f / PI;
     }
     show_FK_result(model_angle, xyz_rpy);
-    model_to_control(model_result, control_result);
+
     // 采用解析法求IK
-    //DWT_GetDeltaT(&dwt_cnt);
-    //ikine_pieper_solutions(target_pos, target_rpy, &solutions[0]);
-    //delta_time = DWT_GetDeltaT(&dwt_cnt);
-    //valid_IK_cnt = solution_filter(&solutions[0], valid_solution);
+    // DWT_GetDeltaT(&dwt_cnt);
+    // ikine_pieper_solutions(target_pos, target_rpy, &solutions[0]);
+    // delta_time = DWT_GetDeltaT(&dwt_cnt);
+    // valid_IK_cnt = solution_filter(&solutions[0], valid_solution);
 }
 
 /**
