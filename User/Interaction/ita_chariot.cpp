@@ -759,15 +759,31 @@ void Class_Chariot::Control_Booster()
     {
         // 左上 开启摩擦轮和发射机构
         if (DR16.Get_Right_Switch() == DR16_Switch_Status_UP)
-        {Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
+        {
+            Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
             Booster.Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
             Fric_Status = Fric_Status_OPEN;
 
-            if(DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN)
-            {         //自瞄模式火控 上位机控制打弹
-                if(MiniPC.Get_Fire_Status() == 1 && MiniPC.Get_MiniPC_Status() == MiniPC_Data_Status_ENABLE){
-                     Booster.Set_Booster_Control_Type(Booster_Control_Type_SINGLE);
-                    //Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
+            if (DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN)
+            { // 自瞄模式火控 上位机控制打弹
+                static uint8_t Switch_Flag = 0;
+                if (MiniPC.Get_MiniPC_Status() == MiniPC_Data_Status_ENABLE)
+                {
+                    if (MiniPC.Get_Fire_Status() == 1)
+                    {
+                        Booster.Set_Booster_Control_Type(Booster_Control_Type_SINGLE);
+                        Switch_Flag = 1;
+                    }
+                    else
+                    {
+                        Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
+                        if (Switch_Flag == 1)
+                        {
+                            float tmp_now_dirve = Booster.Motor_Driver.Get_Now_Radian();
+                            Booster.Set_Target_Drvier_Angle(tmp_now_dirve);
+                            Switch_Flag = 0;
+                        }
+                    }
                 }
             }
             else
@@ -1299,10 +1315,14 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             mod50_mod3 = 0;
         }
         // 云台，随动掉线保护
-        if (Motor_Yaw.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE || Gimbal_Status == Gimbal_Status_DISABLE)
+        if (Motor_Yaw.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE || Gimbal_Status == Gimbal_Status_DISABLE ||  Chassis.Motor_Wheel[0].Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE || Chassis.Motor_Wheel[1].Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE || Chassis.Motor_Wheel[2].Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE || Chassis.Motor_Wheel[3].Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE)
         {
             buzzer_setTask(&buzzer, BUZZER_DEVICE_OFFLINE_PRIORITY);
             Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        }
+        else if(Gimbal_Status == Gimbal_Status_ENABLE)
+        {
+            buzzer_setTask(&buzzer, BUZZER_FORCE_STOP_PRIORITY);
         }
 #elif defined(GIMBAL)
 

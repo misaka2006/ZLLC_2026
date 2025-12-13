@@ -194,43 +194,27 @@ float test_cal;
 float Class_Power_Limit::Calculate_Toque(float omega, float power, float torque, uint8_t motor_index)
 {
 
-    omega = rpm2av(omega);
+     omega = rpm2av(omega);
     float newTorqueCurrent = 0.0f;
 
     float delta = omega * omega - 4 * (k1 * fabs(omega) + k3 - power) * k2;
 
-    if (torque * omega <= 0 || floatEqual(power, 0.0f))             //电机减速反向电动势是发出功率，不消耗功率
+    if (floatEqual(delta, 0.0f))
     {
-        newTorqueCurrent = torque;
-        test_flag=0;
+        newTorqueCurrent = -omega / (2.0f * k2);
     }
-    else
+    else if (delta > 0.0f)
     {
-        if (floatEqual(delta, 0.0f))
-        {
-            newTorqueCurrent = -omega / (2.0f * k2);
-            test_flag=1;
-        }
-        else if (delta > 0.0f)
-        {
-            float solution1 = (-omega + sqrtf(delta)) / (2.0f * k2);
-            float solution2 = (-omega - sqrtf(delta)) / (2.0f * k2);
+        float solution1 = (-omega + sqrtf(delta)) / (2.0f * k2);
+        float solution2 = (-omega - sqrtf(delta)) / (2.0f * k2);
 
-            newTorqueCurrent = (torque > 0) ? solution1 : solution2;
-
-            test_flag=2;
-
-            test_cal=(omega) * torque +
-                     fabs((omega)) * k1 +
-                     torque * torque * k2 +
-                     k3;
-        }
-        else            //delta < 0
-        {
-            newTorqueCurrent = -omega / (2.0f * k2);
-            test_flag=3;
-        }
+        newTorqueCurrent = (torque > 0) ? solution1 : solution2;
     }
+    else // delta < 0
+    {
+        newTorqueCurrent = -omega / (2.0f * k2);
+    }
+
     return newTorqueCurrent;
 }
 
@@ -414,17 +398,17 @@ void Class_Power_Limit::Power_Task(Struct_Power_Management &power_management)
     power_management.Scaled_Total_Power = scaled_sum;           //没啥用的变量，实际上等于需要再分配的理论总功率
 
     //RLS更新参数
-    Calculate_Power_Coefficient(power_management.Actual_Power, power_management.Motor_Data);
-    if((power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
-       (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
-       (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
-       (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200))
-    {
-        Set_K2(2000.f);
-    }
-    else
-    {
-        Set_K2(530.f);
-    }
+    //Calculate_Power_Coefficient(power_management.Actual_Power, power_management.Motor_Data);
+    // if((power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
+    //    (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
+    //    (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200)||
+    //    (power_management.Motor_Data[0].feedback_torque > 0.01f && power_management.Motor_Data[0].feedback_omega < 200))
+    // {
+    //     Set_K2(2000.f);
+    // }
+    // else
+    // {
+    //     Set_K2(530.f);
+    // }
 #endif
 }

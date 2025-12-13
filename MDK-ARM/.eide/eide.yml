@@ -130,7 +130,7 @@ virtualFolder:
             - path: ../User/Middleware/Algorithm/RLS.hpp
             - path: ../User/Middleware/Algorithm/Matrix.hpp
             - path: ../User/Middleware/Algorithm/alg_new_power_limit.cpp
-            - path: ../User/Middleware/Algorithm/alg_new_power_limit.h
+            - path: ../User/Middleware/Algorithm/alg_flying_slope.cpp
           folders: []
         - name: Driver
           files:

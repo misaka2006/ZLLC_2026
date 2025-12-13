@@ -98,7 +98,7 @@ void Class_IMU::TIM1msMod50_Alive_PeriodElapsedCallback(void)
         && (Pre_BMI088_Raw_Data.Accel[2] == BMI088_Raw_Data.Accel[2]))  //判断陀螺仪是否掉线
         {
             IMU_Status = IMU_Status_DISABLE;
-            buzzer_setTask(&buzzer, BUZZER_DEVICE_OFFLINE_PRIORITY);
+//            buzzer_setTask(&buzzer, BUZZER_DEVICE_OFFLINE_PRIORITY);
         }
         else IMU_Status = IMU_Status_ENABLE;
 

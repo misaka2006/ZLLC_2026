@@ -58,7 +58,7 @@ void Class_MiniPC::Init(CAN_HandleTypeDef *hcan)
   }
 }
 
-float camera_distance = 0.036;
+float camera_distance = 0.0f;
 /**
  * @brief 数据处理过程
  *
@@ -85,8 +85,7 @@ void Class_MiniPC::Data_Process()
 
   Fire = Pack_Rx.Fire;
   
-  //Self_aim(target_x, target_y, target_z + camera_distance, &tmp_yaw, &tmp_pitch, &Distance);
-  Self_aim(target_x, target_y, target_z, &tmp_yaw, &tmp_pitch, &Distance);
+  Self_aim(target_x, target_y, target_z + camera_distance, &tmp_yaw, &tmp_pitch, &Distance);
   Rx_Angle_Pitch = tmp_pitch;
   Rx_Angle_Yaw = tmp_yaw;
   Math_Constrain(&Rx_Angle_Pitch, -20.0f, 34.0f);
@@ -130,9 +129,8 @@ void Class_MiniPC::Output()
 
   Pack_Tx_CAN_A.Roll = Tx_Angle_Roll*100.0f;
   Pack_Tx_CAN_A.Yaw = Tx_Angle_Yaw*100.0f;
-  //Pack_Tx_CAN_A.Pitch = -1.0f * Tx_Angle_Pitch*100.0f; //左手螺旋
-  Pack_Tx_CAN_A.Pitch = 1.0f * Tx_Angle_Pitch*100.0f;//右手螺旋
-  //Pack_Tx_CAN_A.Gyro_Yaw = Tx_Angle_Gyro_Yaw * 100.0f; 
+  Pack_Tx_CAN_A.Pitch = 1.0f * Tx_Angle_Pitch*100.0f;
+  //Pack_Tx_CAN_A.Gyro_Yaw = Tx_Angle_Gyro_Yaw * 100.0f;
   memcpy(CAN_Tx_Data_A, &Pack_Tx_CAN_A, sizeof(Pack_tx_can_t_A));
   memcpy(CAN_Tx_Data_B, &Pack_Tx_CAN_B, sizeof(Pack_tx_can_t_B));
 
@@ -289,57 +287,63 @@ float Class_MiniPC::calc_distance(float x, float y, float z)
  * @return 计算得到的俯仰角（以角度制表示）
  */
 float dist;
-float Class_MiniPC::calc_pitch(float x, float y, float z)
+float Class_MiniPC::calc_pitch(float x, float y, float z,uint8_t mode)
 {
-//  // 根据 x、y 分量计算的平面投影的模长和 z 分量计算的反正切值，得到弧度制的俯仰角
-//  float pitch = atan2f(z, sqrtf(x * x + y * y));
-//  // 使用重力加速度模型迭代更新俯仰角
-//  for (size_t i = 0; i < 20; i++)
-//  {
-//    float v_x;
-//    float v_y;
-//    if (Referee->Get_Referee_Status() == Referee_Status_ENABLE && Referee->Get_Shoot_Speed() > 15)
-//    {
-//      v_x = Referee->Get_Shoot_Speed() * cosf(pitch);
-//      v_y = Referee->Get_Shoot_Speed() * sinf(pitch);
-//    }
-//    else
-//    {
-//      v_x = bullet_v * cosf(pitch);
-//      v_y = bullet_v * sinf(pitch);
-//    } // 计算子弹飞行时间
-//    float t = sqrtf(x * x + y * y) / v_x;
-//    float h = v_y * t - 0.5 * g * t * t;
-//    float dz = z - h;
+  #ifdef OLD
+  // 根据 x、y 分量计算的平面投影的模长和 z 分量计算的反正切值，得到弧度制的俯仰角
+  float pitch = atan2f(z, sqrtf(x * x + y * y));
+  // 使用重力加速度模型迭代更新俯仰角
+  for (size_t i = 0; i < 20; i++)
+  {
+    float v_x;
+    float v_y;
+    if (Referee->Get_Referee_Status() == Referee_Status_ENABLE && Referee->Get_Shoot_Speed() > 15)
+    {
+      v_x = Referee->Get_Shoot_Speed() * cosf(pitch);
+      v_y = Referee->Get_Shoot_Speed() * sinf(pitch);
+    }
+    else
+    {
+      v_x = bullet_v * cosf(pitch);
+      v_y = bullet_v * sinf(pitch);
+    } // 计算子弹飞行时间
+    float t = sqrtf(x * x + y * y) / v_x;
+    float h = v_y * t - 0.5 * g * t * t;
+    float dz = z - h;
 
-//    if (abs(dz) < 0.01)
-//    {
-//      break;
-//    }
-//    // 根据 dz 和向量的欧几里德距离计算新的俯仰角的变化量，进行迭代更新
-//    pitch += asinf(dz / calc_distance(x, y, z));
-//	
-//	
-//	
-//  }
-//  dist = sqrtf(x * x + y * y);
+    if (abs(dz) < 0.01)
+    {
+      break;
+    }
+    // 根据 dz 和向量的欧几里德距离计算新的俯仰角的变化量，进行迭代更新
+    pitch += asinf(dz / calc_distance(x, y, z));
+	
+	
+	
+  }
+  dist = sqrtf(x * x + y * y);
 
-//  // 将弧度制的俯仰角转换为角度制
-//  pitch = (pitch * 180 / PI); // 向上为负，向下为正
-////  if(dist > 0.f && dist <= 5.f){
-////	  pitch+=dist *0.5f;
-////  }
-////  else if (dist >5.f && dist <= 7.f){
-////	  pitch+=dist * 0.7f;
-////  }
-////  else if (dist > 7.f){
-////	  pitch+=dist *0.9f;
-////  }
+  // 将弧度制的俯仰角转换为角度制
+  pitch = (pitch * 180 / PI); // 向上为负，向下为正
 
-//  return pitch;
-    // std::由于进行了函数重载，可以根据传入数据的类型选择合适的返回值类型
-    // std::hypot就是根下平方和相加，只不过多了防精度溢出机制，无法使用请替换
-    // c++11有了std::hypot(x, y)，c++17才有std::hypot(x, y, z)
+
+  return pitch;
+  #endif
+  float tmp_g = 0.0f;
+  switch (mode)
+  {
+  case 0:
+  {
+    tmp_g = g;
+  }
+  break;
+  case 1:
+  {
+    tmp_g = g * cos(Tx_Angle_Roll);
+  }
+  break;
+  }
+  const float a_d = 0.0595f; // 改为pitch旋转中心到摩擦轮的距离
     float d = calc_distance(x, y, z);
     if (d < a_d)
     {
@@ -378,10 +382,28 @@ void Class_MiniPC::Self_aim(float x, float y, float z, float *yaw, float *pitch,
 {
 
   *yaw = calc_yaw(x, y, z);
-  *pitch = calc_pitch(x, y, z);
+  *pitch = calc_pitch(x, y, z,0);
   *distance = calc_distance(x, y, z);
 }
 
+void Class_MiniPC::Auto_aim_Add_Roll(float x, float y, float z, float *yaw, float *pitch, float *distance)
+{
+  float Now_Angle_Roll = Tx_Angle_Roll;
+  if (fabs(Now_Angle_Roll) > 0.001f) {
+        // 将点从视觉坐标系转换到云台坐标系
+        float x_rotated = x;
+        float y_rotated = y * cosf(Now_Angle_Roll) + z * sinf(Now_Angle_Roll);//符合右手定则 x轴指向
+        float z_rotated = - y * sinf(Now_Angle_Roll) + z * cosf(Now_Angle_Roll);
+        *yaw = calc_yaw(x_rotated, y_rotated, z_rotated);
+        *pitch = calc_pitch(x_rotated, y_rotated, z_rotated,1);
+        *distance = calc_distance(x_rotated, y_rotated, z_rotated);
+    } else {
+        // 没有roll角度，使用原始坐标
+        *yaw = calc_yaw(x, y, z);
+        *pitch = calc_pitch(x, y, z,0);
+        *distance = calc_distance(x, y, z);
+    }
+}
 float Class_MiniPC::meanFilter(float input)
 {
   static float buffer[5] = {0};

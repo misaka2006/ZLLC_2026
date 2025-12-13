@@ -27,6 +27,8 @@
 #include "alg_new_power_limit.h"
 #include "dvc_supercap.h"
 #include "config.h"
+#include "alg_flying_slope.h"
+#include "dvc_imu.h"
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -61,6 +63,10 @@ enum Enum_Chassis_Control_Type : uint8_t
 class Class_Tricycle_Chassis
 {
 public:
+//
+    Class_IMU Boardc_BMI;
+    //
+    Class_Flying_Slope Flying_Slope;
     // 斜坡函数加减速速度X
     Class_Slope Slope_Velocity_X;
     // 斜坡函数加减速速度Y

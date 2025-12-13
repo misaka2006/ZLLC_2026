@@ -123,7 +123,7 @@ public:
     inline void Set_Friction_Control_Type(Enum_Friction_Control_Type __Friction_Control_Type);
     inline void Set_Friction_Omega(float __Friction_Omega);
     inline void Set_Driver_Omega(float __Driver_Omega);
-
+    inline void Set_Target_Drvier_Angle(float __Driver_Angle);
     void TIM_Calculate_PeriodElapsedCallback();
     void Output();
 
@@ -199,6 +199,10 @@ float Class_Booster::Get_Friction_Omega_Threshold()
     return (Friction_Omega_Threshold);
 }
 
+void Class_Booster::Set_Target_Drvier_Angle(float __Driver_Angle)
+{
+    Drvier_Angle = __Driver_Angle;
+}
 /**
  * @brief 设定发射机构状态
  *

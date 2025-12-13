@@ -367,17 +367,18 @@ float delta_time;
 void Task100us_TIM2_Callback()
 {
 #ifdef CHASSIS
-    GraphicSendtask();
-    static uint16_t Referee_Sand_Cnt = 0;
-    // //暂无云台tim4任务
-    if (Referee_Sand_Cnt % 50 == 1)
-    {
-        // Task_Loop();
-        Referee_Sand_Cnt = 0;
-    }
+    // GraphicSendtask();
+    // static uint16_t Referee_Sand_Cnt = 0;
+    // // //暂无云台tim4任务
+    // if (Referee_Sand_Cnt % 50 == 1)
+    // {
+    //     // Task_Loop();
+    //     Referee_Sand_Cnt = 0;
+    // }
 
-    Referee_Sand_Cnt++;
+    // Referee_Sand_Cnt++;
 
+    chariot.Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
 #elif defined(GIMBAL)
     // 单给IMU消息开的定时器 ims
     chariot.Gimbal.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
@@ -398,14 +399,15 @@ void Task1ms_TIM5_Callback()
     init_finished++;
     if (init_finished > 2000 && start_flag == 0)
     {
-        // Buzzer.Set_NowTask(BUZZER_DEVICE_OFFLINE_PRIORITY);
-//        buzzer_setTask(&buzzer, BUZZER_CALIBRATED_PRIORITY);
+    //Buzzer.Set_NowTask(BUZZER_DEVICE_OFFLINE_PRIORITY);
+    //buzzer_setTask(&buzzer, BUZZER_CALIBRATED_PRIORITY);
         start_flag = 1;
     }
     /************ 判断设备在线状态判断 50ms (所有device:电机，遥控器，裁判系统等) ***************/
-    //buzzer_taskScheduler(&buzzer);
-    chariot.TIM1msMod50_Alive_PeriodElapsedCallback();
 
+    chariot.TIM1msMod50_Alive_PeriodElapsedCallback();
+    
+    //buzzer_taskScheduler(&buzzer);
     /****************************** 交互层回调函数 1ms *****************************************/
     if (start_flag == 1)
     {
@@ -457,7 +459,11 @@ extern "C" void Task_Init()
     // 集中总线can1/can2
     CAN_Init(&hcan1, Chassis_Device_CAN1_Callback);
     CAN_Init(&hcan2, Chassis_Device_CAN2_Callback);
+    // c板陀螺仪spi外设
+    SPI_Init(&hspi1, Device_SPI1_Callback);
 
+    // 磁力计iic外设
+    IIC_Init(&hi2c3, Ist8310_IIC3_Callback);
     // 裁判系统
     UART_Init(&huart6, Referee_UART6_Callback, 128); // 并未使用环形队列 尽量给长范围增加检索时间 减少丢包
 

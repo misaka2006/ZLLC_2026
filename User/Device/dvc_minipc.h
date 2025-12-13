@@ -325,9 +325,9 @@ public:
 
     float calc_yaw(float x, float y, float z);
     float calc_distance(float x, float y, float z);
-    float calc_pitch(float x, float y, float z);
+    float calc_pitch(float x, float y, float z,uint8_t mode);
     void Self_aim(float x, float y, float z, float *yaw, float *pitch, float *distance);
-
+    void Auto_aim_Add_Roll(float x, float y, float z, float *yaw, float *pitch, float *distance);
     float meanFilter(float input);
 
     void USB_RxCpltCallback(uint8_t *Rx_Data);
@@ -387,7 +387,6 @@ protected:
 
     const float g = 9.8;         // 重力加速度
     const float bullet_v = 21.7; // 子弹速度
-	const float a_d = 0.0595f;
 
     // 距离
     float Distance;

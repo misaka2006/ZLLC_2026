@@ -49,13 +49,17 @@ void Class_Tricycle_Chassis::Init(float __Velocity_X_Max, float __Velocity_Y_Max
     // 斜坡函数加减速角速度
     Slope_Omega.Init(0.1f, 0.1f);
 
+    Flying_Slope.Init(&Motor_Wheel[2],&Motor_Wheel[3],&Motor_Wheel[0],&Motor_Wheel[1]);
+    Flying_Slope.IMU = &Boardc_BMI;
+
+    Boardc_BMI.Init();
 #ifdef POWER_LIMIT
     // 超级电容初始化
     Supercap.Init(&hcan1, 45);
     Power_Limit.Init(400, 3500);
 #ifdef POWER_LIMIT_BUFFER_LOOP
     Buffer_Loop_PID.Init(1.0f, 0, 0, 0, 60, 60);
-
+    
 #endif
 #endif
 
@@ -174,14 +178,18 @@ void Class_Tricycle_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Sta
     // 速度解算
     Speed_Resolution();
 
+    if(Get_Chassis_Control_Type() != Chassis_Control_Type_DISABLE){
+        Flying_Slope.Transform_Angle();
+        Flying_Slope.TIM_Calcualte_Feekback();
+        Flying_Slope.Output();
+    }
 #ifdef POWER_LIMIT
-    // float Chassis_Buffer = 0.0;
+
     //计算限制功率
-    //if(Referee->Get_Referee_Status() == Referee_Status_ENABLE){
+    if(Referee->Get_Referee_Status() == Referee_Status_ENABLE){
         //缓冲环限制功率
-        Chassis_Buffer = Referee->Get_Chassis_Energy_Buffer();
         Power_Management.Buffer_Power = Referee->Get_Chassis_Energy_Buffer() - 30.0f;//(sqrt(Chassis_Buffer) - sqrt(Power_Management.Min_Buffer)) * Power_Management.Buffer_K;
-        //Math_Constrain(&Power_Management.Buffer_Power, -30.0f, 0.0f);
+        Math_Constrain(&Power_Management.Buffer_Power, -30.0f, 30.0f);
 
         if (Supercap.Get_Supercap_Status() != Supercap_Status_DISABLE && __Sprint_Status == Sprint_Status_ENABLE)
         {
@@ -192,13 +200,13 @@ void Class_Tricycle_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Sta
             //Power_Management.Max_Power = Power_Management.Buffer_Power + Referee->Get_Chassis_Power_Max();
             Power_Management.Max_Power = Referee->Get_Chassis_Power_Max();
         }
-//    }
-//    else{
-//        //裁判系统离线限制功率
-//        Power_Management.Max_Power = 70.0f;
-//        Chassis_Buffer = 0.0f;
-//    }
-//    
+   }
+   else{
+       //裁判系统离线限制功率
+       Power_Management.Max_Power = 100.0f;
+       Power_Management.Buffer_Power = 0.0f;
+   }
+   
     Power_Management.Actual_Power = Supercap.Get_Chassis_Actual_Power();//Referee->Get_Chassis_Power();
     Power_Management.Total_error = 0.0f;
 
@@ -250,7 +258,7 @@ void Class_Tricycle_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Sta
 #endif
 
     //if(Referee->Get_Referee_Status() == Referee_Status_ENABLE){
-        Supercap.Set_Limit_Power(Referee->Get_Chassis_Power_Max() + Power_Management.Buffer_Power);
+        Supercap.Set_Limit_Power(Power_Management.Max_Power + Power_Management.Buffer_Power);
 
 
     //Supercap.TIM_Supercap_PeriodElapsedCallback();          //向超电发送信息

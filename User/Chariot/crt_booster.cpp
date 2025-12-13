@@ -101,7 +101,6 @@ void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
  * @brief 卡弹策略有限自动机
  *
  */
-#ifdef OlD
 void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
 {
     Status[Now_Status_Serial].Time++;
@@ -160,116 +159,7 @@ void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
     break;
     }
 }
-#endif
-float original_angle;
-void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
-{
-    Status[Now_Status_Serial].Time++;
 
-    // 自己接着编写状态转移函数
-    switch (Now_Status_Serial)
-    {
-    case (0):
-    {
-
-        // 正常状态
-        Booster->Output();
-
-        if (abs(Booster->Motor_Driver.Get_Now_Torque()) >= Booster->Driver_Torque_Threshold)
-        {
-            // 大扭矩->卡弹嫌疑状态
-            Set_Status(1);
-        }
-    }
-    break;
-    case (1):
-    {
-        // 卡弹嫌疑状态
-        Booster->Output();
-
-        if (Status[Now_Status_Serial].Time >= 100)
-        {
-            // 第一次进入卡弹 反转到上一格
-            //  Booster->Drvier_Angle += 2.0f * PI / 6.0f;
-            // 长时间大扭矩->卡弹反应状态
-            Set_Status(2);
-        }
-        else if (abs(Booster->Motor_Driver.Get_Now_Torque()) < Booster->Driver_Torque_Threshold)
-        {
-            // 短时间大扭矩->正常状态
-            Set_Status(0);
-        }
-    }
-    break;
-    case (2):
-    {
-        // 卡弹反应状态->准备卡弹处理
-        Booster->Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
-        original_angle = Booster->Motor_Driver.Get_Now_Radian();
-        Booster->Drvier_Angle = original_angle - PI / 12.0f; // 回退15度
-        Booster->Motor_Driver.Set_Target_Radian(Booster->Drvier_Angle);
-        Set_Status(3);
-    }
-    break;
-    case (3):
-    {
-        // 卡弹处理状态
-
-        if (Status[Now_Status_Serial].Time >= 100)
-        {
-            // Booster->Drvier_Angle = Booster->Motor_Driver.Get_Now_Radian() - PI / 9.0f; //前进20度
-            // Booster->Drvier_Angle = Booster->Drvier_Angle - PI / 9.0f; //前进20度
-            Booster->Drvier_Angle = original_angle;
-            Booster->Motor_Driver.Set_Target_Radian(Booster->Drvier_Angle);
-            Set_Status(4);
-        }
-        // if(Status[Now_Status_Serial].Time >= 400)
-        // {
-        // 	Set_Status(0);
-        // }
-    }
-    break;
-    case (4):
-    {
-        //            if(Status[Now_Status_Serial].Time >= 50)
-        //			{
-        //				Set_Status(0);
-        //			}
-        static uint8_t Torque_tim_cnt1 = 0;
-        if ((abs(Booster->Motor_Driver.Get_Now_Torque()) < 0.3f * Booster->Driver_Torque_Threshold))
-        {
-            Torque_tim_cnt1++;
-            if (Torque_tim_cnt1 > 50)
-            {
-                Set_Status(0);
-                Torque_tim_cnt1 = 0;
-            }
-        }
-        else
-        {
-            Torque_tim_cnt1 = 0;
-            // Torque_tim_cnt = Status[Now_Status_Serial].Time;
-        }
-
-        static uint8_t Torque_tim_cnt2 = 0;
-        if ((abs(Booster->Motor_Driver.Get_Now_Torque()) > Booster->Driver_Torque_Threshold))
-        {
-            Torque_tim_cnt2++;
-            if (Torque_tim_cnt2 > 50)
-            {
-                Set_Status(2);
-                Torque_tim_cnt2 = 0;
-            }
-        }
-        else
-        {
-            Torque_tim_cnt2 = 0;
-            // Torque_tim_cnt = Status[Now_Status_Serial].Time;
-        }
-    }
-    break;
-    }
-}
 /**
  * @brief 发射机构初始化
  *
@@ -318,7 +208,7 @@ void Class_Booster::Output()
 //        //Friction_Omega += Bullet_Speed.Get_Out();
 //    }
 #endif
-    //Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+
     // 控制拨弹轮
     switch (Booster_Control_Type)
     {
@@ -348,11 +238,13 @@ void Class_Booster::Output()
         if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_ANGLE)
         {
             // Motor_Driver.Set_Target_Angle(Motor_Driver.Get_Now_Angle());
+            
         }
         else if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_OMEGA)
         {
             Motor_Driver.Set_Target_Omega_Radian(0.0f);
         }
+
     }
     break;
     case (Booster_Control_Type_SINGLE):
