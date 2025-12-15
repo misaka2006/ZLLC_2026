@@ -289,6 +289,7 @@ public:
     inline float Get_Target_Roll_Angle();
     inline float Get_Target_Roll_Radian();
     inline float Get_Roll_Min_Radian();
+    inline float Get_Roll_Cali_Offset();
 
     inline float Get_Target_Roll_2_Angle();
     inline float Get_Target_Roll_2_Radian();
@@ -345,7 +346,9 @@ public:
     #ifdef MY_DEBUG
     uint8_t move_test_flag = 0; //用于测试平移功能的标志位
     float q_solution[600][6];        // 逆解结果数组，测试用
-    float move_init_control_angle[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f}; //用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
+    float move_start_q[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f};   //平移测试起始角度，模型角度
+    float move_init_control_angle[6]; //用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
+    float move_control_angle[6];      //用于测试平移功能的目标角度，通过将模型角度转换得到，是用来发给电机的角度
     uint32_t valid_solution_cnt = 0; // 有效解的数量
     #endif
 #ifdef MOTOR_TEST
@@ -479,7 +482,7 @@ protected:
     float Target_Gripper_Omega = 0.75f;
 
     //建模解算测试用
-    float model_angle[6] = {-1.41763484f, -0.7515257f, 1.16897726f, 2.37824893f, -0.335987657f, 0.612869143f};
+    float model_angle[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f};
     float model_degree[6];
     float control_angle[6] = {0};
     float xyz_rpy[6] = {0};      //正解算结果
@@ -576,6 +579,11 @@ float Class_Gimbal::Get_Target_Roll_Radian()
 float Class_Gimbal::Get_Roll_Min_Radian()
 {
     return (Min_Roll_Radian);
+}
+
+float Class_Gimbal::Get_Roll_Cali_Offset()
+{
+    return (roll_cali_offset);
 }
 
 /**

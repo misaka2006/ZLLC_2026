@@ -239,6 +239,8 @@ void Class_Gimbal::Output()
                  * 2: 使用计算出的平动中机械臂角度来控制机械臂
                  * default: 急停，机械臂角度保持在当前角度
                  */
+                //把平动起始位置转成控制时的角度
+                model_to_control(move_start_q, move_init_control_angle);
                 switch (move_test_flag)
                 {
                 case 0:
@@ -250,6 +252,7 @@ void Class_Gimbal::Output()
                     {
                         debug_radian[i] = move_init_control_angle[i];
                     }
+                    break;
                 }
 
                 case 2:
@@ -260,28 +263,29 @@ void Class_Gimbal::Output()
                     {
                     case (1):
                     {
-                        debug_radian[0] = q_solution[point_cnt][0];
-                        debug_radian[4] = q_solution[point_cnt][4];
+                        debug_radian[0] = move_control_angle[0];
+                        debug_radian[4] = move_control_angle[4];
                         break;
                     }
                     case (2):
                     {
-                        debug_radian[1] = q_solution[point_cnt][1];
-                        debug_radian[5] = q_solution[point_cnt][5];
+                        debug_radian[1] = move_control_angle[1];
+                        debug_radian[5] = move_control_angle[5];
                         break;
                     }
                     case (3):
                     {
-                        debug_radian[2] = q_solution[point_cnt][2];
+                        debug_radian[2] = move_control_angle[2];
                         break;
                     }
                     case (4):
-                        debug_radian[3] = q_solution[point_cnt][3];
+                        debug_radian[3] = move_control_angle[3];
                         break;
                     case (0):   //不在这清零，执行完Output后TIM_Process_PeriodElapsedCallback里清零，如果清零两次的话电机更新目标角度和电机通信不同步
                     {
                         if(point_cnt < valid_solution_cnt)
                         {
+                            model_to_control(q_solution[point_cnt], move_control_angle);
                             point_cnt++;
                         }
                         else
@@ -291,6 +295,7 @@ void Class_Gimbal::Output()
                         break;
                     }
                     }
+                    break;
                 }
 
                 default:
@@ -451,18 +456,13 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
     control_angle[4] = Motor_DM_J4_Pitch_3.Get_Now_Angle();
     control_angle[5] = multi_to_single(Motor_6020_J5_Roll_2.Get_Now_Radian());
 
-    // motor_to_model(control_angle, model_angle, roll_cali_offset);
+    motor_to_model(control_angle, model_angle, roll_cali_offset);
     for (int i = 0; i < 6; i++)
     {
         model_degree[i] = model_angle[i] * 180.0f / PI;
     }
     show_FK_result(model_angle, xyz_rpy);
 
-    // 采用解析法求IK
-    // DWT_GetDeltaT(&dwt_cnt);
-    // ikine_pieper_solutions(target_pos, target_rpy, &solutions[0]);
-    // delta_time = DWT_GetDeltaT(&dwt_cnt);
-    // valid_IK_cnt = solution_filter(&solutions[0], valid_solution);
 }
 
 /**
