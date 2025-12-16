@@ -24,6 +24,7 @@
 #include "crt_chassis.h"
 #include "config.h"
 #include "alg_filter.h"
+#include "arm_model.h"
 
 /* Exported macros -----------------------------------------------------------*/
 class Class_Chariot;
