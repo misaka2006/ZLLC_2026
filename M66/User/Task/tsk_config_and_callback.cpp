@@ -223,7 +223,12 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 		chariot.Gimbal.Motor_Pitch_J4310.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
-		
+	
+    case (0xa0):
+    {
+		chariot.MiniPC.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
     }
 }
 #endif

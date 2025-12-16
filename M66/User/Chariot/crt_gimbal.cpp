@@ -287,7 +287,8 @@ void Class_Gimbal_Pitch_Motor_J4310::TIM_PID_PeriodElapsedCallback()
             PID_Omega.TIM_Adjust_PeriodElapsedCallback();
 
             Target_Torque=PID_Omega.Get_Out();
-						
+					
+            //Set_Out(Target_Torque);
             Set_Out((Target_Torque+Gravity_Compensate * cosf(True_Rad_Pitch)));//补偿重力
 		}
         break;
@@ -601,10 +602,10 @@ void Class_Gimbal::Init()
     //pitch轴4310电机
     // Motor_Pitch_J4310.PID_Angle.Init(18.0f,1.0f,0.0f,0.0f,2000,4090,0.0f,0.0f,0,0.001f,0.0f,PID_D_First_ENABLE);
     // Motor_Pitch_J4310.PID_Omega.Init(37.0f,0.0f,0.0f,0.0f,2000,4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.0f);
-    Motor_Pitch_J4310.PID_Angle.Init(5.0f,0.0f,0.0f,0.0f,2000,4090,0.0f,0.0f,0,0.001f,0.0f,PID_D_First_ENABLE);
-    Motor_Pitch_J4310.PID_Omega.Init(10.0f,0.0f,0.0f,0.0f,2000,4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.0f);
+    Motor_Pitch_J4310.PID_Angle.Init(10.0f,0.0f,0.0f,0.0f,2000,4090,0.0f,0.0f,0,0.001f,0.0f,PID_D_First_ENABLE);
+    Motor_Pitch_J4310.PID_Omega.Init(12.0f,1.0f,0.0f,0.0f,2000,4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.0f);
     Motor_Pitch_J4310.IMU = &Boardc_BMI;
-    Motor_Pitch_J4310.Init(&hcan1,(Enum_DM_Motor_ID)0x71,DM_Motor_Control_Method_MIT_IMU_Angle,0,20.94f,2.0f);	
+    Motor_Pitch_J4310.Init(&hcan1,(Enum_DM_Motor_ID)0x71,DM_Motor_Control_Method_MIT_IMU_Angle,0,20.94f,5.0f);	
 
 }
 
@@ -634,6 +635,17 @@ void Class_Gimbal::Output()
         Motor_Yaw.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_IMU_ANGLE);
 		Motor_Pitch_J4310.Set_DM_Motor_Control_Method(DM_Motor_Control_Method_MIT_IMU_Angle);
 
+                if (Gimbal_Control_Type == Gimbal_Control_Type_NORMAL)
+        {
+            // 设置目标角度
+            Motor_Yaw.Set_Target_Angle(Target_Yaw_Angle);
+            Motor_Pitch.Set_Target_Angle(Target_Pitch_Angle);
+        }
+        else if ((Gimbal_Control_Type == Gimbal_Control_Type_MINIPC) && (MiniPC->Get_MiniPC_Status() != MiniPC_Status_DISABLE))
+        {
+            Target_Pitch_Angle = MiniPC->Get_Rx_Pitch_Angle();
+            Target_Yaw_Angle = MiniPC->Get_Rx_Yaw_Angle();
+        }
         // 限制角度范围 处理yaw轴180度问题
         while ((Target_Yaw_Angle - Motor_Yaw.Get_True_Angle_Yaw()) > Max_Yaw_Angle)
         {

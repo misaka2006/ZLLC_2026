@@ -248,6 +248,7 @@ void TIM_CAN_PeriodElapsedCallback()
 
 		if(mod % 5 ==0)
 		{
+			CAN_Send_Data(&hcan1, 0xa0, CAN1_MiniPc_Tx_Data, 8); // 上位机
 			CAN_Send_Data(&hcan1,0x71,CAN1_0xxf1_Tx_Data,8);			
 			//CAN_Send_Data(&hcan2,0x03,CAN2_0xxf3_Tx_Data,8);
 			//CAN_Send_Data(&hcan2, 0x1ff,CAN2_0x1ff_Tx_Data,8);//2006测试			

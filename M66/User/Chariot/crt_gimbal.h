@@ -359,7 +359,7 @@ protected:
     // pitch轴最小值
     float Min_Pitch_Angle = 5.0f;
     // pitch轴最大值
-    float Max_Pitch_Angle = 38.5f ; //多10°
+    float Max_Pitch_Angle = 65.0f ; //多10°
 
     //内部变量 
 
@@ -375,7 +375,7 @@ protected:
     // yaw轴角度
     float Target_Yaw_Angle = 0.0f;
     // pitch轴角度
-    float Target_Pitch_Angle = 0.0f;
+    float Target_Pitch_Angle = 45.0f;
 
     //内部函数
 

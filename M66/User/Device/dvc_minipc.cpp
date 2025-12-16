@@ -35,9 +35,9 @@ void Class_MiniPC::Init(Struct_USB_Manage_Object *__USB_Manage_Object, uint8_t _
   USB_Manage_Object = __USB_Manage_Object;
   Frame_Header = __frame_header;
   Frame_Rear = __frame_rear;
-  Pack_Tx.target_type = MiniPC_Type_Nomal;
-  Pack_Tx.windmill_type = Windmill_Type_Small;
-  Pack_Tx.game_stage = MiniPC_Game_Stage_NOT_STARTED;
+  Pack_Tx_CAN_B.target_type = MiniPC_Type_Nomal;
+  Pack_Tx_CAN_B.windmill_type = Windmill_Type_Small;
+  Pack_Tx_CAN_B.game_stage = MiniPC_Game_Stage_NOT_STARTED;
 }
 
 /**
@@ -49,12 +49,12 @@ void Class_MiniPC::Init(CAN_HandleTypeDef *hcan)
   if (hcan->Instance == CAN1)
   {
     CAN_Manage_Object = &CAN1_Manage_Object;
-    CAN_Tx_Data = CAN1_MiniPc_Tx_Data;
+    CAN_Tx_Data_A = CAN1_MiniPc_Tx_Data;
   }
   else if (hcan->Instance == CAN2)
   {
     CAN_Manage_Object = &CAN2_Manage_Object;
-    CAN_Tx_Data = CAN2_MiniPc_Tx_Data;
+    CAN_Tx_Data_A = CAN2_MiniPc_Tx_Data;
   }
 }
 
@@ -124,13 +124,16 @@ void Class_MiniPC::Output()
 
 #ifdef MINIPC_COMM_CAN
   // 设置发送数据
-  Pack_Tx.game_stage = (Enum_MiniPC_Game_Stage)Referee->Get_Game_Stage();
-  Pack_Tx.roll = (int16_t)(Tx_Angle_Roll * 100.0f);
-  Pack_Tx.pitch = (int16_t)(Tx_Angle_Pitch * 100.0f);
-  Pack_Tx.yaw = (int16_t)(Tx_Angle_Yaw * 100.0f);
-  
-  // 直接将整个结构体复制到CAN发送缓冲区
-  memcpy(CAN_Tx_Data, &Pack_Tx, sizeof(Pack_Tx));
+  Pack_Tx_CAN_B.game_stage = (Enum_MiniPC_Game_Stage)Referee->Get_Game_Stage();
+  Pack_Tx_CAN_B.target_type = Get_MiniPC_Type();
+
+  Pack_Tx_CAN_A.Roll = Tx_Angle_Roll*100.0f;
+  Pack_Tx_CAN_A.Yaw = Tx_Angle_Yaw*100.0f;
+  //Pack_Tx_CAN_A.Pitch = -1.0f * Tx_Angle_Pitch*100.0f; //左手螺旋
+  Pack_Tx_CAN_A.Pitch = 1.0f * Tx_Angle_Pitch*100.0f;//右手螺旋
+  //Pack_Tx_CAN_A.Gyro_Yaw = Tx_Angle_Gyro_Yaw * 100.0f; 
+  memcpy(CAN_Tx_Data_A, &Pack_Tx_CAN_A, sizeof(Pack_tx_can_t_A));
+  memcpy(CAN_Tx_Data_B, &Pack_Tx_CAN_B, sizeof(Pack_tx_can_t_B));
   
 
 #endif
@@ -318,7 +321,7 @@ float Class_MiniPC::calc_pitch(float x, float y, float z)
   }
 
   // 将弧度制的俯仰角转换为角度制
-  pitch = (pitch * 180 / PI); // 向上为负，向下为正
+  pitch = -(pitch * 180 / PI); // 向上为负，向下为正
 
   return pitch;
 }

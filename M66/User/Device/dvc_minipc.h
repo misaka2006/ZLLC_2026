@@ -202,6 +202,21 @@ struct Struct_MiniPC_Tx_Data
     uint8_t Carriage_Return;
 } __attribute__((packed));
 
+//can协议下发送数据包
+struct Pack_tx_can_t_A{
+    int16_t Roll;
+    int16_t Pitch;
+    int16_t Yaw;
+    int16_t Gyro_Yaw;
+}__attribute__((packed));
+
+//can协议下发送数据包
+struct Pack_tx_can_t_B{
+    Enum_MiniPC_Game_Stage game_stage : 3;
+    Enum_MiniPC_Type target_type      : 1;
+    Enum_Windmill_Type windmill_type  : 1;
+}__attribute__((packed));
+
 /**
  * @brief 发送数据包
  *
@@ -267,7 +282,7 @@ public:
     void Init(CAN_HandleTypeDef *hcan);
 
     inline Enum_MiniPC_Status Get_MiniPC_Status();
-    inline Enum_Antispin_Type Get_Antispin_Type();
+    //inline Enum_Antispin_Type Get_Antispin_Type();
     inline float Get_Chassis_Target_Velocity_X();
     inline float Get_Chassis_Target_Velocity_Y();
     inline float Get_Chassis_Target_Omega();
@@ -299,7 +314,7 @@ public:
     inline void Set_Outpost_Status(Enum_MiniPC_Data_Status __Outpost_Status);
     inline void Set_Outpost_Protect_Status(Enum_MiniPC_Data_Status __Outpost_Protect_Status);
     inline void Set_MiniPC_Type(Enum_MiniPC_Type __MiniPC_Type);
-    inline void Set_Antispin_Type(Enum_Antispin_Type __Antispin_Type);
+    //inline void Set_Antispin_Type(Enum_Antispin_Type __Antispin_Type);
     void Append_CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength);
     bool Verify_CRC16_Check_Sum(const uint8_t *pchMessage, uint32_t dwLength);
     uint16_t Get_CRC16_Check_Sum(const uint8_t *pchMessage, uint32_t dwLength, uint16_t wCRC);
@@ -352,7 +367,10 @@ protected:
     // 迷你主机对外接口信息
     Struct_MiniPC_Rx_Data Data_NUC_To_MCU;
    
-    Pack_tx_t Pack_Tx;
+    uint8_t *CAN_Tx_Data_A;
+    uint8_t *CAN_Tx_Data_B;
+    Pack_tx_can_t_A Pack_Tx_CAN_A;
+    Pack_tx_can_t_B Pack_Tx_CAN_B;
     Pack_rx_t Pack_Rx;
 
     float Tx_Angle_Roll;
@@ -395,10 +413,10 @@ Enum_MiniPC_Status Class_MiniPC::Get_MiniPC_Status()
     return (MiniPC_Status);
 }
 
-inline Enum_Antispin_Type Class_MiniPC::Get_Antispin_Type()
-{
-    return (Pack_Tx.antispin_type);
-}
+// inline Enum_Antispin_Type Class_MiniPC::Get_Antispin_Type()
+// {
+//     return (Pack_Tx.antispin_type);
+// }
 
 /**
  * @brief 获取底盘目标速度x
@@ -507,7 +525,7 @@ float Class_MiniPC::Get_Distance()
  */
 Enum_MiniPC_Type Class_MiniPC::Get_MiniPC_Type()
 {
-    return (Pack_Tx.target_type);
+    return (Pack_Tx_CAN_B.target_type);
 }
 
 /**
@@ -657,13 +675,13 @@ void Class_MiniPC::Set_Armor_Attacked_Ammo_Status(Enum_MiniPC_Data_Status __Armo
  */
 void Class_MiniPC::Set_MiniPC_Type(Enum_MiniPC_Type __MiniPC_Type)
 {
-    Pack_Tx.target_type = __MiniPC_Type;
+    Pack_Tx_CAN_B.target_type = __MiniPC_Type;
 }
 
-inline void Class_MiniPC::Set_Antispin_Type(Enum_Antispin_Type __Antispin_Type)
-{
-    Pack_Tx.antispin_type=__Antispin_Type;
-}
+// inline void Class_MiniPC::Set_Antispin_Type(Enum_Antispin_Type __Antispin_Type)
+// {
+//     Pack_Tx.antispin_type=__Antispin_Type;
+// }
 
 /**
  * @brief 设定迷你主机类型
@@ -701,8 +719,8 @@ void Class_MiniPC::Set_Outpost_Protect_Status(Enum_MiniPC_Data_Status __Outpost_
  */
 void Class_MiniPC::Transform_Angle_Tx()
 {
-    Tx_Angle_Pitch = IMU->Get_Angle_Roll();
-    Tx_Angle_Roll = IMU->Get_Angle_Pitch();
+    Tx_Angle_Pitch = IMU->Get_Angle_Pitch();
+    Tx_Angle_Roll = IMU->Get_Angle_Roll();
     Tx_Angle_Yaw = IMU->Get_Angle_Yaw();
 }
 
