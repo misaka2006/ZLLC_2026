@@ -594,6 +594,11 @@
               <FileType>8</FileType>
               <FilePath>..\User\Chariot\crt_chassis.cpp</FilePath>
             </File>
+            <File>
+              <FileName>crt_force_control_chassis.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Chariot\crt_force_control_chassis.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -708,6 +713,11 @@
               <FileName>buzzer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Device\buzzer.c</FilePath>
+            </File>
+            <File>
+              <FileName>dvc_motor_dji.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Device\dvc_motor_dji.cpp</FilePath>
             </File>
           </Files>
         </Group>

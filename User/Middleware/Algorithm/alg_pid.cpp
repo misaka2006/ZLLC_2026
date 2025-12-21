@@ -156,7 +156,7 @@ void Class_PID::TIM_Adjust_PeriodElapsedCallback()
 
     float raw_d_out = d_out;
     D_Filter.Set_Now(raw_d_out);
-    D_Filter.TIM_Adjust_PeriodElapsedCallback();
+    D_Filter.TIM_Adjust_PeriodElapsedCallback(0.0f);
     d_out = D_Filter.Get_Out();
 
     // 计算总共的输出

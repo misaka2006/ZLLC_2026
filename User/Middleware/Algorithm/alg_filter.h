@@ -50,7 +50,7 @@ public:
 
     inline void Set_Now(float __Now);
 
-    void TIM_Adjust_PeriodElapsedCallback();
+    void TIM_Adjust_PeriodElapsedCallback(float Zero_Value);
 
 protected:
     //初始化相关常量

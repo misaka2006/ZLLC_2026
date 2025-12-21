@@ -21,8 +21,6 @@
 
 /* Private macros ------------------------------------------------------------*/
 
-/* Private types -------------------------------------------------------------*/
-
 /* Private variables ---------------------------------------------------------*/
 
 /* Private function declarations ---------------------------------------------*/
@@ -52,7 +50,7 @@ void Class_Tricycle_Chassis::Init(float __Velocity_X_Max, float __Velocity_Y_Max
     Flying_Slope.Init(&Motor_Wheel[2],&Motor_Wheel[3],&Motor_Wheel[0],&Motor_Wheel[1]);
     Flying_Slope.IMU = &Boardc_BMI;
 
-    Boardc_BMI.Init();
+    //Boardc_BMI.Init();
 #ifdef POWER_LIMIT
     // 超级电容初始化
     Supercap.Init(&hcan1, 45);
@@ -123,10 +121,10 @@ void Class_Tricycle_Chassis::Speed_Resolution()
 
 #ifdef SPEED_SLOPE
         // 速度换算，正运动学分解
-        float motor1_temp_linear_vel = Slope_Velocity_Y.Get_Out() - Slope_Velocity_X.Get_Out() + Slope_Omega.Get_Out() * (HALF_WIDTH + HALF_LENGTH);
-        float motor2_temp_linear_vel = Slope_Velocity_Y.Get_Out() + Slope_Velocity_X.Get_Out() - Slope_Omega.Get_Out() * (HALF_WIDTH + HALF_LENGTH);
-        float motor3_temp_linear_vel = Slope_Velocity_Y.Get_Out() + Slope_Velocity_X.Get_Out() + Slope_Omega.Get_Out() * (HALF_WIDTH + HALF_LENGTH);
-        float motor4_temp_linear_vel = Slope_Velocity_Y.Get_Out() - Slope_Velocity_X.Get_Out() - Slope_Omega.Get_Out() * (HALF_WIDTH + HALF_LENGTH);
+        float motor1_temp_linear_vel = Slope_Velocity_Y.Get_Out() - Slope_Velocity_X.Get_Out() + Slope_Omega.Get_Out() * (HALF_WIDTH + 0.0f);
+        float motor2_temp_linear_vel = Slope_Velocity_Y.Get_Out() + Slope_Velocity_X.Get_Out() - Slope_Omega.Get_Out() * (HALF_WIDTH + 0.0f);
+        float motor3_temp_linear_vel = Slope_Velocity_Y.Get_Out() + Slope_Velocity_X.Get_Out() + Slope_Omega.Get_Out() * (HALF_WIDTH + 0.0f);
+        float motor4_temp_linear_vel = Slope_Velocity_Y.Get_Out() - Slope_Velocity_X.Get_Out() - Slope_Omega.Get_Out() * (HALF_WIDTH + 0.0f);
 #else
         // 速度换算，正运动学分解
         float motor1_temp_linear_vel = Target_Velocity_Y - Target_Velocity_X + Target_Omega * (HALF_WIDTH + HALF_LENGTH);

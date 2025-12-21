@@ -47,6 +47,10 @@ uint8_t CAN2_0xxf6_Tx_Data[8];
 uint8_t CAN2_0xxf7_Tx_Data[8];
 uint8_t CAN2_0xxf8_Tx_Data[8];
 
+uint8_t CAN1_0x1fe_Tx_Data[8];
+uint8_t CAN2_0x1fe_Tx_Data[8];
+uint8_t CAN1_0x2fe_Tx_Data[8];
+uint8_t CAN2_0x2fe_Tx_Data[8];
 uint8_t CAN_Supercap_Tx_Data[8];
 
 uint8_t CAN2_Gimbal_Tx_Chassis_Data[8];   // 云台给底盘发送缓冲区

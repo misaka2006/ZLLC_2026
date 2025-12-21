@@ -82,6 +82,7 @@ virtualFolder:
         - path: ../User/Chariot/crt_booster.cpp
         - path: ../User/Chariot/crt_gimbal.cpp
         - path: ../User/Chariot/crt_chassis.cpp
+        - path: ../User/Chariot/crt_force_control_chassis.cpp
       folders: []
     - name: Device
       files:
@@ -107,6 +108,7 @@ virtualFolder:
         - path: ../User/Device/dvc_VT13.cpp
         - path: ../User/Device/buzzer_bsp.c
         - path: ../User/Device/buzzer.c
+        - path: ../User/Device/dvc_motor_dji.cpp
       folders: []
     - name: Interaction
       files:
@@ -130,6 +132,7 @@ virtualFolder:
             - path: ../User/Middleware/Algorithm/RLS.hpp
             - path: ../User/Middleware/Algorithm/Matrix.hpp
             - path: ../User/Middleware/Algorithm/alg_new_power_limit.cpp
+            - path: ../User/Middleware/Algorithm/alg_new_power_limit.h
             - path: ../User/Middleware/Algorithm/alg_flying_slope.cpp
           folders: []
         - name: Driver
@@ -221,7 +224,7 @@ targets:
           version: 3
           afterBuildTasks: []
           asm-compiler:
-            $use: asm
+            $use: asm-auto
             misc-controls: ""
           beforeBuildTasks: []
           c/cpp-compiler:

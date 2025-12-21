@@ -86,21 +86,25 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     case (0x201):
     {
         chariot.Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Force_Control_Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x202):
     {
         chariot.Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Force_Control_Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x203):
     {
         chariot.Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Force_Control_Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x204):
     {
         chariot.Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Force_Control_Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x206):
@@ -114,6 +118,7 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     case (0x67): // 留给超级电容
     {
         chariot.Chassis.Supercap.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Force_Control_Chassis.Supercap.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x55):
@@ -377,8 +382,10 @@ void Task100us_TIM2_Callback()
     // }
 
     // Referee_Sand_Cnt++;
-
-    chariot.Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
+    //速控底盘的imu读取任务
+    //chariot.Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
+    //力控底盘的Imu读取任务
+    chariot.Force_Control_Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
 #elif defined(GIMBAL)
     // 单给IMU消息开的定时器 ims
     chariot.Gimbal.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();

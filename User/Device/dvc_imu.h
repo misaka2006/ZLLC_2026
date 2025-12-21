@@ -79,6 +79,9 @@ class Class_IMU
     float Get_Gyro_Pitch(void);
     float Get_Gyro_Yaw(void);
 
+    inline float Get_MotionAccel_b_x(void){return INS.MotionAccel_b[0];};
+
+
     Enum_IMU_Status Get_IMU_Status(void);
 
     protected:

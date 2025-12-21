@@ -23,7 +23,7 @@
 #include "dvc_supercap.h"
 #include "crt_chassis.h"
 #include "config.h"
-
+#include "crt_force_control_chassis.h"
 #include "buzzer.h"
 /* Exported macros -----------------------------------------------------------*/
 class Class_Chariot;
@@ -168,7 +168,8 @@ public:
     Class_Referee Referee;
     // 底盘
     Class_Tricycle_Chassis Chassis;
-
+    //
+    Class_Chassis Force_Control_Chassis;
 #ifdef GIMBAL
     // 遥控器
     Class_DR16 DR16;

@@ -40,13 +40,14 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
     Chassis.Init();
 
     // 底盘随动PID环初始化
-    PID_Chassis_Fllow.Init(4.0f, 0.0f, 0.1f, 0.0f, 10.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.001f, 0.01f);
+    PID_Chassis_Fllow.Init(8.0f, 0.0f, 0.1f, 0.0f, 10.0f, 24.0f, 0.0f, 0.0f, 0.0f, 0.001f, 0.01f);
 
     // yaw电机canid初始化  只获取其编码器值用于底盘随动，并不参与控制
     Motor_Yaw.Init(&hcan2, DJI_Motor_ID_0x206);
 
     huart6.Instance->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), 115200);
 
+    Force_Control_Chassis.Init();
 #elif defined(GIMBAL)
 
     Chassis.Set_Velocity_X_Max(4.0f);
@@ -171,6 +172,17 @@ void Class_Chariot::CAN_Chassis_Rx_Gimbal_Callback()
     // 设定底盘目标速度
     Chassis.Set_Target_Velocity_X(chassis_velocity_x);
     Chassis.Set_Target_Velocity_Y(chassis_velocity_y);
+    //力控底盘任务
+    if(chassis_control_type == Chassis_Control_Type_DISABLE)
+    {
+        Force_Control_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
+    }
+    else
+    {
+        Force_Control_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
+    }
+    Force_Control_Chassis.Set_Target_Velocity_X(chassis_velocity_y);
+    Force_Control_Chassis.Set_Target_Velocity_Y(-chassis_velocity_x);
 }
 void Class_Chariot::CAN_Chassis_Rx_Gimbal_Callback_1()
 {
@@ -1055,6 +1067,8 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
     if (Chassis.Get_Chassis_Control_Type() == Chassis_Control_Type_SPIN)
     {
         Chassis.Set_Target_Omega(Chassis.Get_Spin_Omega());
+        //补充力控底盘
+        Force_Control_Chassis.Set_Target_Omega(10.0f);
     }
     else if (Chassis.Get_Chassis_Control_Type() == Chassis_Control_Type_FLLOW)
     {
@@ -1092,6 +1106,8 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
         PID_Chassis_Fllow.Set_Now(temp_yaw);
         PID_Chassis_Fllow.TIM_Adjust_PeriodElapsedCallback();
         Chassis.Set_Target_Omega(PID_Chassis_Fllow.Get_Out());
+        //补充力控底盘
+        Force_Control_Chassis.Set_Target_Omega(PID_Chassis_Fllow.Get_Out());
     }
 
     static uint8_t mod2 = 0;
@@ -1099,11 +1115,12 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
     mod2++;
     if (mod2 == 2)
     {
-        Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+        //Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+        //补充力控底盘
+        Force_Control_Chassis.TIM_2ms_Control_PeriodElapsedCallback();
+        Force_Control_Chassis.TIM_2ms_Resolution_PeriodElapsedCallback();
         mod2 = 0;
     }
-
-    // 底盘解算任务
 
 #elif defined(GIMBAL)
 

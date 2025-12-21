@@ -106,12 +106,17 @@ void Class_Filter_Fourier::Init(float __Value_Constrain_Low, float __Value_Const
  * @brief 滤波器调整值
  *
  */
-void Class_Filter_Fourier::TIM_Adjust_PeriodElapsedCallback()
+void Class_Filter_Fourier::TIM_Adjust_PeriodElapsedCallback(float Zero_Value)
 {
     Out = 0.0f;
     for (int i = 0; i < Filter_Fourier_Order + 1; i++)
     {
         Out += System_Function[i] * Input_Signal[(Signal_Flag + i) % (Filter_Fourier_Order + 1)];
+    }
+
+    if(fabs(Out) < Zero_Value)
+    {
+        Out = 0.0f;
     }
 }
 

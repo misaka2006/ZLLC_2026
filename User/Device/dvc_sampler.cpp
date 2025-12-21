@@ -74,7 +74,7 @@ void Class_Sampler::TIM_Sampler_PeriodElapsedCallback()
     case (Sampler_Filter_FOURIER):
     {
         Filter_Fourier.Set_Now(*ADC_Value / 4096.0f);
-        Filter_Fourier.TIM_Adjust_PeriodElapsedCallback();
+        Filter_Fourier.TIM_Adjust_PeriodElapsedCallback(0.0f);
         Value = Filter_Fourier.Get_Out();
     }
     break;
