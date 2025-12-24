@@ -76,7 +76,6 @@ void Class_Gimbal::Init()
     Motor_DM_J1_Pitch.Init(&hfdcan1, DM_Motor_ID_0xA2, DM_Motor_Control_Method_POSITION_OMEGA, 0, 20.0f, 20.0f);
     Motor_DM_J2_Pitch_2.Init(&hfdcan1, DM_Motor_ID_0xA3, DM_Motor_Control_Method_POSITION_OMEGA, 0, 20.0f, 25.0f);
     Motor_DM_J4_Pitch_3.Init(&hfdcan2, DM_Motor_ID_0xA5, DM_Motor_Control_Method_POSITION_OMEGA, 0, 20.0f, 25.0f);
-    // 2325需要校准，所以设置成速度环
     Motor_DM_J3_Roll.Init(&hfdcan1, DM_Motor_ID_0xA4, DM_Motor_Control_Method_POSITION_OMEGA, 0, 20.0f, 10.0f);
 
     Motor_6020_J5_Roll_2.PID_Angle.Init(25.0f, 0.0f, 0.0f, 0.0f, 500, 500, 500);
@@ -447,7 +446,7 @@ void Class_Gimbal::TIM_Calculate_PeriodElapsedCallback()
     }
 
     // 用于更新当前机械臂位置
-    Trajectory_Tracer.motor_angles_update();
+    Trajectory_Tracer.arm_pos_rpy_update();
 }
 
 /**
@@ -591,6 +590,37 @@ bool Class_FSM_Calibration::Motor_Calibration(Class_DJI_Motor_C610 *Motor, float
     {
         locked_cnt = 0;
     }
+    return false;
+}
+
+/**
+ * @brief 校准执行函数 C620 - 3508
+ *
+ */
+bool Motor_Calibration(Class_DJI_Motor_C620_Uplift *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt)
+{
+    // // 速度环跑校准
+    // Motor->Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+    // Motor->Set_Target_Omega_Radian(Cali_Omega);
+
+    // if ((fabs(Motor->Get_Now_Torque()) >= locked_torque) && (Motor->Get_Now_Omega_Radian() <= 0.01f))
+    // {
+    //     locked_cnt++;
+    //     if (locked_cnt >= 50)
+    //     {
+    //         locked_cnt = 0;
+
+    //         uplift_offset = Motor->Get_Now_Radian();
+
+    //         Motor->Set_Target_Radian(gripper_offset + 0.015f); // 校准完成后稍微松开一点，避免一直堵转，校准是往张开的方向动的，所以这里往加紧的方向动一下
+
+    //         return true;
+    //     }
+    // }
+    // else
+    // {
+    //     locked_cnt = 0;
+    // }
     return false;
 }
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

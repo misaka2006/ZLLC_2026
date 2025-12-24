@@ -331,6 +331,7 @@ void TIM_CAN_PeriodElapsedCallback()
         mod5 = 0;
         //3508    
         CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8);
+        CAN_Send_Data(&hfdcan2, 0x200, CAN2_0x200_Tx_Data, 8);
         #ifdef AGV
         //6020
         CAN_Send_Data(&hfdcan2, 0x1fe, CAN2_0x1fe_Tx_Data, 8);

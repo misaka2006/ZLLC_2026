@@ -76,7 +76,8 @@ float q_to_show[6];
 float xyz_rpy_to_show[6];
 float s_test;
 /*测试用 测完删*/
-float start_xyz_rpy[6];
+float start_xyz[3];
+float start_rpy[3];
 #endif
 
 /* Private function declarations ---------------------------------------------*/
@@ -92,6 +93,36 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
+#ifdef MOTOR_TEST_CHASSIS
+        // case (0x201):
+        // {
+        //     chariot.Test_Motor.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        // }
+        // break;
+#else
+    // 麦克纳姆轮组
+    case (0x201):
+    {
+        chariot.Chassis.Mecanum_Wheels[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x202):
+    {
+        chariot.Chassis.Mecanum_Wheels[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x203):
+    {
+        chariot.Chassis.Mecanum_Wheels[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x204):
+    {
+        chariot.Chassis.Mecanum_Wheels[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+#endif
+
 #ifdef AGV
     case (0x201):
     {
@@ -159,7 +190,26 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
+#ifdef MOTOR_TEST_CHASSIS
+    case (0x201):
+    {
+        chariot.Test_Motor.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+#else
+    case (0x201):
+    {
+        chariot.Chassis.Track_Motor[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x202):
+    {
+        chariot.Chassis.Track_Motor[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+#endif
 
+#ifdef AGV
     case (0x205):
     {
         chariot.Chassis.Motor_Steer[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
@@ -200,6 +250,8 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
         chariot.Chassis.Motor_Steer[3].MA600_Data_Process(CAN_RxMessage);
     }
     break;
+#endif
+
     case (0x67): // 超电接收
     {
         chariot.Chassis.Supercap.CAN_RxCpltCallback(CAN_RxMessage->Data);
@@ -344,6 +396,12 @@ void DR16_UART5_Callback(uint8_t *Buffer, uint16_t Length)
     chariot.DR16.DR16_UART_RxCpltCallback(Buffer);
     // 底盘 云台 发射机构 的控制策略
     chariot.TIM_Control_Callback();
+}
+#elifdef CHASSIS_TEST
+void DR16_UART5_Callback(uint8_t *Buffer, uint16_t Length)
+{
+    chariot.DR16.DR16_UART_RxCpltCallback(Buffer);
+    chariot.Chassis_Test_Control();
 }
 #endif
 /**
@@ -526,6 +584,10 @@ void Task1ms_TIM5_Callback()
         }
 #endif
 
+#ifdef CHASSIS_TEST
+        chariot.FSM_Alive_Control.Reload_TIM_Status_PeriodElapsedCallback();
+#endif
+
         chariot.TIM_Calculate_PeriodElapsedCallback();
 
         /****************************** 驱动层回调函数 1ms *****************************************/
@@ -561,51 +623,49 @@ void Task1ms_TIM5_Callback()
             mod68 = 0;
         }
     }
-    // /*测试大王奉命接管此区*/
-    // else    //充分利用启动前的2000ms进行轨迹计算
-    // {
-    // show_FK_result(q_start, start_xyz_rpy);
+#ifdef MY_DEBUG
+    /*测试大王奉命接管此区*/
+    else // 充分利用启动前的2000ms进行轨迹计算
+    {
+        chariot.Gimbal.Trajectory_Tracer.dh_model.Fkine(q_start, start_xyz, start_rpy);
+        // 将计算出的真实姿态，赋值给 trajectory_rpy
+        trajectory_rpy[0] = start_rpy[2]; // Yaw
+        trajectory_rpy[1] = start_rpy[1]; // Pitch
+        trajectory_rpy[2] = start_rpy[0]; // Roll
 
-    // // 将计算出的真实姿态，赋值给 trajectory_rpy
-    // trajectory_rpy[0] = start_xyz_rpy[5]; // Yaw
-    // trajectory_rpy[1] = start_xyz_rpy[4]; // Pitch
-    // trajectory_rpy[2] = start_xyz_rpy[3]; // Roll
+        if (calculate_cnt < 600)
+        // 前600次用于计算轨迹点，从0到599一共调用600次计算函数，可以把所有点都算完
+        {
+            chariot.Gimbal.Trajectory_Tracer.Trajectory_Generator(q_start, 1, trajectory_xyz); // 计算轨迹点
+            x_calc = trajectory_xyz[calculate_cnt][0];
+            y_calc = trajectory_xyz[calculate_cnt][1];
+            z_calc = trajectory_xyz[calculate_cnt][2];
+        }
+        else if (calculate_cnt < 1200)
+        {
+            chariot.Gimbal.valid_solution_cnt = chariot.Gimbal.Trajectory_Tracer.Trajectory_Ikine(q_start, start_rpy, trajectory_xyz, chariot.Gimbal.q_solution, chariot.Gimbal.is_low_speed); // 逆运动学求解，测试用
 
-    // if (calculate_cnt < 600)
-    // // 前600次用于计算轨迹点，从0到599一共调用600次计算函数，可以把所有点都算完
-    // {
-    //     calculate_trajectory_xyz(q_start, 1, trajectory_xyz); // 计算轨迹点
-    //     x_calc = trajectory_xyz[calculate_cnt][0];
-    //     y_calc = trajectory_xyz[calculate_cnt][1];
-    //     z_calc = trajectory_xyz[calculate_cnt][2];
-    // }
-    // else if (calculate_cnt < 1200)
-    // {
-    //     chariot.Gimbal.valid_solution_cnt = ikine_trajectory(trajectory_xyz, trajectory_rpy, chariot.Gimbal.q_solution, q_start); // 逆运动学求解，测试用
+            for (int i = 0; i < 6; i++)
+            {
+                q_to_show[i] = chariot.Gimbal.q_solution[calculate_cnt - 600][i];
+                // show_FK_result(q_to_show, xyz_rpy_to_show); // 计算正运动学，得到末端xyzrpy，用于显示验证
+                if (i < 3)
+                {
+                    start_xyz[i] = trajectory_xyz[calculate_cnt - 600][i];
+                    start_rpy[i] = trajectory_rpy[i];
+                }
+            }
+        }
+        else
+        {
+            // 1200次之后，取点和逆解都算完了，停止计算
+            calculate_cnt = 1200;
+        }
 
-    //     for (int i = 0; i < 6; i++)
-    //     {
-    //         q_to_show[i] = chariot.Gimbal.q_solution[calculate_cnt - 600][i];
-    //         //show_FK_result(q_to_show, xyz_rpy_to_show); // 计算正运动学，得到末端xyzrpy，用于显示验证
-    //         if (i < 3)
-    //         {
-    //             start_xyz_rpy[i] = trajectory_xyz[calculate_cnt - 600][i];
-    //         }
-    //         else
-    //         {
-    //             start_xyz_rpy[i] = trajectory_rpy[i - 3];
-    //         }
-    //     }
-    // }
-    // else
-    // {
-    //     // 1200次之后，取点和逆解都算完了，停止计算
-    //     calculate_cnt = 1200;
-    // }
-
-    // calculate_cnt++;
-    // }
-    // /*测试大王奉命接管此区*/
+        calculate_cnt++;
+    }
+/*测试大王奉命接管此区*/
+#endif
 }
 
 /**
@@ -659,6 +719,14 @@ extern "C" void Task_Init()
 
 #endif
 
+#ifdef CHASSIS_TEST
+    UART_Init(&huart5, DR16_UART5_Callback, 18);
+#endif
+
+#ifdef MOTOR_TEST_CHASSIS
+    chariot.Init_Motor_Test_Chassis();
+#endif
+
     // 定时器循环任务
     TIM_Init(&htim4, Task100us_TIM4_Callback);
     TIM_Init(&htim5, Task1ms_TIM5_Callback);
@@ -669,7 +737,8 @@ extern "C" void Task_Init()
 
     /********************************* 交互层初始化 *********************************/
 
-    chariot.Init();
+    // 遥控器四区给0.3f
+    chariot.Init(0.3f);
 
     /********************************* 使能调度时钟 *********************************/
 

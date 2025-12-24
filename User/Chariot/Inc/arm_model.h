@@ -83,9 +83,10 @@ class Class_Trajectory_Tracer
     void get_pos_at(float q_start[6], uint8_t axis, float s, float pos[3]);
 
     uint32_t Trajectory_Generator(float q_start[6], uint8_t axis, float trajectory_xyz[600][3]);
-    uint32_t Trajectory_Ikine(float q_start[6], float rpy_target[3], float trajectory_xyz[600][3], float q_solution[600][6]);
+    uint32_t Trajectory_Ikine(float q_start[6], float rpy_target[3], float trajectory_xyz[600][3], float q_solution[600][6], bool low_speed_flag[6]);
 
     void motor_angles_update();
+    void arm_pos_rpy_update();
     void model_to_control(float model_angles[6], float control_angles[6]);
     void motor_to_model(float motor_angles[6], float model_angles[6]);
 
@@ -95,6 +96,9 @@ class Class_Trajectory_Tracer
 
     float now_motor_angles[6];
     float now_model_angles[6];
+
+    float now_pos[3];
+    float now_rpy[3];
 
     float trajectory_xyz_buffer[600][3];
     float q_solution_buffer[600][6];

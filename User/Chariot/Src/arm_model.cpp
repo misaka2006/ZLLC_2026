@@ -390,7 +390,7 @@ uint8_t Class_DH_model::Ikine_Pieper(float pos_target[3], float rpy_target[3], f
 }
 
 /**
- * @brief 运动学逆解算函数，自动筛选欧式距离最短的解，并返回欧式距离
+ * @brief 运动学逆解算函数，自动筛选欧氏距离最短的解，并返回欧式距离
  *
  * @param pos_target 目标位置 [x, y, z]
  * @param rpy_target 目标姿态 [yaw, pitch, roll]
@@ -571,7 +571,7 @@ uint32_t Class_Trajectory_Tracer::Trajectory_Generator(float q_start[6], uint8_t
     return cal_cnt;
 }
 
-uint32_t Class_Trajectory_Tracer::Trajectory_Ikine(float q_start[6], float rpy_target[3], float trajectory_xyz[600][3], float q_solution[600][6])
+uint32_t Class_Trajectory_Tracer::Trajectory_Ikine(float q_start[6], float rpy_target[3], float trajectory_xyz[600][3], float q_solution[600][6], bool low_speed_flag[6])
 {
     static uint32_t cal_cnt = 0;    // 计算的次数，完成第一次计算则为1，一次都没完成则为0，可以看作是函数的调用次数
     static uint32_t result_cnt = 0; // 有效结果的个数0-600
@@ -589,6 +589,12 @@ uint32_t Class_Trajectory_Tracer::Trajectory_Ikine(float q_start[6], float rpy_t
         }
     }
 
+    if (cal_cnt == 300)
+    // 匀速段时计算各个轴的变化量，判断是否为低速运动，这里暂时只写8009的
+    {
+        low_speed_flag[1] = fabsf(q_solution[298][1] - q_solution[299][1]) < 4*1e-4;
+    }
+
     return result_cnt;
 }
 
@@ -599,10 +605,16 @@ void Class_Trajectory_Tracer::motor_angles_update()
     now_motor_angles[2] = Gimbal->Motor_DM_J2_Pitch_2.Get_Now_Angle();
     now_motor_angles[3] = Gimbal->Motor_DM_J3_Roll.Get_Now_Angle();
     now_motor_angles[4] = Gimbal->Motor_DM_J4_Pitch_3.Get_Now_Angle();
-    now_motor_angles[5] = Gimbal->Motor_6020_J5_Roll_2.Get_Now_Angle();
+    now_motor_angles[5] = multi_to_single(Gimbal->Motor_6020_J5_Roll_2.Get_Now_Angle());
 
     for (int i = 0; i < 6; i++)
     {
         motor_to_model(now_motor_angles, now_model_angles);
     }
+}
+
+void Class_Trajectory_Tracer::arm_pos_rpy_update()
+{
+    motor_angles_update();
+    dh_model.Fkine(now_model_angles, now_pos, now_rpy);
 }

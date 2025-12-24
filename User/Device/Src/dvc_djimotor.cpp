@@ -903,5 +903,86 @@ void Class_DJI_Motor_C620_Steer::MA600_Data_Process(Struct_CAN_Rx_Buffer *CAN_Rx
     Zero_Offset_Radian = Normalize_Angle_Radian_PI_to_PI(delta_rad); 
 }
 
+/**
+ * @brief 电机初始化
+ *
+ * @param hcan CAN编号
+ * @param __CAN_ID CAN ID
+ * @param __DJI_Motor_Control_Method 电机控制方式, 默认速度
+ * @param __Gearbox_Rate 减速箱减速比, 默认为原装减速箱, 如拆去减速箱则该值设为1
+ * @param __Torque_Max 最大扭矩, 需根据不同负载测量后赋值, 也就开环和扭矩环输出用得到, 不过我感觉应该没有奇葩喜欢开环输出这玩意
+ */
+void Class_DJI_Motor_C620_Uplift::Init(FDCAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN_ID, Enum_DJI_Motor_Control_Method __DJI_Motor_Control_Method, float __Gearbox_Rate, float __Torque_Max)
+{
+    if (hcan->Instance == FDCAN1)
+    {
+        CAN_Manage_Object = &CAN1_Manage_Object;
+    }
+    else if (hcan->Instance == FDCAN2)
+    {
+        CAN_Manage_Object = &CAN2_Manage_Object;
+    }
+    else if (hcan->Instance == FDCAN3)
+    {
+        CAN_Manage_Object = &CAN3_Manage_Object;
+    }
+    CAN_ID = __CAN_ID;
+    DJI_Motor_Control_Method = __DJI_Motor_Control_Method;
+    Gearbox_Rate = __Gearbox_Rate;
+    Torque_Max = __Torque_Max;
+    this->CAN_Tx_Data = allocate_tx_data(hcan, __CAN_ID);
 
+    //卡尔曼滤波初始化
+    kalman_init(&Omega_Kalman, 0.0f);
+}
+
+/**
+ * @brief 数据处理过程
+ *
+ */
+void Class_DJI_Motor_C620_Uplift::Data_Process()
+{
+    //数据处理过程
+    int16_t delta_encoder;
+    uint16_t tmp_encoder;
+    int16_t tmp_omega, tmp_torque, tmp_temperature;
+    Struct_DJI_Motor_CAN_Data *tmp_buffer = (Struct_DJI_Motor_CAN_Data *)CAN_Manage_Object->Rx_Buffer.Data;
+
+    //处理大小端
+    Math_Endian_Reverse_16((void *)&tmp_buffer->Encoder_Reverse, (void *)&tmp_encoder);
+    Math_Endian_Reverse_16((void *)&tmp_buffer->Omega_Reverse, (void *)&tmp_omega);
+    Math_Endian_Reverse_16((void *)&tmp_buffer->Torque_Reverse, (void *)&tmp_torque);
+    Math_Endian_Reverse_16((void *)&tmp_buffer->Temperature, (void *)&tmp_temperature);
+
+    //计算圈数与总编码器值
+    if(Start_Falg==1)
+    {
+        delta_encoder = tmp_encoder - Data.Pre_Encoder;
+        if (delta_encoder < -Encoder_Num_Per_Round / 2)
+        {
+            //正方向转过了一圈
+            Data.Total_Round++;
+        }
+        else if (delta_encoder > Encoder_Num_Per_Round / 2)
+        {
+            //反方向转过了一圈
+            Data.Total_Round--;
+        }        
+    }
+    Data.Total_Encoder = Data.Total_Round * Encoder_Num_Per_Round + tmp_encoder;
+
+    //计算电机本身信息
+    Data.Now_Radian = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 2.0f * PI / Gearbox_Rate;
+    Data.Now_Angle = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 360.f / Gearbox_Rate;
+    //卡尔曼滤波更新
+    kalman_update(&Omega_Kalman, (float)tmp_omega);
+    Data.Now_Omega_Radian = (float)Omega_Kalman.x * RPM_TO_RADPS / Gearbox_Rate;
+    Data.Now_Omega_Angle = (float)Omega_Kalman.x * RPM_TO_DEG / Gearbox_Rate;
+    Data.Now_Torque = tmp_torque;
+    Data.Now_Temperature = tmp_temperature + CELSIUS_TO_KELVIN;
+
+    //存储预备信息
+    Data.Pre_Encoder = tmp_encoder;
+    if(Start_Falg==0)  Start_Falg = 1;
+}
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

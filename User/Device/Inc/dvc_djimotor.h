@@ -474,6 +474,26 @@ protected:
     void Output();
 };
 
+// 抬升机构使用的3508电机，转子直连，转一圈 = 5mm
+class Class_DJI_Motor_C620_Uplift : public Class_DJI_Motor_C620{
+
+public:
+    // 重写初始化函数，加卡尔曼滤波
+    void Init(FDCAN_HandleTypeDef *__hcan, Enum_DJI_Motor_ID __CAN_ID, Enum_DJI_Motor_Control_Method __Control_Method = DJI_Motor_Control_Method_OMEGA, float __Gearbox_Rate = 13.933f, float __Torque_Max = 16384.0f);
+    // 重写数据处理函数，加卡尔曼滤波
+    void Data_Process();
+
+    inline float Get_Zero_Position();
+    inline void Set_Zero_Position(float __Zero_Position);
+    inline float Get_Now_Radian_On_Zero();
+    inline void Set_Target_Radian_On_Zero(float __Target_Radian);
+private:
+    KalmanFilter Omega_Kalman;
+    //上电校准后到达机械限位时的角度，作为零点和最低点
+    float Zero_Position = 0.0f;
+
+};
+
 class Class_DJI_Motor_C620_Steer : public Class_DJI_Motor_C620{
 
 public:
@@ -1252,6 +1272,27 @@ inline void Class_DJI_Motor_C620_Steer::Set_Transform_Radian(float __Transform_R
 
 inline void Class_DJI_Motor_C620_Steer::Set_Transform_Radian_Omega(float __Transform_Radian_Omega){
     Transform_Radian_Omega = __Transform_Radian_Omega;
+}
+
+
+inline float Class_DJI_Motor_C620_Uplift::Get_Zero_Position()
+{
+    return (Zero_Position);
+}
+
+inline void Class_DJI_Motor_C620_Uplift::Set_Zero_Position(float __Zero_Position)
+{
+    Zero_Position = __Zero_Position;
+}
+
+inline float Class_DJI_Motor_C620_Uplift::Get_Now_Radian_On_Zero()
+{
+    return (Get_Now_Radian() - Zero_Position);
+}
+
+inline void Class_DJI_Motor_C620_Uplift::Set_Target_Radian_On_Zero(float __Target_Radian)
+{
+    Set_Target_Radian(__Target_Radian + Zero_Position);
 }
 
 #endif

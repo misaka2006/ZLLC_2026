@@ -228,9 +228,11 @@ public:
     /*电机校准执行函数*/
     bool Motor_Calibration(Class_DM_Motor_J4310 *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
     bool Motor_Calibration(Class_DJI_Motor_C610 *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
-
+    bool Motor_Calibration(Class_DJI_Motor_C620_Uplift *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
+    
     inline bool Get_roll_cali_status();
     inline bool Get_Gripper_cali_status();
+    inline bool Get_Uplift_cali_status(uint8_t index);
 
 protected:
     /*roll轴校准相关变量*/
@@ -242,8 +244,13 @@ protected:
     float gripper_locked_torque = 1600.0f; //暂定为8.0f，待测
     bool gripper_cali_status = false;
 
+    float uplift_offset[2] = {0.0f};
+    float uplift_cali_torque;       //待测
+    bool uplift_cali_status[2] = {false};
+
     uint16_t locked_cnt = 0;       // 堵转时间计数
     uint16_t gripper_locked_cnt = 0;// 夹爪堵转时间计数
+    uint16_t uplift_locked_cnt[2] = {0};// 抬升堵转时间计数
 };
 
 /**
@@ -332,6 +339,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
+    #ifdef MY_DEBUG
     /*dh建模和解算相关变量，后期移到arm_model类中*/
     float target_pos[3] = {5.2006f, 2.9150f, 77.7629f};      //目标xyz
     float target_rpy[3] = {1.5704f, 0.6867f, 0.1338f};      //目标欧拉角
@@ -345,14 +353,16 @@ public:
     uint8_t axis = 0;               //平移的轴选择，0-x,1-y,2-z 
     float s = 0.0f;                 //平移距离，单位mm
 
-    #ifdef MY_DEBUG
     uint8_t move_test_flag = 0; //用于测试平移功能的标志位
     float q_solution[600][6];        // 逆解结果数组，测试用
     float move_start_q[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f};   //平移测试起始角度，模型角度
     float move_init_control_angle[6]; //用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
     float move_control_angle[6];      //用于测试平移功能的目标角度，通过将模型角度转换得到，是用来发给电机的角度
     uint32_t valid_solution_cnt = 0; // 有效解的数量
+    bool is_low_speed[6] = {false};
+    float now_pos[3];
     #endif
+
 #ifdef MOTOR_TEST
 
     float debug_j0_target_angle = 0.0f; // J0目标角度（角度）
@@ -384,6 +394,7 @@ public:
     float debug_roll_target_omega = 1.5f;
     float debug_roll_target_radian = 0.0f; // roll目标位置，弧度制，用于在校准后角度的基础上进行增量，顺时针方向为正，电机校准的方向是逆时针，所以需要加角度
 #endif
+
 protected:
     // 电机CAN通信优先级变量
     static inline uint32_t can_priority_cnt = 0;     // 电机CAN通信优先级计数器，前面写inline是为了能保持变量是类内部静态变量的同时可以自动初始化

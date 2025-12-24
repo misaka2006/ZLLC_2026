@@ -38,7 +38,8 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
 
     // 底盘
     Chassis.Referee = &Referee;
-    Chassis.Init();
+    // 限速，暂时给到2m/s ， 1.75m/s和 4 rad/s
+    Chassis.Init(2.0f, 1.75f, 4.0f);
 
     // 超电
     Chassis.Supercap.Referee = &Referee;
@@ -76,9 +77,14 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
     MiniPC.IMU = &Gimbal.Boardc_BMI;
     MiniPC.Referee = &Referee;
 
-    // 底盘随动环pid初始化(角度结算在上板完成)
-    Chassis.Chassis_Follow_PID_Angle.Init(0.03f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f); // 随动PID初始化
+#endif
 
+#ifdef CHASSIS_TEST
+    // 遥控器离线控制 状态机
+    FSM_Alive_Control.Chariot = this;
+    FSM_Alive_Control.Init(5, 0);
+    DR16.Init(&huart5, &huart1);
+    DR16_Dead_Zone = __DR16_Dead_Zone;
 #endif
 }
 
@@ -247,6 +253,7 @@ void Class_Chariot::CAN_Chassis_Rx_Gimbal_Callback(uint8_t *Rx_Data)
     int16_t tmp_velocity_x, tmp_velocity_y, tmp_omega;
     switch (CAN_Manage_Object->Rx_Buffer.Header.Identifier)
     {
+    // 底盘控制数据回传
     case (0x77):
     {
         memcpy(&tmp_velocity_x, &CAN_Manage_Object->Rx_Buffer.Data[0], sizeof(int16_t));
@@ -280,10 +287,11 @@ void Class_Chariot::CAN_Chassis_Rx_Gimbal_Callback(uint8_t *Rx_Data)
         break;
     }
     case (0x95):
-    {
-        memcpy(&CAN_Referee_Rx_Data, &CAN_Manage_Object->Rx_Buffer.Data, sizeof(Struct_CAN_Referee_Rx_Data_t));
-        break;
-    }
+        // 裁判系统数据回传
+        {
+            memcpy(&CAN_Referee_Rx_Data, &CAN_Manage_Object->Rx_Buffer.Data, sizeof(Struct_CAN_Referee_Rx_Data_t));
+            break;
+        }
     }
 }
 #endif
@@ -403,59 +411,31 @@ float Offset_K = 0.175f;
 void Class_Chariot::Control_Chassis()
 {
     // 遥控器摇杆值
-    float dr16_l_x, dr16_l_y;
-    // 云台坐标系速度目标值 float
-    float gimbal_velocity_x = 0, gimbal_velocity_y = 0;
+    float dr16_l_x, dr16_l_y, dr16_r_x;
     // 底盘坐标系速度目标值 float
     float chassis_velocity_x = 0, chassis_velocity_y = 0;
     float chassis_omega = 0;
-    // 云台坐标系角度目标值 float
-    float gimbal_angle = 0, chassis_angle = 0, relative_angle = 0;
 
     // 排除遥控器死区
     dr16_l_x = (Math_Abs(DR16.Get_Left_X()) > DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
     dr16_l_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
-
-    // 设定矩形到圆形映射进行控制
-    gimbal_velocity_x = dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
-    gimbal_velocity_y = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
+    dr16_r_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
 
     // 遥控器操作逻辑
     volatile int DR16_Left_Switch_Status = DR16.Get_Left_Switch();
     switch (DR16_Left_Switch_Status)
     {
-    case (DR16_Switch_Status_UP): // 左上 小陀螺模式
+    case (DR16_Switch_Status_MIDDLE): // 左中 控制底盘
     {
 
-        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SPIN);
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
         break;
     }
-    case (DR16_Switch_Status_MIDDLE): // 左中 随动模式
+    default:
     {
-        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_FLLOW);
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
         break;
     }
-    }
-
-    Chassis.Set_Target_Velocity_X(gimbal_velocity_y);
-    Chassis.Set_Target_Velocity_Y(-gimbal_velocity_x); // 前x左y正
-
-    // 相对角度计算
-    gimbal_angle = Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle();
-    chassis_angle = addSampleAndFilter(Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle(), 5);
-    relative_angle = chassis_angle - gimbal_angle;
-
-    MiniPC.Set_Gimbal_Now_Relative_Angle(relative_angle);
-
-    relative_angle = DEG_TO_RAD * relative_angle;
-
-    if (MiniPC.Get_MiniPC_Status() != MiniPC_Status_DISABLE && DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN)
-    { // 上位机导航信息接收
-        if (MiniPC.Get_Chassis_Target_Velocity_X() != 0 || MiniPC.Get_Chassis_Target_Velocity_Y() != 0)
-        {
-            Chassis.Set_Target_Velocity_X(float(MiniPC.Get_Chassis_Target_Velocity_X() / 100.f));
-            Chassis.Set_Target_Velocity_Y(float(MiniPC.Get_Chassis_Target_Velocity_Y() / 100.f));
-        }
     }
 
     // 云台到底盘坐标系转换
@@ -469,34 +449,12 @@ void Class_Chariot::Control_Chassis()
         chassis_omega = 0;
         break;
     }
-    case (Chassis_Control_Type_FLLOW):
-    { // 随动 附有非随动和受击陀螺逻辑
-        if (Gimbal.Motor_DM_J0_Yaw.Get_DM_Motor_Status() == DM_Motor_Status_DISABLE)
-        { // 大yaw离线失能
-            Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
-        }
-        else
-        { // 正常随动
-            Chassis.Chassis_Follow_PID_Angle.Set_Target(0);
-            Chassis.Chassis_Follow_PID_Angle.Set_Now(relative_angle * 180 / PI);
-            Chassis.Chassis_Follow_PID_Angle.TIM_Adjust_PeriodElapsedCallback();
-            chassis_omega = Chassis.Chassis_Follow_PID_Angle.Get_Out() / 2;
-            chassis_velocity_x = Chassis.Get_Target_Velocity_X() * cos(relative_angle) - Chassis.Get_Target_Velocity_Y() * sin(relative_angle);
-            chassis_velocity_y = Chassis.Get_Target_Velocity_X() * sin(relative_angle) + Chassis.Get_Target_Velocity_Y() * cos(relative_angle);
-        }
-        break;
-    }
-    case (Chassis_Control_Type_SPIN):
+    case (Chassis_Control_Type_NORMAL):
     {
-        chassis_omega = 0.75f;
-        relative_angle += Gimbal.Motor_DM_J0_Yaw.Get_Now_Angle() * 3.14 * Offset_K;
-        chassis_velocity_x = Chassis.Get_Target_Velocity_X() * cos(relative_angle) - Chassis.Get_Target_Velocity_Y() * sin(relative_angle);
-        chassis_velocity_y = Chassis.Get_Target_Velocity_X() * sin(relative_angle) + Chassis.Get_Target_Velocity_Y() * cos(relative_angle);
-        if (DR16.Get_Right_Switch() == DR16_Switch_Status_DOWN &&
-            DR16.Get_Left_Switch() == DR16_Switch_Status_UP)
-        {
-            chassis_omega = -0.75f;
-        }
+        // 设定矩形到圆形映射进行控制
+        chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
+        chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
+        chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * Chassis.Get_Omega_Max();
         break;
     }
     }
@@ -504,6 +462,82 @@ void Class_Chariot::Control_Chassis()
         chassis_omega = 4;
     if (chassis_omega < -4)
         chassis_omega = -4;
+
+    Chassis.Set_Target_Velocity_X(chassis_velocity_x);
+    Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
+    Chassis.Set_Target_Omega(chassis_omega);
+}
+#elifdef CHASSIS_TEST
+void Class_Chariot::Chassis_Test_Control()
+{
+    // 遥控器摇杆值
+    float dr16_l_x, dr16_l_y, dr16_r_x;
+    // 底盘坐标系速度目标值 float
+    float chassis_velocity_x = 0, chassis_velocity_y = 0;
+    float chassis_omega = 0;
+
+    // 排除遥控器死区
+    dr16_l_x = (Math_Abs(DR16.Get_Left_X()) > DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
+    dr16_l_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
+    dr16_r_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
+
+    // 遥控器操作逻辑
+    volatile int DR16_Left_Switch_Status = DR16.Get_Left_Switch();
+    volatile int DR16_Right_Switch_Status = DR16.Get_Right_Switch();
+    switch (DR16_Left_Switch_Status)
+    {
+    case (DR16_Switch_Status_MIDDLE): // 左中 控制底盘，正常模式，无斜坡
+    {
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
+        break;
+    }
+    case (DR16_Switch_Status_DOWN): // 左下，斜坡速度曲线模式
+    {
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SLOPE);
+        break;
+    }
+    default:
+    {
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        break;
+    }
+    }
+
+    volatile int Chassis_control_type = Chassis.Get_Chassis_Control_Type();
+    switch (Chassis_control_type)
+    {
+    case (Chassis_Control_Type_DISABLE):
+    { // 失能
+        chassis_velocity_x = 0;
+        chassis_velocity_y = 0;
+        chassis_omega = 0;
+        break;
+    }
+    case (Chassis_Control_Type_SLOPE):
+    case (Chassis_Control_Type_NORMAL):
+    {
+        if (DR16_Right_Switch_Status == DR16_Switch_Status_DOWN)
+        // 右下低速模式
+        {
+            chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * 0.5f;
+            chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * 0.5f;
+            chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * 0.5f;
+        }
+        else
+        {
+        // 设定矩形到圆形映射进行控制，velocity_x为前，velocity_y为左
+        chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
+        chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
+        chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * Chassis.Get_Omega_Max();
+        }
+        break;
+    }
+    }
+    float Max_Omega = Chassis.Get_Omega_Max();
+    if (chassis_omega > Max_Omega)
+        chassis_omega = Max_Omega;
+    if (chassis_omega < -Max_Omega)
+        chassis_omega = -Max_Omega;
 
     Chassis.Set_Target_Velocity_X(chassis_velocity_x);
     Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
@@ -570,7 +604,8 @@ void Class_Chariot::Control_Gimbal()
                 tmp_arm_pitch2 += dr16_left_y * DR16_Pitch_2_Resolution;
                 tmp_arm_roll += dr16_left_x * DR16_Roll_Resolution;
                 tmp_arm_pitch3 -= dr16_right_y * DR16_Pitch_3_Resolution; // 由于装配上的设计，Pitch3角度减小是关节上抬，增大是关节下抬，这里让遥控器直观控制关节的运动
-                tmp_arm_roll_2 += dr16_right_x * DR16_Roll_2_Resolution; break;
+                tmp_arm_roll_2 += dr16_right_x * DR16_Roll_2_Resolution;
+                break;
             }
         case (DR16_Switch_Status_MIDDLE):
             // 右中，左摇杆y轴控制pitch_1，x轴控制yaw，右摇杆y轴控制pitch_2，x轴控制roll_1
@@ -578,14 +613,16 @@ void Class_Chariot::Control_Gimbal()
                 tmp_arm_yaw += dr16_left_x * DR16_Yaw_Resolution;
                 tmp_arm_pitch1 -= dr16_left_y * DR16_Pitch_1_Resolution;
                 tmp_arm_roll += dr16_right_x * DR16_Roll_Resolution;
-                tmp_arm_pitch2 += dr16_right_y * DR16_Pitch_2_Resolution; break;
+                tmp_arm_pitch2 += dr16_right_y * DR16_Pitch_2_Resolution;
+                break;
             }
         case (DR16_Switch_Status_DOWN):
             // 右下，暂时定为控制末端机构的平动和垂直运动，解算出的目标角度必须使用Gimbal对象中的Set函数，保持模式切换下数据的同步
             {
                 // 暂定为测试roll_2的单圈设置函数
                 Gimbal.Set_Target_Roll_2_Radian_Single(single_radian);
-                tmp_arm_roll_2 = Gimbal.Get_Target_Roll_2_Radian(); break;
+                tmp_arm_roll_2 = Gimbal.Get_Target_Roll_2_Radian();
+                break;
             }
         }
 
@@ -649,7 +686,20 @@ void Class_Chariot::Control_Booster()
 void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
 {
 #ifdef CHASSIS
-    // 底盘给云台发消息
+
+#ifdef CHASSIS_TEST // 底盘测试用
+    if (DR16.Get_DR16_Status() == DR16_Status_DISABLE)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
+        }
+    }
+    else
+    {
+        Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+    }
+#else // 底盘给云台发消息
     CAN_Chassis_Tx_Gimbal_Callback();
 
     // 云台，随动掉线保护
@@ -661,11 +711,11 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
     {
         for (int i = 0; i < 4; i++)
         {
-            Chassis.Motor_Wheel[i].Set_Out(0.0f);
-            Chassis.Motor_Steer[i].Set_Out(0.0f);
+            Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
         }
     }
-    // DWT_SysTimeUpdate();
+// DWT_SysTimeUpdate();
+#endif
 
 #elif defined(GIMBAL)
 
@@ -676,6 +726,10 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
     MiniPC.TIM_Write_PeriodElapsedCallback();
     // 给下板发送数据
     CAN_Gimbal_Tx_Chassis_Callback();
+#endif
+
+#ifdef MOTOR_TEST_CHASSIS
+    Output_Motor_Test_Chassis();
 #endif
 }
 
@@ -717,13 +771,14 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
         mod50_mod3++;
 // TIM_Unline_Protect_PeriodElapsedCallback();
 #ifdef CHASSIS
+#ifndef CHASSIS_TEST
         Referee.TIM1msMod50_Alive_PeriodElapsedCallback();
         Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
-        for (auto &wheel : Chassis.Motor_Wheel)
+        for (auto &wheel : Chassis.Mecanum_Wheels)
         {
             wheel.TIM_Alive_PeriodElapsedCallback();
         }
-        for (auto &steer : Chassis.Motor_Steer)
+        for (auto &steer : Chassis.Mecanum_Wheels)
         {
             steer.TIM_Alive_PeriodElapsedCallback();
         }
@@ -732,14 +787,33 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             TIM1msMod50_Gimbal_Communicate_Alive_PeriodElapsedCallback();
             mod50_mod3 = 0;
         }
-        if (Get_Gimbal_Status() == Gimbal_Status_DISABLE ||
-            Motor_Yaw.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE)
+        if (Get_Gimbal_Status() == Gimbal_Status_DISABLE)
         {
             Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
             Chassis.Set_Target_Velocity_X(0);
             Chassis.Set_Target_Velocity_Y(0);
             Chassis.Set_Target_Omega(0);
         }
+#else
+        Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
+        for (int i = 0; i < 4; i++)
+        {
+            Chassis.Mecanum_Wheels[i].TIM_Alive_PeriodElapsedCallback();
+        }
+        if (mod50_mod3 % 3 == 0)
+        {
+            TIM1msMod50_Gimbal_Communicate_Alive_PeriodElapsedCallback();
+            mod50_mod3 = 0;
+        }
+
+        // if (Get_Gimbal_Status() == Gimbal_Status_DISABLE)
+        // {
+        //     Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        //     Chassis.Set_Target_Velocity_X(0);
+        //     Chassis.Set_Target_Velocity_Y(0);
+        //     Chassis.Set_Target_Omega(0);
+        // }
+#endif
 #elif defined(GIMBAL)
 
         if (mod50_mod3 % 3 == 0)
@@ -798,22 +872,23 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
         Gimbal.Motor_6020_J5_Roll_2.TIM_Alive_PeriodElapsedCallback();
         Gimbal.Motor_C610_Gripper.TIM_Alive_PeriodElapsedCallback();
 
-        //当所有电机都掉线时视为机械臂掉线，arm_init设为false，所以这里使用或
-        is_arm_online = ( Gimbal.Motor_DM_J0_Yaw.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
-                          Gimbal.Motor_DM_J1_Pitch.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
-                          Gimbal.Motor_DM_J2_Pitch_2.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
-                          Gimbal.Motor_DM_J3_Roll.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
-                          Gimbal.Motor_DM_J4_Pitch_3.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
-                          Gimbal.Motor_6020_J5_Roll_2.Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE ||
-                          Gimbal.Motor_C610_Gripper.Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE );
+        // 当所有电机都掉线时视为机械臂掉线，arm_init设为false，所以这里使用或
+        is_arm_online = (Gimbal.Motor_DM_J0_Yaw.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
+                         Gimbal.Motor_DM_J1_Pitch.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
+                         Gimbal.Motor_DM_J2_Pitch_2.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
+                         Gimbal.Motor_DM_J3_Roll.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
+                         Gimbal.Motor_DM_J4_Pitch_3.Get_DM_Motor_Status() == DM_Motor_Status_ENABLE ||
+                         Gimbal.Motor_6020_J5_Roll_2.Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE ||
+                         Gimbal.Motor_C610_Gripper.Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE);
 
-        if(!is_arm_online) Gimbal.arm_init = false; // 如果机械臂掉线，arm_init设为false
+        if (!is_arm_online)
+            Gimbal.arm_init = false; // 如果机械臂掉线，arm_init设为false
 
-        if(Gimbal.Motor_6020_J5_Roll_2.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE)
-        //当检测到roll_2电机掉线时，将主控板中存储的角度转成单圈，防止电机重连后疯狂转动多圈
+        if (Gimbal.Motor_6020_J5_Roll_2.Get_DJI_Motor_Status() == DJI_Motor_Status_DISABLE)
+        // 当检测到roll_2电机掉线时，将主控板中存储的角度转成单圈，防止电机重连后疯狂转动多圈
         {
             float single_radian = fmod(Gimbal.Get_Target_Roll_2_Radian(), 2.0f * PI);
-            float single_angle = fmod(Gimbal.Get_Target_Roll_2_Angle() , 360.0f);
+            float single_angle = fmod(Gimbal.Get_Target_Roll_2_Angle(), 360.0f);
 
             Gimbal.Set_Target_Roll_2_Radian(single_radian);
             Gimbal.Set_Target_Roll_2_Angle(single_angle);
@@ -827,6 +902,18 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
 
         MiniPC.TIM1msMod50_Alive_PeriodElapsedCallback();
 
+#endif
+
+#ifdef MOTOR_TEST_CHASSIS
+        Test_Motor.TIM_Alive_PeriodElapsedCallback();
+#endif
+
+#ifdef CHASSIS_TEST
+        if (mod50_mod3 % 3 == 0)
+        {
+            DR16.TIM1msMod50_Alive_PeriodElapsedCallback();
+            mod50_mod3 = 0;
+        }
 #endif
 
         mod50 = 0;
@@ -1027,6 +1114,97 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
     }
 }
 #endif
+
+#ifdef CHASSIS_TEST
+void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
+{
+    Status[Now_Status_Serial].Time++;
+
+    switch (Now_Status_Serial)
+    {
+    // 离线检测状态
+    case (0):
+    {
+        // 遥控器中途断联导致错误离线 跳转到 遥控器串口错误状态
+        if (huart5.ErrorCode)
+        {
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(4);
+        }
+
+        // 转移为 在线状态
+        if (Chariot->DR16.Get_DR16_Status() == DR16_Status_ENABLE)
+        {
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(2);
+        }
+
+        // 超过一秒的遥控器离线 跳转到 遥控器关闭状态
+        if (Status[Now_Status_Serial].Time > 1000)
+        {
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(1);
+        }
+    }
+    break;
+    // 遥控器关闭状态
+    case (1):
+    {
+        // 离线保护
+        Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+
+        if (Chariot->DR16.Get_DR16_Status() == DR16_Status_ENABLE)
+        {
+            Chariot->Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type());
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(2);
+        }
+
+        // 遥控器中途断联导致错误离线 跳转到 遥控器串口错误状态
+        if (huart5.ErrorCode)
+        {
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(4);
+        }
+    }
+    break;
+    // 遥控器在线状态
+    case (2):
+    {
+        // 转移为 刚离线状态
+        if (Chariot->DR16.Get_DR16_Status() == DR16_Status_DISABLE)
+        {
+            Status[Now_Status_Serial].Time = 0;
+            Set_Status(3);
+        }
+    }
+    break;
+    // 刚离线状态
+    case (3):
+    {
+        // 记录离线检测前控制模式
+        Chariot->Set_Pre_Chassis_Control_Type(Chariot->Chassis.Get_Chassis_Control_Type());
+
+        // 无条件转移到 离线检测状态
+        Status[Now_Status_Serial].Time = 0;
+        Set_Status(0);
+    }
+    break;
+    // 遥控器串口错误状态
+    case (4):
+    {
+        HAL_UART_DMAStop(&huart5); // 停止以重启
+        // HAL_Delay(10); // 等待错误结束
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart5, UART5_Manage_Object.Rx_Buffer, UART5_Manage_Object.Rx_Buffer_Length);
+
+        // 处理完直接跳转到 离线检测状态
+        Status[Now_Status_Serial].Time = 0;
+        Set_Status(0);
+    }
+    break;
+    }
+}
+#endif
 /**
  * @brief 机器人遥控器离线控制状态转移函数
  *
@@ -1123,6 +1301,26 @@ void Class_FSM_Alive_Control_VT13::Reload_TIM_Status_PeriodElapsedCallback()
     }
     break;
     }
+}
+#endif
+
+#ifdef MOTOR_TEST_CHASSIS
+void Class_Chariot::Init_Motor_Test_Chassis()
+{
+    // 电机PID初始化
+    Test_Motor.PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, Test_Motor.Get_Output_Max(), Test_Motor.Get_Output_Max());
+    Test_Motor.PID_Angle.Init(0.0f, 0.0f, 0.0f, 0.0f, 0, 1.5f * PI);
+    // 电机ID初始化
+    Test_Motor.Init(&hfdcan2, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA);
+}
+
+void Class_Chariot::Output_Motor_Test_Chassis()
+{
+    Test_Motor.Set_DJI_Motor_Control_Method(Test_Method);
+    Test_Motor.Set_Target_Radian(target_angle);
+    Test_Motor.Set_Target_Omega_Radian(target_omega);
+
+    Test_Motor.TIM_PID_PeriodElapsedCallback();
 }
 #endif
 
