@@ -164,13 +164,17 @@ public:
 #elifdef CHASSIS_TEST
     Class_DR16 DR16;
     float DR16_Dead_Zone = 0.3f;
-    void Chassis_Test_Control(); // 遥控器离线保护控制状态机
+    void Chassis_Test_Control(); 
+    // 遥控器离线保护控制状态机
     Class_FSM_Alive_Control FSM_Alive_Control;
     friend class Class_FSM_Alive_Control;
 
     Enum_Chassis_Control_Type Pre_Chassis_Control_Type = Chassis_Control_Type_DISABLE;
+    Enum_Chassis_Control_Type__ Pre_Chassis_Control_Type__ = Chassis_Control_Type_DISABLE__;
     inline Enum_Chassis_Control_Type Get_Pre_Chassis_Control_Type();
+    inline Enum_Chassis_Control_Type__ Get_Pre_Chassis_Control_Type__();
     inline void Set_Pre_Chassis_Control_Type(Enum_Chassis_Control_Type __Chassis_Control_Type);
+    inline void Set_Pre_Chassis_Control_Type__(Enum_Chassis_Control_Type__ __Chassis_Control_Type);
 
 #endif
 
@@ -496,6 +500,16 @@ Enum_Chassis_Control_Type Class_Chariot::Get_Pre_Chassis_Control_Type()
 void Class_Chariot::Set_Pre_Chassis_Control_Type(Enum_Chassis_Control_Type __Chassis_Control_Type)
 {
     Pre_Chassis_Control_Type = __Chassis_Control_Type;
+}
+
+Enum_Chassis_Control_Type__ Class_Chariot::Get_Pre_Chassis_Control_Type__()
+{
+    return (Pre_Chassis_Control_Type__);
+}
+
+void Class_Chariot::Set_Pre_Chassis_Control_Type__(Enum_Chassis_Control_Type__ __Chassis_Control_Type)
+{
+    Pre_Chassis_Control_Type__ = __Chassis_Control_Type;
 }
 #endif
 

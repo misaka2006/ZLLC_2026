@@ -103,25 +103,25 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     // 麦克纳姆轮组
     case (0x201):
     {
-        chariot.Chassis.Mecanum_Wheels[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Chassis.Mecanum_Wheels[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x202):
     {
-        chariot.Chassis.Mecanum_Wheels[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Chassis.Mecanum_Wheels[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x203):
     {
-        chariot.Chassis.Mecanum_Wheels[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Chassis.Mecanum_Wheels[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x204):
     {
-        chariot.Chassis.Mecanum_Wheels[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Chassis.Mecanum_Wheels[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
@@ -692,6 +692,7 @@ extern "C" void Task_Init()
     // 裁判系统
     UART_Init(&huart10, Referee_UART10_Callback, 128); // 并未使用环形队列 尽量给长范围增加检索时间 减少丢包
 
+    SPI_Init(&hspi2, Device_SPI2_Callback);
 #ifdef POWER_LIMIT
 
 #endif

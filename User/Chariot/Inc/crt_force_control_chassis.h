@@ -61,6 +61,15 @@ public:
     Class_Filter_Fourier PID_Velocity_Filter[2];
     Class_Filter_Fourier PID_Omega_Filter;
 
+    // Spike滤波，滤跳变
+    SpikeFilter Velocity_X_Spike;
+    SpikeFilter Velocity_Y_Spike;
+    SpikeFilter Omega_Spike;
+
+    float Now_Velocity_X_Spike = 0.0f;
+    float Now_Velocity_Y_Spike = 0.0f;
+    float Now_Omega_Spike = 0.0f;
+
     // 斜坡函数加减速速度X
     Class_Slope Slope_Velocity_X;
     // 斜坡函数加减速速度Y
@@ -118,7 +127,7 @@ protected:
     const float Wheel_Radius = 0.141f/2.0f; // 轮子半径
     const float half_w = 0.159f;            // m
     const float half_l = 0.152f;           // m
-    const float Wheel_To_Core_Distance = 0.18466f; // 轮投影点距离中心距离
+    const float Motor_Omega_Contration = 20.0f / 16384.0f;  // 轮子速度环P的收缩系数，主要是方便调参
     // 内部变量
     //观测车体的速度
     Struct_Chassis_INS_Data INS_Data;
@@ -143,7 +152,7 @@ protected:
     // 轮向电机摩擦阻力连续化的角速度阈值
     float Wheel_Resistance_Omega_Threshold = 1.0f;
     // 防单轮超速系数
-    float Wheel_Speed_Limit_Factor = 0.5f; 
+    float Wheel_Speed_Limit_Factor[4] = {600.0f, 600.0f,600.0f, 600.0f}; 
 
     // 读变量
 

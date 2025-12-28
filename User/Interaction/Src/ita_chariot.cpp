@@ -39,7 +39,7 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
     // 底盘
     Chassis.Referee = &Referee;
     // 限速，暂时给到2m/s ， 1.75m/s和 4 rad/s
-    Chassis.Init(2.0f, 1.75f, 4.0f);
+    Chassis.Init(2.0f, 2.0f, 4.0f);
     // 力控底盘
     Force_Chassis.Init();
 
@@ -490,33 +490,76 @@ void Class_Chariot::Chassis_Test_Control()
     {
     case (DR16_Switch_Status_MIDDLE): // 左中 控制底盘，正常模式，无斜坡
     {
-        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
+        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
+        Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
         break;
     }
     case (DR16_Switch_Status_DOWN): // 左下，斜坡速度曲线模式
     {
-        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SLOPE);
+        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SLOPE);
+        Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
         break;
     }
     default:
     {
-        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
         break;
     }
     }
 
-    volatile int Chassis_control_type = Chassis.Get_Chassis_Control_Type();
+    /*速控底盘，暂时注释掉*/
+    // volatile int Chassis_control_type = Chassis.Get_Chassis_Control_Type();
+    // switch (Chassis_control_type)
+    // {
+    // case (Chassis_Control_Type_DISABLE):
+    // { // 失能
+    //     chassis_velocity_x = 0;
+    //     chassis_velocity_y = 0;
+    //     chassis_omega = 0;
+    //     break;
+    // }
+    // case (Chassis_Control_Type_SLOPE):
+    // case (Chassis_Control_Type_NORMAL):
+    // {
+    //     if (DR16_Right_Switch_Status == DR16_Switch_Status_DOWN)
+    //     // 右下低速模式
+    //     {
+    //         chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * 0.5f;
+    //         chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * 0.5f;
+    //         chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * 0.5f;
+    //     }
+    //     else
+    //     {
+    //         // 设定矩形到圆形映射进行控制，velocity_x为前，velocity_y为左
+    //         chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
+    //         chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
+    //         chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * Chassis.Get_Omega_Max();
+    //     }
+    //     break;
+    // }
+    // }
+    // float Max_Omega = Chassis.Get_Omega_Max();
+    // if (chassis_omega > Max_Omega)
+    //     chassis_omega = Max_Omega;
+    // if (chassis_omega < -Max_Omega)
+    //     chassis_omega = -Max_Omega;
+
+    // Chassis.Set_Target_Velocity_X(chassis_velocity_x);
+    // Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
+    // Chassis.Set_Target_Omega(chassis_omega);
+
+    volatile int Chassis_control_type = Force_Chassis.Get_Chassis_Control_Type();
     switch (Chassis_control_type)
     {
-    case (Chassis_Control_Type_DISABLE):
+    case (Chassis_Control_Type_DISABLE__):
     { // 失能
         chassis_velocity_x = 0;
         chassis_velocity_y = 0;
         chassis_omega = 0;
         break;
     }
-    case (Chassis_Control_Type_SLOPE):
-    case (Chassis_Control_Type_NORMAL):
+    case (Chassis_Control_Type_NORMAL__):
     {
         if (DR16_Right_Switch_Status == DR16_Switch_Status_DOWN)
         // 右下低速模式
@@ -541,9 +584,9 @@ void Class_Chariot::Chassis_Test_Control()
     if (chassis_omega < -Max_Omega)
         chassis_omega = -Max_Omega;
 
-    Chassis.Set_Target_Velocity_X(chassis_velocity_x);
-    Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
-    Chassis.Set_Target_Omega(chassis_omega);
+    Force_Chassis.Set_Target_Velocity_X(chassis_velocity_x);
+    Force_Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
+    Force_Chassis.Set_Target_Omega(chassis_omega);
 }
 #endif
 
@@ -694,18 +737,20 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
     {
         for (int i = 0; i < 4; i++)
         {
-            Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
+            //Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
+            Force_Chassis.Motor_Wheel[i].Set_Target_Current(0.0f);
         }
     }
     else
     {
-        Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+        //Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
 
         static uint8_t ms_cnt = 0;
         ms_cnt++;
         if (ms_cnt % 2 == 0)
         {
             Force_Chassis.TIM_2ms_Resolution_PeriodElapsedCallback();
+            Force_Chassis.TIM_2ms_Control_PeriodElapsedCallback();
             ms_cnt = 0;
         }
     }
@@ -1162,11 +1207,13 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
     case (1):
     {
         // 离线保护
-        Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        //Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        Chariot->Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
 
         if (Chariot->DR16.Get_DR16_Status() == DR16_Status_ENABLE)
         {
-            Chariot->Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type());
+            //Chariot->Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type());
+            Chariot->Force_Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type__());
             Status[Now_Status_Serial].Time = 0;
             Set_Status(2);
         }
@@ -1194,7 +1241,8 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
     case (3):
     {
         // 记录离线检测前控制模式
-        Chariot->Set_Pre_Chassis_Control_Type(Chariot->Chassis.Get_Chassis_Control_Type());
+        //Chariot->Set_Pre_Chassis_Control_Type(Chariot->Chassis.Get_Chassis_Control_Type());
+        Chariot->Set_Pre_Chassis_Control_Type__(Chariot->Force_Chassis.Get_Chassis_Control_Type());
 
         // 无条件转移到 离线检测状态
         Status[Now_Status_Serial].Time = 0;
