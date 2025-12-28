@@ -278,6 +278,9 @@ public:
     //斜坡函数加减速角速度
     Class_Slope Slope_Omega;
 
+    //IMU
+    Class_IMU BoardDM_BMI;
+
     Class_Supercap Supercap;
       
     //功率限制
@@ -352,6 +355,12 @@ protected:
     float Relative_Angle = 0.0f;
 
     //读变量
+
+    //车体倾斜角度
+    float Chassis_Pitch = 0.0f;
+    //距离车体水平的差值角度
+    float Error_Pitch = 0.0f;
+
 
     //当前总功率
     float Now_Power = 0.0f;

@@ -26,6 +26,7 @@ virtualFolder:
         - path: ../User/Chariot/Src/crt_booster.cpp
         - path: ../User/Chariot/Src/crt_chassis.cpp
         - path: ../User/Chariot/Src/crt_gimbal.cpp
+        - path: ../User/Chariot/Src/crt_force_control_chassis.cpp
       folders: []
     - name: Device
       files:
@@ -44,6 +45,7 @@ virtualFolder:
         - path: ../User/Device/Src/dvc_TensionMeter.cpp
         - path: ../User/Device/Src/dvc_servo.cpp
         - path: ../User/Device/Src/dvc_buzzer.cpp
+        - path: ../User/Device/Src/dvc_motor_dji.cpp
       folders: []
     - name: Driver
       files:

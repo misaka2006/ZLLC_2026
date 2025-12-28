@@ -56,6 +56,9 @@ void Class_HybridTrackLeg_Chassis::Init(float __Velocity_X_Max, float __Velocity
     //斜坡函数加减速角速度
     Slope_Omega.Init(0.05f, 0.05f);
 
+    //imu初始化
+    BoardDM_BMI.Init();
+
     //轮向电机PID初始化
     Motor_Wheel[0].PID_Omega.Init(1000.0f, 0.0f, 0.0f, 0.0f, Motor_Wheel[0].Get_Output_Max(), Motor_Wheel[0].Get_Output_Max());
     Motor_Wheel[1].PID_Omega.Init(1000.0f, 0.0f, 0.0f, 0.0f, Motor_Wheel[1].Get_Output_Max(), Motor_Wheel[1].Get_Output_Max());
@@ -566,6 +569,7 @@ void Class_Streeing_Chassis::Speed_Resolution(){
  */
 void Class_HybridTrackLeg_Chassis::Switch_Pose()
 {
+    #ifdef LOCKED_SWITCH
     switch (Pose_Control_Type)
     {
     case(Pose_DISABLE)://失能
@@ -613,9 +617,87 @@ void Class_HybridTrackLeg_Chassis::Switch_Pose()
         Motor_Track[0].Set_Target_Omega_Radian(0.0f);
         Motor_Track[1].Set_Target_Omega_Radian(0.0f);
     }
+    #endif
+    #ifdef AUTO_SWITCH
+    static uint16_t mod2s = 0;// 2s重置计数器
+    static uint8_t  pose_state = 2; // 位姿控制状态 0-Enable 1-Standby 2-Disable
+    static bool locked_from_standby = false; 
+    Chassis_Pitch = BoardDM_BMI.Get_Angle_Pitch();
+    Error_Pitch= 0.0f - Chassis_Pitch;
+    if(Error_Pitch > 15.0f)
+    {
+        Set_Pose_Control_Type(Pose_ENABLE);
+        pose_state = 0;
+        locked_from_standby = false;
+        mod2s = 0;
+    }
+    // else if(Error_Pitch < 5.0f && !locked_from_standby)
+    // {
+    //     if (pose_state != 1) 
+    //     {
+    //         Set_Pose_Control_Type(Pose_STANDBY);
+    //         pose_state = 1;
+    //         mod2s = 0;
+    //     }
+    //     else
+    //     {
+    //         if (++mod2s >= 2000) 
+    //         {
+    //             Set_Pose_Control_Type(Pose_DISABLE);
+    //             pose_state = 2;
+    //             locked_from_standby = true;
+    //             mod2s = 0;
+    //         }
+    //     }
+    // }
+    switch (Pose_Control_Type)
+    {
+        case(Pose_DISABLE)://失能
+    {
+        Motor_Joint[0].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
+        Motor_Joint[1].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
+        break;
+    }
+    case(Pose_STANDBY)://待机
+    {
+        //启动控制方式
+        Motor_Joint[0].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        Motor_Joint[1].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        //设定控制帧所需参数： 角度、角速度、t_ff、Kp、Kd
+        for(int i = 0; i <2; i++)
+        {
+            Motor_Joint[i].Set_Target_Angle(0.0f);
+            Motor_Joint[i].Set_Target_Omega(0.0f);
+            Motor_Joint[i].Set_Target_Torque(0.0f);//需要测试腿克服重力所需要的前馈力矩
+            Motor_Joint[i].Set_MIT_K_P(15.0f);//还需测试合适的数值
+            Motor_Joint[i].Set_MIT_K_D(1.0f);
+        }
+        break;
+    }
+    case(Pose_ENABLE)://使能
+    {
+        //启动控制方式
+        Motor_Joint[0].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        Motor_Joint[1].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        //设定控制帧所需参数： 角度、角速度、t_ff、Kp、Kd
+        for(int i = 0; i <2; i++)
+        {
+            Motor_Joint[i].Set_Target_Angle(0.0f);
+            Motor_Joint[i].Set_Target_Omega(0.0f);
+            Motor_Joint[i].Set_Target_Torque(0.0f);//需要测试腿克服重力所需要的前馈力矩
+            Motor_Joint[i].Set_MIT_K_P(15.0f);//需测试
+            Motor_Joint[i].Set_MIT_K_D(1.0f);
+        }
+        break;
+    }
+    }
+    #endif
     //计算回调函数
-    Motor_Joint[0].TIM_Process_PeriodElapsedCallback();
-    Motor_Joint[1].TIM_Process_PeriodElapsedCallback();
+    for(int i = 0; i < 2; i++)
+    {
+        Motor_Joint[i].TIM_Process_PeriodElapsedCallback();
+        Motor_Track[i].TIM_PID_PeriodElapsedCallback();
+    }
 }
 #endif
 
@@ -645,7 +727,7 @@ void Class_HybridTrackLeg_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Spri
 
     #endif
     //速度解算
-    Speed_Resolution();
+    // Speed_Resolution();
     //位姿切换
     Switch_Pose();
     #if POWER_CONTROL == 1

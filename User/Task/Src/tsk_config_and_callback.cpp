@@ -74,21 +74,25 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
         case (0x201):
         {
             chariot.Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Force_Control_Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         case (0x202):
         {
             chariot.Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Force_Control_Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         case (0x203):
         {
             chariot.Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Force_Control_Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         case (0x204):
         {
             chariot.Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+            chariot.Force_Control_Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
         }
         break;
         #endif
@@ -487,8 +491,9 @@ extern Referee_Rx_A_t CAN3_Chassis_Rx_Data_A;
 void Task100us_TIM4_Callback()
 {
     #ifdef CHASSIS
-
-
+    //Imu读取任务
+    //chariot.Force_Control_Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
+    chariot.Chassis.BoardDM_BMI.TIM_Calculate_PeriodElapsedCallback();
     #elif defined(GIMBAL)
         // 单给IMU消息开的定时器 ims
         chariot.Gimbal.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();     
@@ -661,10 +666,13 @@ extern "C" void Task_Init()
         CAN_Init(&hfdcan1, Chassis_Device_CAN1_Callback);
         CAN_Init(&hfdcan2, Chassis_Device_CAN2_Callback);
         CAN_Init(&hfdcan3, Chassis_Device_CAN3_Callback);
-
+        //陀螺仪spi外设
+        SPI_Init(&hspi2,Device_SPI2_Callback);
         //裁判系统
         UART_Init(&huart10, Referee_UART10_Callback, 128);//并未使用环形队列 尽量给长范围增加检索时间 减少丢包
+        //遥控器
         UART_Init(&huart5, DR16_UART5_Callback, 18);
+        //功率计
         UART_Init(&huart1, Power_Cale_UART_Callback, 8+1);
         #ifdef POWER_LIMIT
 

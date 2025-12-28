@@ -236,7 +236,9 @@ public:
     Class_DM_Motor_J4310 Joint_Test;
     // pitch轴电机
     Class_DJI_Motor_GM6020 Motor_Pitch;
-
+    Class_DM_Motor_J4310 Motor_Pitch_DM4310;
+    //相机pitch轴电机
+    Class_DJI_Motor_C610 Motor_Camera;
 
     void Init();
 

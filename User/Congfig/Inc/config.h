@@ -25,8 +25,8 @@
 
 #define Only_Chassis
 //功率控制相关
-#define POWER_CONTROL 1 //启用功率控制
-// #define BUFFER_LOOP
+// #define POWER_CONTROL 1 //启用功率控制
+#define BUFFER_LOOP
 
 //使能超电
 #define SuperCap 0
@@ -35,8 +35,8 @@
 //#define SPEED_SLOPE
 
 //位姿控制选择
-#define Angle_Locked
-//#define Angle_UnLocked
+// #define LOCKED_SWITCH
+#define AUTO_SWITCH
 
 //发射机构选择
 // #define Single_Friction

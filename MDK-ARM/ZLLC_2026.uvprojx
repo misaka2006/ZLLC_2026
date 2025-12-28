@@ -429,6 +429,11 @@
               <FileType>8</FileType>
               <FilePath>..\User\Chariot\Src\crt_gimbal.cpp</FilePath>
             </File>
+            <File>
+              <FileName>crt_force_control_chassis.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Chariot\Src\crt_force_control_chassis.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -508,6 +513,11 @@
               <FileName>dvc_buzzer.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\User\Device\Src\dvc_buzzer.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>dvc_motor_dji.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\User\Device\Src\dvc_motor_dji.cpp</FilePath>
             </File>
           </Files>
         </Group>

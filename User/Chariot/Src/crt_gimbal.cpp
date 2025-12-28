@@ -48,6 +48,12 @@ void Class_Gimbal::Init()
     Motor_Pitch.PID_Omega.Init(90.0f, 20.0f, 0.0f, 0.0f, 6000, Motor_Pitch.Get_Output_Max(),0.f,0.f,40.f);
     Motor_Pitch.PID_Torque.Init(0.f, 0.0f, 0.0f, 0.0f, Motor_Pitch.Get_Output_Max(), Motor_Pitch.Get_Output_Max());
     Motor_Pitch.Init(&hfdcan2, DJI_Motor_ID_0x206, DJI_Motor_Control_Method_ANGLE, 3413);
+
+    //yaw轴电机初始化
+    Motor_Yaw_DM4310.Init(&hfdcan2,DM_Motor_ID_0xA3,DM_Motor_Control_Method_MIT_POSITION);
+    //pitch轴电机初始化
+    Motor_Pitch_DM4310.Init(&hfdcan2,DM_Motor_ID_0xA4,DM_Motor_Control_Method_MIT_POSITION);
+    //相机控制电机初始化
 }
 
 

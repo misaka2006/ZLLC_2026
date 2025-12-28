@@ -22,6 +22,7 @@
 #include "tsk_config_and_callback.h"
 #include "dvc_supercap.h"
 #include "crt_chassis.h"
+#include "crt_force_control_chassis.h"
 #include "config.h"
 #include "alg_filter.h"
 
@@ -160,6 +161,7 @@ public:
         //底盘
         #ifdef TRACK_LEG
         Class_HybridTrackLeg_Chassis Chassis;
+        Class_Chassis Force_Control_Chassis;
         #endif
         #ifdef AGV
         Class_Streeing_Chassis Chassis;
