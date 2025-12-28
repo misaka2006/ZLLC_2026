@@ -147,10 +147,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     {
         UART1_Manage_Object.Rx_Length = Size;
         HAL_UARTEx_ReceiveToIdle_DMA(huart, UART1_Manage_Object.Rx_Buffer, UART1_Manage_Object.Rx_Buffer_Length*2);
-        // if( UART1_Manage_Object.Rx_Length<=UART1_Manage_Object.Rx_Buffer_Length)
-        //     UART1_Manage_Object.Callback_Function(UART1_Manage_Object.Rx_Buffer, Size);
-        // else
-        // memset( UART1_Manage_Object.Rx_Buffer, 0, UART1_Manage_Object.Rx_Buffer_Length);
+        
+        if( UART1_Manage_Object.Rx_Length<=UART1_Manage_Object.Rx_Buffer_Length)
+            UART1_Manage_Object.Callback_Function(UART1_Manage_Object.Rx_Buffer, Size);
+        else
+        memset( UART1_Manage_Object.Rx_Buffer, 0, UART1_Manage_Object.Rx_Buffer_Length);
 
     }
     else if (huart->Instance == UART5)
@@ -207,9 +208,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         UART1_Manage_Object.Rx_Length = 28;
         if( UART1_Manage_Object.Rx_Length<=UART1_Manage_Object.Rx_Buffer_Length)
             UART1_Manage_Object.Callback_Function(UART1_Manage_Object.Rx_Buffer, 28);
-        else
-        memset( UART1_Manage_Object.Rx_Buffer, 0, UART1_Manage_Object.Rx_Buffer_Length);
-        HAL_UART_Receive_IT(huart, UART1_Manage_Object.Rx_Buffer, UART1_Manage_Object.Rx_Buffer_Length);//再开启接收中断
+        //else
+        // memset( UART1_Manage_Object.Rx_Buffer, 0, UART1_Manage_Object.Rx_Buffer_Length);
+        // HAL_UART_Receive_IT(huart, UART1_Manage_Object.Rx_Buffer, UART1_Manage_Object.Rx_Buffer_Length);//再开启接收中断
     }
 }
 

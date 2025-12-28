@@ -2,7 +2,7 @@
 #define CRT_FORCE_CONTROL_CHASSIS_H
 #include "alg_pid.h"
 #include "dvc_motor_dji.h"
-//#include "alg_new_power_limit.h"
+#include "alg_new_power_limit.h"
 #include "dvc_supercap.h"
 #include "dvc_imu.h"
 #include "dvc_dwt.h"
@@ -47,9 +47,9 @@ public:
     Class_Motor_DJI_C620 Motor_Wheel[4];
     
     //功率管理
-    //Class_New_Power_Limit Power_Limit;
+    Class_New_Power_Limit Power_Limit;
 
-    //Struct_Power_Management Power_Management;
+    Struct_Power_Management Power_Management;
 
     //IMU
     Class_IMU Boardc_BMI;

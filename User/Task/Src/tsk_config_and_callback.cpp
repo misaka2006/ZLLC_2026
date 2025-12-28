@@ -455,7 +455,13 @@ void Referee_UART10_Callback(uint8_t *Buffer, uint16_t Length)
 #if defined CHASSIS
 void SuperCAP_UART1_Callback(uint8_t *Buffer, uint16_t Length)
 {
-    chariot.Chassis.Supercap.UART_RxCpltCallback(Buffer);
+    //chariot.Chassis.Supercap.UART_RxCpltCallback(Buffer);
+    chariot.Force_Chassis.Supercap.UART_RxCpltCallback(Buffer);
+    /*紫板子功率计*/
+    int16_t tmp_power;
+    memcpy(&tmp_power,&Buffer[6],sizeof(int16_t));
+
+    chariot.Force_Chassis.Supercap.Set_Now_Power((float)tmp_power/75.0f);
 }
 #endif
 /**
@@ -691,6 +697,7 @@ extern "C" void Task_Init()
 
     // 裁判系统
     UART_Init(&huart10, Referee_UART10_Callback, 128); // 并未使用环形队列 尽量给长范围增加检索时间 减少丢包
+    UART_Init(&huart1, SuperCAP_UART1_Callback, 32);
 
     SPI_Init(&hspi2, Device_SPI2_Callback);
 #ifdef POWER_LIMIT

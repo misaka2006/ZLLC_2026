@@ -5,46 +5,46 @@ void Class_Chassis::Init()
     // PID初始化
 
     // 底盘速度xPID, 输出摩擦力
-    PID_Velocity_X.Init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 0.002f);
+    PID_Velocity_X.Init(60.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 0.002f);
 
     // 底盘速度yPID, 输出摩擦力
-    PID_Velocity_Y.Init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 0.002f);
+    PID_Velocity_Y.Init(70.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1000.0f, 0.002f);
 
     // 底盘角速度PID, 输出扭矩
     PID_Omega.Init(12.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f, 0.002f);
 
     // 轮向电机ID初始化
-   // 电机初始化
-    Motor_Wheel[0].Init(&hfdcan1, Motor_DJI_ID_0x201, Motor_DJI_Control_Method_CURRENT, 3591.f/187.f, Motor_DJI_Power_Limit_Status_ENABLE);
+    // 电机初始化
+    Motor_Wheel[0].Init(&hfdcan1, Motor_DJI_ID_0x201, Motor_DJI_Control_Method_CURRENT, 3591.f / 187.f, Motor_DJI_Power_Limit_Status_ENABLE);
     Motor_Wheel[0].PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, 20.0f, 20.0f);
     // 电机初始化
-    Motor_Wheel[1].Init(&hfdcan1, Motor_DJI_ID_0x202, Motor_DJI_Control_Method_CURRENT, 3591.f/187.f, Motor_DJI_Power_Limit_Status_ENABLE);
+    Motor_Wheel[1].Init(&hfdcan1, Motor_DJI_ID_0x202, Motor_DJI_Control_Method_CURRENT, 3591.f / 187.f, Motor_DJI_Power_Limit_Status_ENABLE);
     Motor_Wheel[1].PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, 20.0f, 20.0f);
     // 电机初始化
-    Motor_Wheel[2].Init(&hfdcan1, Motor_DJI_ID_0x203, Motor_DJI_Control_Method_CURRENT, 3591.f/187.f, Motor_DJI_Power_Limit_Status_ENABLE);
+    Motor_Wheel[2].Init(&hfdcan1, Motor_DJI_ID_0x203, Motor_DJI_Control_Method_CURRENT, 3591.f / 187.f, Motor_DJI_Power_Limit_Status_ENABLE);
     Motor_Wheel[2].PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, 20.0f, 20.0f);
     // 电机初始化
-    Motor_Wheel[3].Init(&hfdcan1, Motor_DJI_ID_0x204, Motor_DJI_Control_Method_CURRENT, 3591.f/187.f, Motor_DJI_Power_Limit_Status_ENABLE);
+    Motor_Wheel[3].Init(&hfdcan1, Motor_DJI_ID_0x204, Motor_DJI_Control_Method_CURRENT, 3591.f / 187.f, Motor_DJI_Power_Limit_Status_ENABLE);
     Motor_Wheel[3].PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, 20.0f, 20.0f);
 
     // 超级电容初始化
-    Supercap.Init(&hfdcan1, 45);
+    Supercap.Init_UART(&huart1);
 
-    //imu初始化
+    // imu初始化
     Boardc_BMI.Init();
 
-    //低通滤波初始化
-    //实际速度滤波
-    // PID_Velocity_Filter[0].Init(-4.0f,4.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,5);
-    // PID_Velocity_Filter[1].Init(-4.0f,4.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,5);
-    // PID_Omega_Filter.Init(-20.0f,20.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,15);
+    // 低通滤波初始化
+    // 实际速度滤波
+    //  PID_Velocity_Filter[0].Init(-4.0f,4.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,5);
+    //  PID_Velocity_Filter[1].Init(-4.0f,4.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,5);
+    //  PID_Omega_Filter.Init(-20.0f,20.0f,Filter_Fourier_Type_LOWPASS,10.0f,0.0f,500.0f,15);
 
     // Spike滤波初始化
     init_filter(&Velocity_X_Spike, 5);
     init_filter(&Velocity_Y_Spike, 5);
     init_filter(&Omega_Spike, 5);
 
-   // 斜坡函数加减速速度X  控制周期1ms
+    // 斜坡函数加减速速度X  控制周期1ms
     Slope_Velocity_X.Init(0.005f, 0.01f);
     // 斜坡函数加减速速度Y  控制周期1ms
     Slope_Velocity_Y.Init(0.005f, 0.01f);
@@ -52,15 +52,14 @@ void Class_Chassis::Init()
     Slope_Omega.Init(0.05f, 0.05f);
 }
 
-//#define Control_Type_Oemga
+// #define Control_Type_Oemga
 #define Control_Type_Current
-
 
 void Class_Chassis::TIM_100ms_Alive_PeriodElapsedCallback()
 {
     for (int i = 0; i < 4; i++)
     {
-       // Motor_Steer[i].TIM_100ms_Alive_PeriodElapsedCallback();
+        // Motor_Steer[i].TIM_100ms_Alive_PeriodElapsedCallback();
         Motor_Wheel[i].TIM_100ms_Alive_PeriodElapsedCallback();
     }
 }
@@ -71,7 +70,7 @@ void Class_Chassis::TIM_100ms_Alive_PeriodElapsedCallback()
 void Class_Chassis::TIM_2ms_Resolution_PeriodElapsedCallback()
 {
     Self_Resolution();
-    
+
     // PID_Velocity_Filter[0].Set_Now(Now_Velocity_X);
     // PID_Velocity_Filter[0].TIM_Adjust_PeriodElapsedCallback();
     // PID_Velocity_Filter[1].Set_Now(Now_Velocity_Y);
@@ -91,10 +90,10 @@ void Class_Chassis::TIM_2ms_Resolution_PeriodElapsedCallback()
     Slope_Velocity_Y.TIM_Calculate_PeriodElapsedCallback();
     Slope_Omega.Set_Target(Target_Omega);
     Slope_Omega.TIM_Calculate_PeriodElapsedCallback();
-    //卡尔曼滤波器更新车体x方向速度
-    //xvEstimateKF_Update(&vaEstimateKF,Acceleration_X_Filter.Get_Out(),Now_Velocity_X);
-    
-    //INS_Data.Mix_Velocity_X = vel_acc[0];
+    // 卡尔曼滤波器更新车体x方向速度
+    // xvEstimateKF_Update(&vaEstimateKF,Acceleration_X_Filter.Get_Out(),Now_Velocity_X);
+
+    // INS_Data.Mix_Velocity_X = vel_acc[0];
 }
 
 /**
@@ -105,17 +104,16 @@ void Class_Chassis::TIM_2ms_Control_PeriodElapsedCallback()
 {
     Kinematics_Inverse_Resolution();
 
-    #ifdef Control_Type_Current
+#ifdef Control_Type_Current
 
-    Output_To_Dynamics(); 
+    Output_To_Dynamics();
 
     Dynamics_Inverse_Resolution();
 
-    #endif
+#endif
 
     Output_To_Motor();
 }
-
 
 /**
  * @brief 运动学逆解算，车身速度结算到电机角速度，用于电机速度环
@@ -197,9 +195,9 @@ void Class_Chassis::Dynamics_Inverse_Resolution()
 
     for (int i = 0; i < 4; i++)
     {
-        //#define force (20.0f/(0.154f/2.0f)*7.0f*0.01562f) 预测最大的摩擦力为28.4N左右
-        // 摩擦力转换至扭矩 
-        Target_Wheel_Current[i] = (Target_Wheel_Force[i] * Wheel_Radius) + Wheel_Speed_Limit_Factor[i] * Motor_Omega_Contration * (Target_Wheel_Omega[i] - Motor_Wheel[i].Get_Now_Omega());//(tmp_force[i] * Wheel_Radius) / (13.933f * 0.5f) / M3508_Kt;//Wheel_Speed_Limit_Factor * (Target_Wheel_Omega[i] - Motor_Wheel[i].Get_Now_Omega());
+        // #define force (20.0f/(0.154f/2.0f)*7.0f*0.01562f) 预测最大的摩擦力为28.4N左右
+        //  摩擦力转换至扭矩
+        Target_Wheel_Current[i] = (Target_Wheel_Force[i] * Wheel_Radius) + Wheel_Speed_Limit_Factor[i] * Motor_Omega_Contration * (Target_Wheel_Omega[i] - Motor_Wheel[i].Get_Now_Omega()); //(tmp_force[i] * Wheel_Radius) / (13.933f * 0.5f) / M3508_Kt;//Wheel_Speed_Limit_Factor * (Target_Wheel_Omega[i] - Motor_Wheel[i].Get_Now_Omega());
         // 动摩擦阻力前馈
         if (Target_Wheel_Omega[i] > Wheel_Resistance_Omega_Threshold)
         {
@@ -232,7 +230,7 @@ void Class_Chassis::Output_To_Motor()
         // 底盘失能
         for (int i = 0; i < 4; i++)
         {
-            
+
             Motor_Wheel[i].Set_Control_Method(Motor_DJI_Control_Method_CURRENT);
 
             Motor_Wheel[i].Set_Target_Current(0.0f);
@@ -241,8 +239,8 @@ void Class_Chassis::Output_To_Motor()
         break;
     }
     case (Chassis_Control_Type_NORMAL__):
-    {   
-        #ifdef Control_Type_Current
+    {
+#ifdef Control_Type_Current
         // 全向模型
         for (int i = 0; i < 4; i++)
         {
@@ -253,14 +251,14 @@ void Class_Chassis::Output_To_Motor()
         {
             Motor_Wheel[i].Set_Target_Current(Target_Wheel_Current[i]);
         }
-        #endif
-        #ifdef Control_Type_Oemga
+#endif
+#ifdef Control_Type_Oemga
         for (int i = 0; i < 4; i++)
         {
             Motor_Wheel[i].Set_Control_Method(Motor_DJI_Control_Method_OMEGA);
             Motor_Wheel[i].Set_Target_Omega(Target_Wheel_Omega[i]);
         }
-        #endif
+#endif
 
         break;
     }
@@ -271,14 +269,14 @@ void Class_Chassis::Output_To_Motor()
         Motor_Wheel[i].TIM_Calculate_PeriodElapsedCallback();
     }
 
-    // //进行功率限制
-    // Power_Management.Max_Power = 100.0f;
-    // Power_Limit.Power_Task(Power_Management);
+    // 进行功率限制
+    Power_Management.Max_Power = 120.0f;
+    Power_Limit.Power_Task(Power_Management);
 
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     Motor_Wheel[i].Reset_Set_Out_And_Output(Power_Management.Motor_Data[i].output);
-    // }
+    for (int i = 0; i < 4; i++)
+    {
+        Motor_Wheel[i].Reset_Set_Out_And_Output(Power_Management.Motor_Data[i].output);
+    }
 }
 
 /**
@@ -299,8 +297,8 @@ void Class_Chassis::Self_Resolution()
 
     // 轮线速度的计算方式 v = Ω * r，根据正运动学测得得结果，1和2号的轮子转向反了，这里取负
     float wheel_vel0 = Motor_Wheel[0].Get_Now_Omega() * Wheel_Radius;
-    float wheel_vel1 = - Motor_Wheel[1].Get_Now_Omega() * Wheel_Radius;
-    float wheel_vel2 = - Motor_Wheel[2].Get_Now_Omega() * Wheel_Radius;
+    float wheel_vel1 = -Motor_Wheel[1].Get_Now_Omega() * Wheel_Radius;
+    float wheel_vel2 = -Motor_Wheel[2].Get_Now_Omega() * Wheel_Radius;
     float wheel_vel3 = Motor_Wheel[3].Get_Now_Omega() * Wheel_Radius;
 
     // 从逆运动学方程推导正运动学：
@@ -308,11 +306,11 @@ void Class_Chassis::Self_Resolution()
     // 建立轮速向量
     float wheel_vel[4] = {wheel_vel0, wheel_vel1, wheel_vel2, wheel_vel3};
     // 因此正运动学公式为：
-    for(int i =0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         Now_Velocity_X += wheel_vel[i];
 
-        if(i % 2 == 0)
+        if (i % 2 == 0)
         {
             Now_Velocity_Y -= wheel_vel[i];
         }
@@ -324,32 +322,25 @@ void Class_Chassis::Self_Resolution()
 
     Now_Velocity_X *= 0.25f;
     Now_Velocity_Y *= 0.25f;
-    Now_Omega = (- wheel_vel[0]
-                 + wheel_vel[1]
-                 + wheel_vel[2]
-                 - wheel_vel[3])
-                 / (4.0f * (half_l + half_w));
+    Now_Omega = (-wheel_vel[0] + wheel_vel[1] + wheel_vel[2] - wheel_vel[3]) / (4.0f * (half_l + half_w));
 
     // bool flag = (fabs(Now_Velocity_X - last_X) >= 1.0f) || (fabs(Now_Velocity_Y - last_Y)) || (fabs(Now_Omega - last_Omega));
 
     // if(flag)
     // {
-        
+
     // }
 
     // last_X = Now_Velocity_X;
     // last_Y = Now_Velocity_Y;
     // last_Omega = Now_Omega;
-    
-    // for (int i = 0; i < 4; i++)         //数据传递处理
-    // {
-    //     //都是计算转子的
-    //     Power_Management.Motor_Data[i].feedback_omega = Motor_Wheel[i].Get_Now_Omega() /  RPM_TO_RADPS *  13.933f;
-    //     Power_Management.Motor_Data[i].feedback_torque = Motor_Wheel[i].Get_Now_Current() * 16384.0f / 20.0f * M3508_CMD_CURRENT_TO_TORQUE;     //与减速比有关
-    //     Power_Management.Motor_Data[i].torque = Motor_Wheel[i].Get_Target_Current() * 16384.0f / 20.0f * M3508_CMD_CURRENT_TO_TORQUE;                     //与减速比有关
-    //     Power_Management.Motor_Data[i].pid_output = Motor_Wheel[i].Get_Target_Current() * 16384.0f / 20.0f;
 
-    //     //Power_Management.Motor_Data[i].Target_error = fabs(Motor_Wheel[i].Get_Target_Omega_Radian() - Motor_Wheel[i].Get_Now_Omega_Radian());
-        
-    // }
+    for (int i = 0; i < 4; i++) // 数据传递处理
+    {
+        // 都是计算转子的
+        Power_Management.Motor_Data[i].feedback_omega = Motor_Wheel[i].Get_Now_Omega() / RPM_TO_RADPS * M3508_REDUATION;
+        Power_Management.Motor_Data[i].feedback_torque = Motor_Wheel[i].Get_Now_Current() * 16384.0f / 20.0f * M3508_CMD_CURRENT_TO_TORQUE; // 与减速比有关
+        Power_Management.Motor_Data[i].torque = Motor_Wheel[i].Get_Target_Current() * 16384.0f / 20.0f * M3508_CMD_CURRENT_TO_TORQUE;       // 与减速比有关
+        Power_Management.Motor_Data[i].pid_output = Motor_Wheel[i].Get_Target_Current() * 16384.0f / 20.0f;
+    }
 }

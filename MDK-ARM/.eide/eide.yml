@@ -67,7 +67,6 @@ virtualFolder:
         - path: ../User/Algorithm/Src/alg_fsm.cpp
         - path: ../User/Algorithm/Src/alg_MahonyAHRS.cpp
         - path: ../User/Algorithm/Src/alg_pid.cpp
-        - path: ../User/Algorithm/Src/alg_power_limit.cpp
         - path: ../User/Algorithm/Src/alg_slope.cpp
         - path: ../User/Algorithm/Src/kalman_filter.cpp
         - path: ../User/Algorithm/Src/PID.cpp
@@ -77,6 +76,8 @@ virtualFolder:
         - path: ../User/Algorithm/Src/utils.cpp
         - path: ../User/Algorithm/Src/matrix.cpp
         - path: ../User/Algorithm/Src/robotics.cpp
+        - path: ../User/Algorithm/Src/alg_new_power_limit.cpp
+        - path: ../User/Algorithm/Src/alg_power_limit.cpp
       folders: []
     - name: Application
       files: []

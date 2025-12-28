@@ -44,13 +44,14 @@ typedef struct
 typedef struct
 {
     float Max_Power;            // 最大功率限制
-    float Scale_Conffient[2];         // 功率收缩系数//0：转向电机 1：动力电机
+    float Scale_Conffient;         // 功率收缩系数//0：转向电机 1：动力电机
     float Theoretical_Total_Power; // 理论总功率
     float Needed_Scaled_Theoretical_Total_Power;    //需要再分配的理论总功率
     float Scaled_Total_Power;      // 收缩后总功率
     float Actual_Power;            // 实际总功率
 
-    Struct_Power_Motor_Data Motor_Data[8]; // 舵轮底盘八个电机，分为四组，默认偶数索引值的电机为转向电机，奇数索引值的电机为动力电机
+    // 麦轮轮组只有四个电机
+    Struct_Power_Motor_Data Motor_Data[4]; // 舵轮底盘八个电机，分为四组，默认偶数索引值的电机为转向电机，奇数索引值的电机为动力电机
 
 } Struct_Power_Management;
 
@@ -61,6 +62,7 @@ public:
     float Calculate_Toque(float omega, float power, float torque, uint8_t motor_index);
     void Power_Task(Struct_Power_Management &power_management);
     void Power_Allocate(float Power_Limit, float rate,float dir_predict_power,float mot_predict_power,float *dir_power_allocate,float *mot_power_allocate);
+    void Power_Allocate(float Power_Limit, float mot_predict_power, float *mot_power_allocate);
     void Calulate_Power_Allocate(Struct_Power_Motor_Data &Motor_Data, float __Total_error, float Max_Power, float __Scale_Conffient);
     // 普通模式下的getter/setter
     inline float Get_K1() const { return k1; }
@@ -75,8 +77,8 @@ public:
 protected:
 
     float k1 = 0.01;
-    float k2 = 500.0f;
-    float k3 = 6.6f / 8.0f;
+    float k2 = 550.0f;
+    float k3 = 3.50;
 
     uint8_t Control_Status; // 控制状态
 };

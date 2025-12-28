@@ -14,7 +14,7 @@
  * torque = pidout*M3508_CMD_CURRENT_TO_TORQUE
  * 2.功率分配
  * 3.限制功率
- * 
+ *
  * @copyright ZLLC 2026
  *
  */
@@ -39,7 +39,7 @@ static inline float my_fmax(float a, float b) { return (a > b) ? a : b; }
  * @param motor_index 电机索引，偶数为转向电机，奇数为动力电机，舵轮需要传此参数
  * @return float 理论功率值
  */
-//西交功率模型
+// 西交功率模型
 float Class_New_Power_Limit::Calculate_Theoretical_Power(float omega, float torque, uint8_t motor_index)
 {
 
@@ -95,62 +95,40 @@ float Class_New_Power_Limit::Calculate_Toque(float omega, float power, float tor
 void Class_New_Power_Limit::Calulate_Power_Allocate(Struct_Power_Motor_Data &Motor_Data, float __Total_error, float Max_Power, float __Scale_Conffient)
 {
     Motor_Data.scaled_power = Motor_Data.theoretical_power *
-                                    __Scale_Conffient;
+                              __Scale_Conffient;
 }
 /**
  * @brief 功率限制主任务
  *
  * @param power_management 功率管理结构体
  */
-float dirmotor_predic_power = 0.f,motmotor_predic_power = 0.f;
-float dir_needScaled_power = 0.f,mot_needScaled_power = 0.f;
-float dir_max_power = 0.0f,mot_max_power = 0.0f;
-float power_pid_out = 0.0f,pre_pid_out = 0.0f;
+float motmotor_predic_power = 0.f;
+float mot_needScaled_power = 0.f;
+float mot_max_power = 0.0f;
+float power_pid_out = 0.0f, pre_pid_out = 0.0f;
 void Class_New_Power_Limit::Power_Task(Struct_Power_Management &power_management)
 {
-    float tmp_dirmotor_predic_power = 0.0f,tmp_motmotor_predic_power = 0.0f;
-    float tmp_dir_needScaled_power = 0.f,tmp_mot_needScaled_power = 0.f;
+    float tmp_motmotor_predic_power = 0.0f;
+    float tmp_mot_needScaled_power = 0.f;
 
-    for (int i = 0; i < 8; i++) 
+    for (int i = 0; i < 4; i++)
     {
-        if(i % 2 == 0)//转向电机
+        power_management.Motor_Data[i].theoretical_power = Calculate_Theoretical_Power(power_management.Motor_Data[i].feedback_omega, power_management.Motor_Data[i].torque, i);
+        tmp_motmotor_predic_power += power_management.Motor_Data[i].theoretical_power;
+
+        if (power_management.Motor_Data[i].theoretical_power > 0.0f)
         {
-            power_management.Motor_Data[i].theoretical_power = Calculate_Theoretical_Power(power_management.Motor_Data[i].feedback_omega, power_management.Motor_Data[i].torque, i);
-            tmp_dirmotor_predic_power += power_management.Motor_Data[i].theoretical_power;
-        }
-        else//动力电机
-        {
-            power_management.Motor_Data[i].theoretical_power = Calculate_Theoretical_Power(power_management.Motor_Data[i].feedback_omega, power_management.Motor_Data[i].torque, i);
-            tmp_motmotor_predic_power += power_management.Motor_Data[i].theoretical_power;
-        }
-        
-        if(i % 2 == 0)
-        {
-            if(power_management.Motor_Data[i].theoretical_power > 0.0f)
-            {
-                tmp_dir_needScaled_power += power_management.Motor_Data[i].theoretical_power;
-            }
-            else
-            {
-                tmp_dir_needScaled_power += 0.0f;
-            }
+            tmp_mot_needScaled_power += power_management.Motor_Data[i].theoretical_power;
         }
         else
         {
-             if(power_management.Motor_Data[i].theoretical_power > 0.0f)
-            {
-                tmp_mot_needScaled_power += power_management.Motor_Data[i].theoretical_power;
-            }
-            else
-            {
-                tmp_mot_needScaled_power += 0.0f;
-            }
+            tmp_mot_needScaled_power += 0.0f;
         }
     }
-#ifdef Enable_Power_Buffer_Loop//有回传实际功率的功率限制
+#ifdef Enable_Power_Buffer_Loop // 有回传实际功率的功率限制
     // 只有在启用功率缓冲时才执行
     Control_Status = 1;
-#else//无回传实际功率的功率限制
+#else // 无回传实际功率的功率限制
     // 禁用时的替代方案
     Control_Status = 0;
 #endif
@@ -168,113 +146,74 @@ void Class_New_Power_Limit::Power_Task(Struct_Power_Management &power_management
     {
         power_pid_out = 0;
     }
-    dirmotor_predic_power = tmp_dirmotor_predic_power + power_pid_out;
     motmotor_predic_power = tmp_motmotor_predic_power + power_pid_out;
-    dir_needScaled_power = tmp_dir_needScaled_power + power_pid_out;
     mot_needScaled_power = tmp_mot_needScaled_power + power_pid_out;
-    //计算理论总功率
-    power_management.Theoretical_Total_Power = dirmotor_predic_power + motmotor_predic_power;
-    //计算需要收缩的理论总功率
-    power_management.Needed_Scaled_Theoretical_Total_Power = dir_needScaled_power + mot_needScaled_power;
+    // 计算理论总功率
+    power_management.Theoretical_Total_Power = motmotor_predic_power;
+    // 计算需要收缩的理论总功率
+    power_management.Needed_Scaled_Theoretical_Total_Power = mot_needScaled_power;
 
-    //上层功率分配
-    Power_Allocate(power_management.Max_Power,0.6f,dirmotor_predic_power,motmotor_predic_power,&dir_max_power,&mot_max_power);
-    //下层功率限制
-    if (dir_max_power >= dirmotor_predic_power) // 计算转向收缩系数
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            if (j % 2 == 0)
-                power_management.Motor_Data[j].output = power_management.Motor_Data[j].pid_output;
-        }
-    }
-    else
-    {
-        power_management.Scale_Conffient[0] = dir_max_power / dir_needScaled_power;
-        for (int i = 0; i < 8; i++)
-        {
-            if (i % 2 == 0)
-            {
-                if (power_management.Motor_Data[i].theoretical_power < 0.0f)
-                {
-                    power_management.Motor_Data[i].output = power_management.Motor_Data[i].pid_output;
-                    continue;
-                }
-
-                Calulate_Power_Allocate(power_management.Motor_Data[i], 0,
-                                        power_management.Max_Power, power_management.Scale_Conffient[0]);
-
-                power_management.Motor_Data[i].output =
-                    Calculate_Toque(power_management.Motor_Data[i].feedback_omega,
-                                    power_management.Motor_Data[i].scaled_power,
-                                    power_management.Motor_Data[i].torque,
-                                    i) *
-                    DIR_TORQUE_TO_CMD_CURRENT;
-            }
-        }
-    }
+    // 上层功率分配
+    Power_Allocate(power_management.Max_Power, motmotor_predic_power, &mot_max_power);
+    // 下层功率限制
 
     if (mot_max_power >= motmotor_predic_power) // 计算行进收缩系数
     {
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < 4; j++)
         {
-            if (j % 2 != 0)
-                power_management.Motor_Data[j].output = power_management.Motor_Data[j].pid_output;
+            power_management.Motor_Data[j].output = power_management.Motor_Data[j].pid_output;
         }
     }
     else
     {
-        power_management.Scale_Conffient[1] = mot_max_power / mot_needScaled_power;
-        for (int i = 0; i < 8; i++)
+        power_management.Scale_Conffient = mot_max_power / mot_needScaled_power;
+        for (int i = 0; i < 4; i++)
         {
-            if (i % 2 != 0)
+            if (power_management.Motor_Data[i].theoretical_power < 0.0f)
             {
-                if (power_management.Motor_Data[i].theoretical_power < 0.0f)
-                {
-                    power_management.Motor_Data[i].output = power_management.Motor_Data[i].pid_output;
-                    continue;
-                }
-
-                Calulate_Power_Allocate(power_management.Motor_Data[i], 0,
-                                        power_management.Max_Power, power_management.Scale_Conffient[1]);
-
-                power_management.Motor_Data[i].output =
-                    Calculate_Toque(power_management.Motor_Data[i].feedback_omega,
-                                    power_management.Motor_Data[i].scaled_power,
-                                    power_management.Motor_Data[i].torque,
-                                    i) *
-                    MOT_TORQUE_TO_CMD_CURRENT;
+                power_management.Motor_Data[i].output = power_management.Motor_Data[i].pid_output;
+                continue;
             }
+
+            Calulate_Power_Allocate(power_management.Motor_Data[i], 0,
+                                    power_management.Max_Power, power_management.Scale_Conffient);
+
+            power_management.Motor_Data[i].output =
+                Calculate_Toque(power_management.Motor_Data[i].feedback_omega,
+                                power_management.Motor_Data[i].scaled_power,
+                                power_management.Motor_Data[i].torque,
+                                i) *
+                MOT_TORQUE_TO_CMD_CURRENT;
         }
     }
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 4; i++)
     {
         if ((power_management.Motor_Data[i].output) >= 16384)
         {
             power_management.Motor_Data[i].output = 16384;
         }
 
-		if ((power_management.Motor_Data[i].output) <= -16384)
+        if ((power_management.Motor_Data[i].output) <= -16384)
         {
             power_management.Motor_Data[i].output = -16384;
         }
     }
 }
-void Class_New_Power_Limit::Power_Allocate(float Power_Limit, float rate,float dir_predict_power,float mot_predict_power,float *dir_power_allocate,float *mot_power_allocate)
+void Class_New_Power_Limit::Power_Allocate(float Power_Limit, float rate, float dir_predict_power, float mot_predict_power, float *dir_power_allocate, float *mot_power_allocate)
 {
     // 新的功率分配逻辑
-    float dir_power_limit = Power_Limit * rate; // 转向电机功率上限
-    float mot_power_limit = Power_Limit * (1.f-rate);      // 动力电机功率上限，动态计算
+    float dir_power_limit = Power_Limit * rate;         // 转向电机功率上限
+    float mot_power_limit = Power_Limit * (1.f - rate); // 动力电机功率上限，动态计算
 
-    //实际分配到的功率
-    float dir_allocate,mot_allocate;
+    // 实际分配到的功率
+    float dir_allocate, mot_allocate;
 
     // 首先分配转向电机功率
     if (dir_predict_power > dir_power_limit)
     {
         // 转向功率需求超过限制，按限制分配
-        dir_allocate = dir_power_limit; 
+        dir_allocate = dir_power_limit;
     }
     else
     {
@@ -292,7 +231,28 @@ void Class_New_Power_Limit::Power_Allocate(float Power_Limit, float rate,float d
     {
         mot_allocate = mot_predict_power;
     }
-    //赋值给成员变量
+    // 赋值给成员变量
     *dir_power_allocate = dir_allocate;
+    *mot_power_allocate = mot_allocate;
+}
+
+void Class_New_Power_Limit::Power_Allocate(float Power_Limit, float mot_predict_power, float *mot_power_allocate)
+{
+    // 新的功率分配逻辑
+    float mot_power_limit = Power_Limit;
+
+    // 实际分配到的功率
+    float mot_allocate;
+
+    // 分配动力电机功率
+    if (mot_predict_power > mot_power_limit)
+    {
+        mot_allocate = mot_power_limit;
+    }
+    else
+    {
+        mot_allocate = mot_predict_power;
+    }
+    // 赋值给成员变量
     *mot_power_allocate = mot_allocate;
 }

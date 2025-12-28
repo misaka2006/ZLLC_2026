@@ -851,6 +851,8 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
         }
 #else
         Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
+        // 力控底盘中的超电存活检测函数
+        Force_Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
         for (int i = 0; i < 4; i++)
         {
             Chassis.Mecanum_Wheels[i].TIM_Alive_PeriodElapsedCallback();
