@@ -14,6 +14,12 @@
 #include "crt_booster.h"
 
 /* Private macros ------------------------------------------------------------*/
+    extern bool Push_Calibration_Finished = false;
+    extern bool Pull_Calibration_Finished = true;
+
+    //int servo_test;
+    int servo_test_flag = 0;
+    float test_0_1_push = 0.01f;
 
 /* Private types -------------------------------------------------------------*/
 
@@ -24,357 +30,485 @@
 /* Function prototypes -------------------------------------------------------*/
 
 /**
- * @brief 定时器处理函数
- * 这是一个模板, 使用时请根据不同处理情况在不同文件内重新定义
- *
+ * @brief  将当前角度线性映射到目标行程
+ * @param  curr_angle   当前电机角度
+ * @param  angle_start  起始点角度（通常是 Backward 角度）
+ * @param  angle_end    结束点角度（通常是 Forward 角度）
+ * @param  max_length   物理最大行程（例如 1.0 表示百分比，或者 200.0 表示 mm）
+ * @return 映射后的位置值
  */
-void Class_FSM_Heat_Detect::Reload_TIM_Status_PeriodElapsedCallback()
+float Class_FSM_Push_Calibration::Linear_Map_Position(float curr_angle, float angle_start, float angle_end, float max_length)
 {
-    Status[Now_Status_Serial].Time++;
-
-    //自己接着编写状态转移函数
-    switch (Now_Status_Serial)
-    {
-    case (0):
-    {
-        //正常状态
-
-        if (abs(Booster->Motor_Friction_Right.Get_Now_Torque()) >= Booster->Friction_Torque_Threshold)
-        {
-            //大扭矩->检测状态
-            Set_Status(1);
-        }
-        else if (Booster->Booster_Control_Type == Booster_Control_Type_DISABLE)
-        {
-            //停机->停机状态
-            Set_Status(3);
-        }
-    }
-    break;
-    case (1):
-    {
-        //发射嫌疑状态
-
-        if (Status[Now_Status_Serial].Time >= 15)
-        {
-            //长时间大扭矩->确认是发射了
-            Set_Status(2);
-        }
-    }
-    break;
-    case (2):
-    {
-        //发射完成状态->加上热量进入下一轮检测
-
-        Heat += 10.0f;
-        Set_Status(0);
-    }
-    break;
-    case (3):
-    {
-        //停机状态
-
-        if (abs(Booster->Motor_Friction_Right.Get_Now_Omega_Radian()) >= Booster->Friction_Omega_Threshold)
-        {
-            //开机了->正常状态
-            Set_Status(0);
-        }
-    }
-    break;
+    // 防止分母为0（极其罕见的情况，但为了安全）
+    if (fabs(angle_end - angle_start) < 0.001f) {
+        return 0.0f;
     }
 
-    //热量冷却到0
-    if (Heat > 0)
-    {
-        Heat -= 80.f / 1000.0f;//哨兵默认80
-    }
-    else
-    {
-        Heat = 0;
-    }
+    // 1. 计算归一化比例 (Ratio 0.0 ~ 1.0)
+    // 公式: (x - min) / (max - min)
+    float ratio = (curr_angle - angle_start) / (angle_end - angle_start);
+
+    // 2. 安全限幅 (Clamping)
+    // 这一步非常重要：如果当前角度因为惯性稍微超过了校准值，
+    // 不限幅会导致 PID 计算出的误差反向剧增，引发震荡。
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
+
+    // 3. 映射到物理长度
+    return ratio * max_length;
 }
 
+float Class_FSM_Pull_Calibration::Linear_Map_Position(float curr_angle, float angle_start, float angle_end, float max_length)
+{
+    // 防止分母为0（极其罕见的情况，但为了安全）
+    if (fabs(angle_end - angle_start) < 0.001f) {
+        return 0.0f;
+    }
+
+    // 1. 计算归一化比例 (Ratio 0.0 ~ 1.0)
+    // 公式: (x - min) / (max - min)
+    float ratio = (curr_angle - angle_start) / (angle_end - angle_start);
+
+    // 2. 安全限幅 (Clamping)
+    // 这一步非常重要：如果当前角度因为惯性稍微超过了校准值，
+    // 不限幅会导致 PID 计算出的误差反向剧增，引发震荡。
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
+
+    // 3. 映射到物理长度
+    return ratio * max_length;
+}
+
+// 已经通过串口读取到一拉力值
+// 使用全局变量保存，单位为kg
+
+// 拉力环比例系数
+float K_tension = 0.01f; 
 /**
- * @brief 卡弹策略有限自动机
+ * @brief 拉力外环控制（将拉力误差映射为 Pull 电机的目标位置）
  *
  */
-void Class_FSM_Antijamming::Reload_TIM_Status_PeriodElapsedCallback()
+void Class_Booster::Pull_Tension_Control()
+{
+    // 读取测量值与目标值
+    now_tension_value = Get_Measured_Tension();
+    target_tension_value = Get_Target_Tension();
+
+    float tension_error = target_tension_value - now_tension_value;
+    target_tension_position_pull += K_tension * tension_error;
+
+    // 限幅
+    if (target_tension_position_pull > 0.9f) {
+        target_tension_position_pull = 0.9f;
+    }
+    if (target_tension_position_pull < 0.1f) {
+        target_tension_position_pull = 0.1f;
+    }
+
+    Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+    Motor_Pull.Set_Target_Radian(target_tension_position_pull);
+
+}
+
+
+
+void Class_FSM_Push_Calibration::Reload_TIM_Status_PeriodElapsedCallback()
 {
     Status[Now_Status_Serial].Time++;
 
     //自己接着编写状态转移函数
     switch (Now_Status_Serial)
     {
-        case (0):
+        case (0)://向前堵转
         {
-            //正常状态
-            Booster->Output();
+            Booster->Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+            Booster->Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
 
-            if (abs(Booster->Motor_Driver.Get_Now_Torque()) >= Booster->Driver_Torque_Threshold)
-            {
-                //大扭矩->卡弹嫌疑状态
+            Booster->Motor_Push_L.Set_Target_Omega_Radian(speed);
+            Booster->Motor_Push_R.Set_Target_Omega_Radian(speed);
+
+            if(fabs(Booster->Motor_Push_L.Get_Now_Torque()) > Torque_Threshold_up &&
+                fabs(Booster->Motor_Push_R.Get_Now_Torque()) > Torque_Threshold_up){
                 Set_Status(1);
             }
         }
         break;
-        case (1):
+        case (1)://前侧检测
         {
-            //卡弹嫌疑状态
-            Booster->Output();
-
-            if (Status[Now_Status_Serial].Time >= 100)
-            {
-                //长时间大扭矩->卡弹反应状态
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Forward_L = Booster->Motor_Push_L.Get_Now_Angle();
+                Booster->Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Push_L.Set_Target_Torque(0.f);
+                Booster->Motor_Push_L.Set_Out(0.f);
+                forward_flag_L = 1;
+            }
+            else if (fabs(Booster->Motor_Push_L.Get_Now_Torque()) < Torque_Threshold_up){
+                Set_Status(0);
+                forward_flag_L = 0;
+                forward_flag_R = 0;
+            }
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Forward_R = Booster->Motor_Push_R.Get_Now_Angle();
+                Booster->Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Push_R.Set_Target_Torque(0.f);
+                Booster->Motor_Push_R.Set_Out(0.f);
+                forward_flag_R = 1;
+            }
+            else if (fabs(Booster->Motor_Push_R.Get_Now_Torque()) < Torque_Threshold_up){
+                Set_Status(0);
+                forward_flag_L = 0;
+                forward_flag_R = 0;
+            }
+            if(forward_flag_L == 1 && forward_flag_R == 1){
                 Set_Status(2);
             }
-            else if (abs(Booster->Motor_Driver.Get_Now_Torque()) < Booster->Driver_Torque_Threshold)
-            {
-                //短时间大扭矩->正常状态
-                Set_Status(0);
-            }
         }
         break;
-        case (2):
+        case (2)://向后堵转
         {
-            //卡弹反应状态->准备卡弹处理
-            Booster->Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
-            //Booster->Driver_Angle = Booster->Motor_Driver.Get_Now_Radian() + PI / 12.0f;//原版本
-            Booster->Driver_Angle = Booster->Motor_Driver.Get_Now_Radian() + (2 * PI / 8.0f);
-            Booster->Motor_Driver.Set_Target_Radian(Booster->Driver_Angle);
-            Set_Status(3);
-        }
-        break;
-        case (3):
-        {
-            //卡弹处理状态
+            Booster->Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+            Booster->Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
 
-            if (Status[Now_Status_Serial].Time >= 300)
-            {
-                //长时间回拨->正常状态
+            Booster->Motor_Push_L.Set_Target_Omega_Radian(-speed);
+            Booster->Motor_Push_R.Set_Target_Omega_Radian(-speed);
+
+            if(fabs(Booster->Motor_Push_L.Get_Now_Torque()) > Torque_Threshold_down && 
+                fabs(Booster->Motor_Push_R.Get_Now_Torque()) > Torque_Threshold_down){
+                Set_Status(3);
+            }
+        }
+        break;
+        case (3)://后侧检测
+        {
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Backward_L = Booster->Motor_Push_L.Get_Now_Angle();
+                Booster->Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Push_L.Set_Target_Torque(0.f);
+                Booster->Motor_Push_L.Set_Out(0.f);
+                backward_flag_L = 1;
+            }
+            else if (fabs(Booster->Motor_Push_L.Get_Now_Torque()) < Torque_Threshold_down){
+                Set_Status(2);
+                backward_flag_L = 0;
+                backward_flag_R = 0;
+            }
+            
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Backward_R = Booster->Motor_Push_R.Get_Now_Angle();
+                Booster->Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Push_R.Set_Target_Torque(0.f);
+                Booster->Motor_Push_R.Set_Out(0.f);
+                backward_flag_R = 1;
+            }
+            else if (fabs(Booster->Motor_Push_R.Get_Now_Torque()) < Torque_Threshold_down){
+                Set_Status(2);
+                backward_flag_L = 0;
+                backward_flag_R = 0;
+            }
+            if(backward_flag_L == 1 && backward_flag_R == 1){
+                //舵机控制
+                Booster->Servo_Trigger.Set_Target_Angle(Booster->tirrger_reset_angle);//测试舵机用
+                Set_Status(4);
+            }
+        }
+        break;
+        case (4)://正常控制流程
+        {
+            //舵机控制
+            Booster->Servo_Trigger.Set_Target_Angle(Booster->tirrger_reset_angle);
+            Push_Calibration_Finished = true;
+            Set_Status(5);
+        }
+        break;
+        case (5)://校准检测
+        {
+            //定义上面是1.0f最大行程 下面是0.0f最小行程
+            //所以在函数映射的时候颠倒了位置
+            float now_position_l = Linear_Map_Position(Booster->Motor_Push_L.Get_Now_Angle(), Angle_Backward_L, Angle_Forward_L,1.0f);
+            float now_position_r = Linear_Map_Position(Booster->Motor_Push_R.Get_Now_Angle(), Angle_Backward_R, Angle_Forward_R,1.0f);
+            float now_position = (now_position_l + now_position_r) / 2.0f;
+            Booster->Motor_Push_L.Set_Transform_Angle(now_position);
+            Booster->Motor_Push_R.Set_Transform_Angle(now_position);
+
+            if(Push_Calibration_Finished && Pull_Calibration_Finished){
+                Booster->Set_Booster_Control_Type(Booster_Control_Type_NORMAL);
+            }
+
+        }
+    }
+}
+
+void Class_FSM_Pull_Calibration::Reload_TIM_Status_PeriodElapsedCallback()
+{
+    Status[Now_Status_Serial].Time++;
+
+    //自己接着编写状态转移函数
+    switch (Now_Status_Serial)
+    {
+        case (0)://向前堵转
+        {
+            Booster->Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+            Booster->Motor_Pull.Set_Target_Omega_Radian(speed);
+            
+            if(fabs(Booster->Motor_Pull.Get_Now_Torque()) > Torque_Threshold){
+                Set_Status(1);
+            }
+        }
+        break;
+        case (1)://前侧检测
+        {
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Forward = Booster->Motor_Pull.Get_Now_Angle();
+                Booster->Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Pull.Set_Target_Torque(0.f);
+                Booster->Motor_Pull.Set_Out(0.f);
+                Set_Status(2);
+            }
+            else if (fabs(Booster->Motor_Pull.Get_Now_Torque()) < Torque_Threshold){
                 Set_Status(0);
             }
+        }
+        break;
+        case (2)://向后堵转
+        {
+
+            Booster->Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+            Booster->Motor_Pull.Set_Target_Omega_Radian(-speed);
+
+            if(fabs(Booster->Motor_Pull.Get_Now_Torque()) > Torque_Threshold){
+                Set_Status(3);
+            }
+        }
+        break;
+        case (3)://后侧检测
+        {
+            if(Status[Now_Status_Serial].Time > 100){
+                Angle_Backward = Booster->Motor_Pull.Get_Now_Angle();
+                Booster->Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+                Booster->Motor_Pull.Set_Target_Torque(0.f);
+                Booster->Motor_Pull.Set_Out(0.f);
+                Set_Status(4);
+            }
+            else if (fabs(Booster->Motor_Pull.Get_Now_Torque()) < Torque_Threshold){
+                Set_Status(2);
+            }
+            
+        }
+        break;
+        case (4)://正常控制流程
+        {
+            Pull_Calibration_Finished = true;
+            Set_Status(5);
+        }
+        break;
+        case (5)://校准检测
+        {
+            //定义上面是1.0f最大行程 下面是0.0f最小行程
+            float now_position = Linear_Map_Position(Booster->Motor_Pull.Get_Now_Angle(), Angle_Backward, Angle_Forward,1.0f);//注意这里颠倒了
+            Booster->Motor_Pull.Set_Transform_Angle(now_position);
+
+            if(Push_Calibration_Finished && Pull_Calibration_Finished){
+                Booster->Set_Booster_Control_Type(Booster_Control_Type_NORMAL);
+            }
+        }
+    }
+}
+
+void Class_FSM_Shooting::Reload_TIM_Status_PeriodElapsedCallback()
+{
+    Status[Now_Status_Serial].Time++;
+
+    //自己接着编写状态转移函数
+    switch (Now_Status_Serial)
+    {
+        case (Shooting_Control_Type_DISABLE):
+        {
+            
+        }
+        break;
+        case (Shooting_Control_Type_READY)://
+        {
+            //-----------------------
+            //Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+            Booster->Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+            Booster->Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+
+            //Motor_Pull.Set_Target_Radian(target_position_pull);
+            Booster->Motor_Push_L.Set_Target_Radian(Booster->target_position_push);
+            Booster->Motor_Push_R.Set_Target_Radian(Booster->target_position_push);
+            //-------------------------------------------------
+        }
+        break;
+        case (2)://向后堵转
+        {
+    
+        }
+        break;
+        case (3)://后侧检测
+        {
+
+        }
+        break;
+        case (4)://正常控制流程
+        {
+
         }
         break;
     }
 }
+
+//测试参数
+float Motor_L_test_P = 270.0f;
+float Motor_L_test_I = 25.f;
+float Motor_R_test_P = 320.0f;
+float Motor_R_test_I = 28.f;
+
+float Motor_Push_Angle_P_test = 4200.0f;
+float Motor_Push_Angle_I_test = 0.0f;
+
+float Motor_Pull_Omega_test_P = 2300.0f;
+float Motor_Pull_Omega_test_I = 370.0f;
+
+float Motor_Pull_Angle_P_test = 300.0f;
+float Motor_Pull_Angle_I_test = 0.0f;
 
 /**
  * @brief 发射机构初始化
  *
  */
-
 void Class_Booster::Init()
 {
-    //正常状态, 发射嫌疑状态, 发射完成状态, 停机状态
-    FSM_Heat_Detect.Booster = this;
-    FSM_Heat_Detect.Init(3, 3);
+    FSM_Shooting.Booster = this;
+    FSM_Shooting.Init(9, 0);
 
-    //正常状态, 卡弹嫌疑状态, 卡弹反应状态, 卡弹处理状态
-    FSM_Antijamming.Booster = this;
-    FSM_Antijamming.Init(4, 0);
+    FSM_Push_Calibration.Booster = this;
+    FSM_Push_Calibration.Init(6, 0);
 
-    //拨弹盘电机
-    Motor_Driver.PID_Angle.Init(25.0f, 0.0f, 0.0f, 0.0f, 5.0f * PI, 5.0f * PI);
-    Motor_Driver.PID_Omega.Init(2500.0f, 500.0f, 0.0f, 0.0f, Motor_Driver.Get_Output_Max(), Motor_Driver.Get_Output_Max());
-    Motor_Driver.Init(&hfdcan3, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_OMEGA);
+    FSM_Pull_Calibration.Booster = this;
+    FSM_Pull_Calibration.Init(6, 0);
 
-    //注意初始化ID 此版本6020为电流环版本 可能会有ID冲突
-    //摩擦轮电机左
-    Motor_Friction_Left.PID_Omega.Init(80.0f, 0.0f, 0.f, 0.0f, 2000.0f, Motor_Friction_Left.Get_Output_Max());
-    Motor_Friction_Left.Init(&hfdcan2, DJI_Motor_ID_0x207, DJI_Motor_Control_Method_OMEGA, 1.0f);
-    
-    //摩擦轮电机右
-    Motor_Friction_Right.PID_Omega.Init(80.0f, 0.0f, 0.f, 0.0f, 2000.0f, Motor_Friction_Right.Get_Output_Max());
-    Motor_Friction_Right.Init(&hfdcan2, DJI_Motor_ID_0x208, DJI_Motor_Control_Method_OMEGA, 1.0f);
+    //舵机
+    Servo_Trigger.Init(&htim2, TIM_CHANNEL_1, 270);
+    Servo_Trigger.Set_Target_Angle(tirrger_fire_angle);
 
+    //拉力电机
+    Motor_Pull.PID_Angle.Init(Motor_Pull_Angle_P_test, Motor_Pull_Angle_I_test, 0.0f, 0.0f, 5.0f * PI, 35.0f * PI);
+    Motor_Pull.PID_Omega.Init(Motor_Pull_Omega_test_P, Motor_Pull_Omega_test_I, 0.001f, 0.0f, 2000, Motor_Pull.Get_Output_Max());
+    Motor_Pull.Init(&hfdcan1, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA);
 
+    //Push电机左
+    Motor_Push_L.PID_Angle.Init(Motor_Push_Angle_P_test, Motor_Push_Angle_I_test, 0.0f, 0.0f, 5.0f * PI, 150.0f * PI);
+    Motor_Push_L.PID_Omega.Init(Motor_L_test_P, Motor_L_test_I, 0.0f, 0.0f, Motor_Push_L.Get_Output_Max() * 0.5f, Motor_Push_L.Get_Output_Max());
+    Motor_Push_L.Init(&hfdcan1, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_OMEGA,1.0f);
+
+    //Push电机右
+    Motor_Push_R.PID_Angle.Init(Motor_Push_Angle_P_test, Motor_Push_Angle_I_test, 0.0f, 0.0f, 5.0f * PI, 150.0f * PI);
+    Motor_Push_R.PID_Omega.Init(Motor_R_test_P, Motor_R_test_I, 0.0f, 0.0f, Motor_Push_R.Get_Output_Max() * 0.5f, Motor_Push_R.Get_Output_Max());
+    Motor_Push_R.Init(&hfdcan1, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_OMEGA,1.0f);
 }
 
 /**
  * @brief 输出到电机
  *
  */
-extern Referee_Rx_B_t CAN3_Chassis_Rx_Data_B;
+// float test_b = -10.0f;//速度环测试目标速度
+// float target_position_b = 0.5f;//角度环测试目标位置
+
+
 void Class_Booster::Output()
 {
-    Now_Angle = Motor_Driver.Get_Now_Radian();
-    //控制拨弹轮
+//  // 设置电机控制模式（调试用）
+    // Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+    // Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+    // Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+    // Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+    // Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+    // Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+
+// //角度环调参
+//    Motor_Pull.PID_Angle.Set_K_P(Motor_Pull_Angle_P_test);
+//    Motor_Pull.PID_Angle.Set_K_I(Motor_Pull_Angle_I_test);
+//    Motor_Push_L.PID_Angle.Set_K_P(Motor_Push_Angle_P_test);
+//    Motor_Push_R.PID_Angle.Set_K_P(Motor_Push_Angle_P_test);
+//    Motor_Push_L.PID_Angle.Set_K_I(Motor_Push_Angle_I_test);
+//    Motor_Push_L.PID_Angle.Set_K_I(Motor_Push_Angle_I_test);
+    
+// //角度环测试
+//    Motor_Pull.Set_Target_Radian(Target);
+//    Motor_Push_L.Set_Target_Radian(target_position_b);
+//    Motor_Push_R.Set_Target_Radian(target_position_b);
+
+// //速度环调参
+//    Motor_Pull.PID_Omega.Set_K_P(Motor_Pull_Omega_test_P);
+//    Motor_Pull.PID_Omega.Set_K_I(Motor_Pull_Omega_test_I);
+//    Motor_Push_L.PID_Omega.Set_K_P(Motor_L_test_P);
+//    Motor_Push_R.PID_Omega.Set_K_P(Motor_R_test_P);
+//    Motor_Push_L.PID_Omega.Set_K_I(Motor_L_test_I);
+//    Motor_Push_R.PID_Omega.Set_K_I(Motor_R_test_I);
+
+// //速度环测试    
+//    Motor_Pull.Set_Target_Omega_Radian(test_b);
+//    Motor_Pull.Set_Transform_Angle(Motor_Pull.Get_Now_Radian());
+//     Motor_Push_L.Set_Target_Omega_Radian(test_b);
+//     Motor_Push_L.Set_Transform_Angle(Motor_Push_L.Get_Now_Radian());
+//     Motor_Push_R.Set_Target_Omega_Radian(test_b);
+//     Motor_Push_R.Set_Transform_Angle(Motor_Push_R.Get_Now_Radian());
+
     switch (Booster_Control_Type)
     {
         case (Booster_Control_Type_DISABLE):
         {
-            // 发射机构失能
-            Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OPENLOOP);
-            Motor_Friction_Left.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-            Motor_Friction_Right.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+            // Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+            // Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
+            // Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_TORQUE);
 
-            // 关闭摩擦轮
-            Set_Friction_Control_Type(Friction_Control_Type_DISABLE);
+            // Motor_Pull.Set_Target_Torque(0.f);
+            // Motor_Push_L.Set_Target_Torque(0.f);
+            // Motor_Push_R.Set_Target_Torque(0.f);
 
-            Motor_Driver.PID_Angle.Set_Integral_Error(0.0f);
-            Motor_Driver.PID_Omega.Set_Integral_Error(0.0f);
-            Motor_Friction_Left.PID_Angle.Set_Integral_Error(0.0f);
-            Motor_Friction_Right.PID_Angle.Set_Integral_Error(0.0f);
-
-            Motor_Driver.Set_Out(0.0f);
-            Motor_Friction_Left.Set_Out(0.0f);
-            Motor_Friction_Right.Set_Out(0.0f);
-
-            shoot_time = 0;
+            // Motor_Pull.Set_Out(0.f);
+            // Motor_Push_L.Set_Out(0.f);
+            // Motor_Push_R.Set_Out(0.f);
         }
         break;
-        case (Booster_Control_Type_CEASEFIRE):
+        case (Booster_Control_Type_NORMAL)://校准结束，进入准备发射状态
         {
-            // 停火
-            if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_ANGLE)
-            {
-               // Motor_Driver.Set_Target_Radian(Motor_Driver.Get_Now_Radian());
-            }
-            else if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_OMEGA)
-            {
-                Motor_Driver.Set_Target_Omega_Radian(0.0f);
-                Motor_Driver.Set_Out(0.f);               
-            }
-            else
-            {
-                Motor_Driver.Set_Out(0.f);
-            }
-            shoot_time = 0;
-            Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
+            //-----------------------
+            //Motor_Pull.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+            Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+            Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+
+            //Motor_Pull.Set_Target_Radian(target_position_pull);
+            Motor_Push_L.Set_Target_Radian(target_position_push);
+            Motor_Push_R.Set_Target_Radian(target_position_push);
+            //-------------------------------------------------
+
+            //进入Shooting状态机
+            Set_Shooting_Control_Type(Shooting_Control_Type_READY);
         }
         break;
-        case (Booster_Control_Type_SINGLE):
-        {
-            // 单发模式
-            Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
-            Motor_Friction_Left.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-            Motor_Friction_Right.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
 
-            Driver_Angle = Now_Angle - 2.0f * PI / 8.0f;
-            // Driver_Angle -= 2.0f * PI / 8.0f;
-            Motor_Driver.Set_Target_Radian(Driver_Angle);
+        // case (Booster_Control_Type_READY_Tension)://准备发射状态下一步，PUSH不动，Pull电机进入拉力环
+        // {
+        //     // //-----------------------
+        //     // Pull_Tension_Control();
 
-            Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
-        }
-        break;
-        case (Booster_Control_Type_MULTI):
-        {
-            // 连发模式
-            Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
-            Motor_Friction_Left.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-            Motor_Friction_Right.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+        //     // Motor_Push_L.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+        //     // Motor_Push_R.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
 
-            Driver_Angle = Now_Angle - 2.0f * PI / 8.0f * 5.0f; //五连发5
-            // Driver_Angle -= 2.0f * PI / 8.0f * 5.0f; //五连发
-            Motor_Driver.Set_Target_Radian(Driver_Angle);
+        //     // Motor_Push_L.Set_Target_Radian(target_position_push);
+        //     // Motor_Push_R.Set_Target_Radian(target_position_push);
+        //     // //-------------------------------------------------
+        // }
+        // break;
 
-            Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
-        }
-        break;
-        case (Booster_Control_Type_REPEATED):
-        {
-            float max_speed = 30.f;
-            float speed_x = fabs((float)(MiniPC->Get_Chassis_Target_Velocity_X() / 100.f));
-            float speed_y = fabs((float)(MiniPC->Get_Chassis_Target_Velocity_Y() / 100.f));
-            float max_sum = sqrt(speed_x * speed_x + speed_y * speed_y);
-
-            // 连发模式
-            Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-            Motor_Friction_Left.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-            Motor_Friction_Right.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-
-            // 根据冷却计算拨弹盘默认速度, 此速度下与冷却均衡
-            Default_Driver_Omega = - 80.f / 10.0f / 8.0f * 2.0f * PI;
-            Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega);
-            if(max_sum > 0.f && max_sum <= 0.75f)
-            {
-                max_speed = 30.f;
-            }
-            else if(max_sum > 0.75f && max_sum <= 4.f)
-            {
-                max_speed = 8.f;
-            }
-            else if(max_sum > 4.f && max_sum <= 9.f)
-            {
-                max_speed = 4.f;
-            }
-            else if(max_sum > 9.f && max_sum <= 16.f)
-            {
-                max_speed = 2.f;
-            }
-            else if(max_sum > 16.f)
-            {
-                max_speed = 1.f;
-            }
-            // 热量控制
-            Cooling_Value = CAN3_Chassis_Rx_Data_B.cooling_value;
-            if(Heat == 0 && (uint16_t)FSM_Heat_Detect.Heat != 0)
-            {
-                Heat = (uint16_t)FSM_Heat_Detect.Heat;
-            }
-            if(shoot_time == 0)
-            {
-                ShootTime = ((Heat_Max - Heat) + 2 * Cooling_Value) * 10;
-                if(Heat_Max - Heat < 100){
-                    shoot_speed = (10 * (Heat_Max - Heat) - Cooling_Value - 3 * Heat_Consumption) / (Heat_Consumption * (ShootTime / 100.f)) + Cooling_Value / Heat_Consumption;
-                }
-                else{
-                    shoot_speed = (10 * (Heat_Max - Heat) - Cooling_Value - 5 * Heat_Consumption) / (Heat_Consumption * (ShootTime / 100.f)) + Cooling_Value / Heat_Consumption;
-                }
-            }               
-            else if(0 < shoot_time && shoot_time < ShootTime)
-            {
-                Driver_Omega = shoot_speed * 2 * PI / 7.f;
-                Math_Constrain(&Driver_Omega, 0.0f, max_speed);
-                Motor_Driver.Set_Target_Omega_Radian(-Driver_Omega);
-            }
-            else
-            {
-                shoot_speed = (Cooling_Value / Heat_Consumption);
-                Driver_Omega = shoot_speed * 2 * PI / 7.f;
-                Math_Constrain(&Driver_Omega, 0.0f, max_speed);
-                Motor_Driver.Set_Target_Omega_Radian(-Driver_Omega);
-            }
-            if(shoot_time < ShootTime)
-            {
-                shoot_time++;
-            }
-            //Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega * 2.5f);//测试用 平常注释
-            //裁判系统正常模式
-            if(Heat > 340)
-            {
-                Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega * 0.4f);
-            }
-            if(Heat > 370)
-            {
-                Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega * 0.25f);
-            }
-            //离线保守模式
-            if(Heat > 300)
-            {
-                Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega * 0.4f);
-            }
-            if(Heat > 350)
-            {
-                Motor_Driver.Set_Target_Omega_Radian(Default_Driver_Omega * 0.25f);
-            }
-            
-            Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
-        }
-        break;  
     }
+    if(servo_test_flag == 1){
+        Servo_Trigger.Set_Target_Angle(tirrger_fire_angle);
+    }
+    Set_Target_position_push(test_0_1_push);
 
-    //控制摩擦轮
-    if(Friction_Control_Type != Friction_Control_Type_DISABLE)
-    {
-        Motor_Friction_Left.Set_Target_Omega_Radian(Friction_Omega);
-        Motor_Friction_Right.Set_Target_Omega_Radian(-Friction_Omega);
-    }
-    else
-    {
-        Motor_Friction_Left.Set_Target_Omega_Radian(0.0f);
-        Motor_Friction_Right.Set_Target_Omega_Radian(0.0f);
-    }
+
 }
 
 /**
@@ -382,16 +516,26 @@ void Class_Booster::Output()
  *
  */
 void Class_Booster::TIM_Calculate_PeriodElapsedCallback()
-{     
+{    
+    //皮筋校准
+    FSM_Push_Calibration.Reload_TIM_Status_PeriodElapsedCallback();
+
+    //拉力校准
+    //FSM_Pull_Calibration.Reload_TIM_Status_PeriodElapsedCallback();
+
+    //发射状态机
+
+    FSM_Shooting.Reload_TIM_Status_PeriodElapsedCallback();
+
+    Output();
     
-    //无需裁判系统的热量控制计算
-    FSM_Heat_Detect.Reload_TIM_Status_PeriodElapsedCallback();
-    //卡弹处理
-    FSM_Antijamming.Reload_TIM_Status_PeriodElapsedCallback();
     //PID输出
-    Motor_Driver.TIM_PID_PeriodElapsedCallback();
-    Motor_Friction_Left.TIM_PID_PeriodElapsedCallback();
-    Motor_Friction_Right.TIM_PID_PeriodElapsedCallback();
+    //Motor_Pull.TIM_PID_PeriodElapsedCallback();
+    Motor_Push_L.TIM_PID_PeriodElapsedCallback();
+    Motor_Push_R.TIM_PID_PeriodElapsedCallback();
+
+    // //Servo_Trigger.Set_Target_Angle(servo_test);//测试舵机用
+
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

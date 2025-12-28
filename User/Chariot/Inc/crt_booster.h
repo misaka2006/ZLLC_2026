@@ -23,6 +23,7 @@
 #include "dvc_referee.h"
 #include "dvc_djimotor.h"
 #include "dvc_minipc.h"
+#include "dvc_servo.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -37,48 +38,89 @@ class Class_Booster;
 enum Enum_Booster_Control_Type
 {
     Booster_Control_Type_DISABLE = 0,
-    Booster_Control_Type_CEASEFIRE,
-    Booster_Control_Type_SINGLE,
-    Booster_Control_Type_REPEATED,
-    Booster_Control_Type_MULTI,  //连发
+    Booster_Control_Type_NORMAL,//暂时不用
+    Booster_Control_Type_Push_CALIBRATION,
+    Booster_Control_Type_Pull_CALIBRATION,
+    Booster_Control_Type_Shooting,
+    
 };
 
 /**
- * @brief 摩擦轮控制类型
+ * @brief 发射过程控制类型
  *
  */
-enum Enum_Friction_Control_Type
+enum Enum_Shooting_Control_Type
 {
-    Friction_Control_Type_DISABLE = 0,
-    Friction_Control_Type_ENABLE,
+    //Booster_Control_Type_DISABLE = 0,
+    // Booster_Control_Type_READY,//可以发射的状态，初始化之后的状态。PUSH和PULL电机位置保持在目标位置
+    // Booster_Control_Type_READY_Tension,//进一步的状态，PUSH电机位置保持在目标位置，PULL电机进入拉力环
+    // Booster_Control_Type_DART_IN_FLIGHT,//发射中状态1,此时Push上膛压块在上（1的位置）飞镖在轨道内滑行。
+    // Booster_Control_Type_DART_IN_AIR,//发射中状态2,此时Push上膛压块正在下降（正在从1位置回到0位置）飞镖在空中
+    Shooting_Control_Type_DISABLE = 0,
+    Shooting_Control_Type_READY,
+
 };
 
 
 
 /**
- * @brief Specialized, 热量检测有限自动机
+ * @brief Specialized, 发射策略有限自动机
  *
  */
-class Class_FSM_Heat_Detect : public Class_FSM
-{
-public:
-    Class_Booster *Booster;
-
-    float Heat;
-
-    void Reload_TIM_Status_PeriodElapsedCallback();
-};
-
-/**
- * @brief Specialized, 卡弹策略有限自动机
- *
- */
-class Class_FSM_Antijamming : public Class_FSM
+class Class_FSM_Shooting : public Class_FSM
 {
 public:
     Class_Booster *Booster;
 
     void Reload_TIM_Status_PeriodElapsedCallback();
+    Enum_Shooting_Control_Type Shooting_Control_Type = Shooting_Control_Type_DISABLE;
+
+};
+
+/**
+ * @brief Specialized, 发射策略有限自动机
+ *
+ */
+class Class_FSM_Push_Calibration  : public Class_FSM
+{
+public:
+    Class_Booster *Booster;
+
+    float Torque_Threshold_up = 3000.0f;
+    float Torque_Threshold_down = 9000.0f;
+    float speed = 60.0f;
+
+    float Angle_Forward_L = 0.0f;
+    float Angle_Backward_L = 0.0f;
+    float Angle_Forward_R = 0.0f;
+    float Angle_Backward_R = 0.0f;
+
+    int forward_flag_L = 0;
+    int forward_flag_R = 0;
+    int backward_flag_L = 0;
+    int backward_flag_R = 0;
+
+    void Reload_TIM_Status_PeriodElapsedCallback();
+    float Linear_Map_Position(float curr_angle, float angle_start, float angle_end, float max_length);
+};
+
+/**
+ * @brief Specialized, 发射策略有限自动机
+ *
+ */
+class Class_FSM_Pull_Calibration  : public Class_FSM
+{
+public:
+    Class_Booster *Booster;
+
+    float Torque_Threshold = 4000.0f;
+    float speed = 10.0f;
+
+    float Angle_Forward = 0.0f;
+    float Angle_Backward = 0.0f;
+
+    void Reload_TIM_Status_PeriodElapsedCallback();
+    float Linear_Map_Position(float curr_angle, float angle_start, float angle_end, float max_length);
 };
 
 /**
@@ -88,45 +130,57 @@ public:
 class Class_Booster
 {
 public:
-    //热量检测有限自动机
-    Class_FSM_Heat_Detect FSM_Heat_Detect;
-    friend class Class_FSM_Heat_Detect;
 
-    //卡弹策略有限自动机
-    Class_FSM_Antijamming FSM_Antijamming;
-    friend class Class_FSM_Antijamming;
+    //发射有限自动机
+    Class_FSM_Shooting FSM_Shooting;
+    friend class Class_FSM_Shooting;
+
+    //皮筋电机校准
+    Class_FSM_Push_Calibration FSM_Push_Calibration;
+    friend class Class_FSM_Push_Calibration;
+
+    //拉力电机校准
+    Class_FSM_Pull_Calibration FSM_Pull_Calibration;
+    friend class Class_FSM_Pull_Calibration;
 
     //裁判系统
     Class_Referee *Referee;
     //上位机
     Class_MiniPC *MiniPC;
 
-    //拨弹盘电机
-    Class_DJI_Motor_C610 Motor_Driver;
+    //180°舵机->撒放器
+    Class_Servo Servo_Trigger;
 
-    //摩擦轮电机左
-    Class_DJI_Motor_C620 Motor_Friction_Left;
-    //摩擦轮电机右
-    Class_DJI_Motor_C620 Motor_Friction_Right;
+    //发射电机
+    Class_DJI_Motor_C610 Motor_Pull;
+
+    Class_DJI_Motor_C620 Motor_Push_L;
+    Class_DJI_Motor_C620 Motor_Push_R;
+
+    
+
+    void Pull_Tension_Control();
 
     void Init();
 
-    inline float Get_Default_Driver_Omega();
-    inline float Get_Friction_Omega();
-    inline float Get_Friction_Omega_Threshold();
-    inline uint16_t Get_Heat();
-    
-
     inline Enum_Booster_Control_Type Get_Booster_Control_Type();
-    inline Enum_Friction_Control_Type Get_Friction_Control_Type();
+
+    inline int Get_Target_PushMotor_Angle();
+    inline int Get_Target_PullMotor_Angle();
+    inline int Get_Measured_Tension();
+    inline int Get_Target_Tension();
+    inline float Get_Target_position_push();
+    inline float Get_Target_position_pull();
 
     inline void Set_Booster_Control_Type(Enum_Booster_Control_Type __Booster_Control_Type);
-    inline void Set_Friction_Control_Type(Enum_Friction_Control_Type __Friction_Control_Type);
-    inline void Set_Friction_Omega(float __Friction_Omega);
-    inline void Set_Driver_Omega(float __Driver_Omega);
-    inline void Set_Booster_Type(Enum_Booster_Type __Booster_Type);
-    inline void Set_Heat(uint16_t __Heat);
-    inline void Set_Cooling_Value(uint16_t __Cooling_Value);
+    inline void Set_Shooting_Control_Type(Enum_Shooting_Control_Type __Shooting_Control_Type);
+    
+    inline void Set_Target_PushMotor_Angle(float __Target_PushMotor_Angle);
+    inline void Set_Target_PullMotor_Angle(float __Target_PullMotor_Angle);
+    inline void Set_Measured_Tension(int __Measured_Tension);
+    inline void Set_Target_Tension(int __Target_Tension);
+    inline void Set_Target_position_push(float __target_position_push);
+    inline void Set_Target_position_pull(float __target_position_pull);
 
     void TIM_Calculate_PeriodElapsedCallback();
 	void Output();
@@ -134,41 +188,34 @@ public:
 protected:
     //初始化相关常量
 
-    //常量
-    uint16_t Heat_Max = 400;
-    uint16_t Cooling_Value = 80;
-    float Heat_Consumption = 10.f;
-    //拨弹盘堵转扭矩阈值, 超出被认为卡弹
-    uint16_t Driver_Torque_Threshold = 8500;
-    //摩擦轮单次判定发弹阈值, 超出被认为发射子弹
-    uint16_t Friction_Torque_Threshold = 2000;
-    //摩擦轮速度判定发弹阈值, 超出则说明已经开机
-    float Friction_Omega_Threshold = 600;
+    //校准完成标志位
+    bool Push_Calibration_Finished = false;
+    bool Pull_Calibration_Finished = false;
 
-    //内部变量
-    uint16_t Heat;
-    float shoot_time = 0.f;
-    float ShootTime = 0.f;
-    float shoot_speed = 0.f;
-    float Now_Angle = 0.f;
-    //读变量
+    float target_position_push = 0.01f;//校准完成后push电机目标位置
+    float target_position_pull = 0.5f;//校准完成后pull电机目标位置
 
-    //拨弹盘默认速度, 一圈八发子弹, 此速度下与冷却均衡
-    float Default_Driver_Omega = -2.0f * PI;
+    //舵机相关
+    float tirrger_fire_angle = 235.0f;//舵机发射角度
+    float tirrger_reset_angle = 90.0f;//舵机复位角度
 
-    //写变量
+    //内部
+    //拉力相关变量
+    int Measured_Tension = 0;
+    int Target_Tension = 0;
+
+    //拉力环相关变量
+    float now_tension_value = 0.0f;           // 当前测得的拉力值
+    float target_tension_value = 0.0f;        // 目标拉力值    
+    float target_tension_position_pull = target_position_pull;// 拉力环下 Pull 电机目标位置，初始由 target_position_pull 提供
 
     //发射机构状态
-    Enum_Booster_Control_Type Booster_Control_Type = Booster_Control_Type_CEASEFIRE;
-    Enum_Friction_Control_Type Friction_Control_Type = Friction_Control_Type_DISABLE;
-    Enum_Booster_Type Booster_Type;
-    //摩擦轮角速度
-    float Friction_Omega = 650.0f;
-    //拨弹盘实际的目标速度, 一圈八发子弹
-    float Driver_Omega = -2.0f * PI * 2;
-    //拨弹轮目标绝对角度 加圈数
-    float Driver_Angle = 0.0f;
+    Enum_Booster_Control_Type Booster_Control_Type = Booster_Control_Type_DISABLE;
+
     //读写变量
+    float Target_PushMotor_Angle = 0.0f;
+
+    float Target_PullMotor_Angle = 0.0f;
 
     //内部函数
 
@@ -179,43 +226,51 @@ protected:
 
 /* Exported function declarations --------------------------------------------*/
 
-uint16_t Class_Booster::Get_Heat()
-{
-    return (Heat);
-}
 /**
- * @brief 获取拨弹盘默认速度, 一圈八发子弹, 此速度下与冷却均衡
+ * @brief 获得发射机构状态
  *
- * @return float 拨弹盘默认速度, 一圈八发子弹, 此速度下与冷却均衡
+ * @return Enum_Booster_Control_Type 发射机构状态
  */
-float Class_Booster::Get_Default_Driver_Omega()
+Enum_Booster_Control_Type Class_Booster::Get_Booster_Control_Type()
 {
-    return (Default_Driver_Omega);
+    return (Booster_Control_Type);
+}
+
+int Class_Booster::Get_Target_PushMotor_Angle()
+{
+    return Target_PushMotor_Angle;
+}
+
+int Class_Booster::Get_Target_PullMotor_Angle()
+{
+    return Target_PullMotor_Angle;
 }
 
 /**
- * @brief 获取摩擦轮默认速度,
+ * @brief 获取当前拉力,
  *
- * @return float 获取摩擦轮默认速度
+ * @return int 获取当前拉力
  */
-float Class_Booster::Get_Friction_Omega()
+inline int Class_Booster::Get_Measured_Tension()
 {
-    return (Friction_Omega);
+    return (Measured_Tension);
 }
 
-/**
- * @brief 获取摩擦轮默认速度,
- *
- * @return float 获取摩擦轮默认速度
- */
-float Class_Booster::Get_Friction_Omega_Threshold()
+inline int Class_Booster::Get_Target_Tension()
 {
-    return (Friction_Omega_Threshold);
+    return (Target_Tension);
 }
-void Class_Booster::Set_Heat(uint16_t __Heat)
+
+inline float Class_Booster::Get_Target_position_push()
 {
-    Heat = __Heat;
+    return (target_position_push);
 }
+
+inline float Class_Booster::Get_Target_position_pull()
+{
+    return (target_position_pull);
+}
+
 /**
  * @brief 设定发射机构状态
  *
@@ -227,63 +282,53 @@ void Class_Booster::Set_Booster_Control_Type(Enum_Booster_Control_Type __Booster
 }
 
 /**
- * @brief 设定发射机构状态
+ * @brief 设定发射过程控制状态
  *
- * @param __Booster_Control_Type 发射机构状态
+ * @param __Shooting_Control_Type 发射过程控制状态
  */
-void Class_Booster::Set_Friction_Control_Type(Enum_Friction_Control_Type __Friction_Control_Type)
+inline void Class_Booster::Set_Shooting_Control_Type(Enum_Shooting_Control_Type __Shooting_Control_Type)
 {
-    Friction_Control_Type = __Friction_Control_Type;
+    FSM_Shooting.Shooting_Control_Type = __Shooting_Control_Type;
 }
 
-
-void Class_Booster::Set_Booster_Type(Enum_Booster_Type __Booster_Type)
+inline void Class_Booster::Set_Target_PushMotor_Angle(float __Target_PushMotor_Angle)
 {
-    Booster_Type = __Booster_Type;
+    Target_PushMotor_Angle = __Target_PushMotor_Angle;
 }
-/**
- * @brief 获得发射机构状态
- *
- * @return Enum_Booster_Control_Type 发射机构状态
- */
-Enum_Booster_Control_Type Class_Booster::Get_Booster_Control_Type()
+
+inline void Class_Booster::Set_Target_PullMotor_Angle(float __Target_PullMotor_Angle)
 {
-    return (Booster_Control_Type);
+    Target_PullMotor_Angle = __Target_PullMotor_Angle;
 }
 
 /**
- * @brief 获得发射机构状态
+ * @brief 设定测量拉力
  *
- * @return Enum_Booster_Control_Type 发射机构状态
+ * @param __Measured_Tension 测量拉力
  */
-Enum_Friction_Control_Type Class_Booster::Get_Friction_Control_Type()
+void Class_Booster::Set_Measured_Tension(int __Measured_Tension)
 {
-    return (Friction_Control_Type);
-
+    Measured_Tension = __Measured_Tension;
 }
 
 /**
- * @brief 设定摩擦轮角速度
+ * @brief 设置目标拉力,
  *
- * @param __Friction_Omega 摩擦轮角速度
+ * @return int 设置目标拉力
  */
-void Class_Booster::Set_Friction_Omega(float __Friction_Omega)
+void Class_Booster::Set_Target_Tension(int __Target_Tension)
 {
-    Friction_Omega = __Friction_Omega;
+    Target_Tension = __Target_Tension;
 }
 
-/**
- * @brief 设定拨弹盘实际的目标速度, 一圈八发子弹
- *
- * @param __Driver_Omega 拨弹盘实际的目标速度, 一圈八发子弹
- */
-void Class_Booster::Set_Driver_Omega(float __Driver_Omega)
+inline void Class_Booster::Set_Target_position_push(float __target_position_push)
 {
-    Driver_Omega = __Driver_Omega;
+    target_position_push = __target_position_push;
 }
-void Class_Booster::Set_Cooling_Value(uint16_t __Cooling_Value)
+
+inline void Class_Booster::Set_Target_position_pull(float __target_position_pull)
 {
-    Cooling_Value = __Cooling_Value;
+    target_position_pull = __target_position_pull;
 }
 
 #endif

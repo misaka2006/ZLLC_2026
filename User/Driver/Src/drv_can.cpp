@@ -362,18 +362,20 @@ void TIM_CAN_PeriodElapsedCallback()
     mod4++;
     mod20++;
     
-    if(mod5 == 5)
+    if(mod5 == 5) //200Hz
     {
         mod5 = 0;
-        CAN_Send_Data(&hfdcan2, 0x1fe, CAN2_0x1fe_Tx_Data, 8); //GM6020  按照0x1fe ID 发送 可控制多个电机
-        CAN_Send_Data(&hfdcan2, 0x1ff, CAN2_0x1ff_Tx_Data, 8); //摩擦轮 按照0x1ff ID 发送 可控制多个电机
+        // // CAN1->Booster
+        CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8); //云台电机 按照0x200 ID 发送 可控制多个电机
+        
+        // //CAN2
+        //CAN_Send_Data(&hfdcan2, 0x200, CAN2_0x200_Tx_Data, 8); //云台电机 按照0x200 ID 发送 可控制多个电机
 
-        //  CAN3  下板       
-        CAN_Send_Data(&hfdcan3, 0x200, CAN3_0x200_Tx_Data, 8); //拨弹盘  按照0x200 ID 发送 可控制多个电机
-        CAN_Send_Data(&hfdcan3, 0x77, CAN3_Gimbal_Tx_Chassis_Data, 8); //给底盘发送控制命令 按照0x77 ID 发送
+        // //CAN3      
+        // CAN_Send_Data(&hfdcan3, 0x200, CAN3_0x200_Tx_Data, 8); //拨弹盘  按照0x200 ID 发送 可控制多个电机
         
     }
-    if(mod4 == 4)
+    if(mod4 == 4) //250Hz
     {
         mod4 = 0;
     }   
@@ -382,7 +384,6 @@ void TIM_CAN_PeriodElapsedCallback()
         mod20 = 0;
     }
     #endif
-
 }
 
 /**

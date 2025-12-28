@@ -19,7 +19,7 @@
 #include "alg_power_limit.h"
 #include "dvc_dwt.h"
 #include "alg_filter.h"
-
+#include "alg_SMC_Control.h"
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -130,6 +130,9 @@ public:
     // PID扭矩环控制
     Class_PID PID_Torque;
 
+    //滑模控制算法，目前只适用于Yaw
+    Class_SMC SMC_Control;
+
     void Init(FDCAN_HandleTypeDef *__hcan, Enum_DJI_Motor_ID __CAN_ID, Enum_DJI_Motor_Control_Method __Control_Method = DJI_Motor_Control_Method_ANGLE, int32_t __Encoder_Offset = 0, float __Omega_Max = 320.0f * RPM_TO_RADPS);
 
     inline uint16_t Get_Output_Max();
@@ -169,7 +172,7 @@ public:
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void TIM_Alive_PeriodElapsedCallback();
     void TIM_PID_PeriodElapsedCallback();
-
+    void TIM_SMC_PeriodElapsedCallback();
 
     float Yaw;
     float init_Yaw;
@@ -288,6 +291,8 @@ public:
     inline void Set_Target_Omega_Angle(float __Target_Omega_Angle);
     inline void Set_Target_Omega_Radian(float __Target_Omega_Radian);
     inline void Set_Target_Torque(float __Target_Torque);
+    inline void Set_Transform_Angle(float __Transform_Angle);
+    inline void Set_Transform_Omega(float __Transform_Omega);
     
     inline void Set_Out(float __Out);
 
@@ -350,6 +355,9 @@ protected:
     //输出量
     float Out = 0.0f;
 
+    float Transform_Angle = 0.f;
+    float Transform_Omega = 0.f;
+
     //内部函数
 
     void Data_Process();
@@ -396,10 +404,12 @@ public:
     inline void Set_Target_Omega_Radian(float __Target_Omega_Radian);
     inline void Set_Target_Torque(float __Target_Torque);
     inline void Set_Out(float __Out);
+    inline void Set_Transform_Angle(float __Transform_Angle);
+    inline void Set_Transform_Omega(float __Transform_Omega);
 
     void CAN_RxCpltCallback(uint8_t *Rx_Data);
     void TIM_Alive_PeriodElapsedCallback();
-    void TIM_PID_PeriodElapsedCallback();
+    virtual void TIM_PID_PeriodElapsedCallback();
 
     float v;
     float init_v = 0.0f;
@@ -462,10 +472,43 @@ protected:
     //输出量
     float Out = 0.0f;
 
+    float Transform_Angle = 0.f;
+    float Transform_Omega = 0.f;
+
     //内部函数
 
     void Data_Process();
     void Output();
+};
+
+class Class_DJI_Motor_C620_Steer : public Class_DJI_Motor_C620{
+
+public:
+    inline float Get_Now_Zero_Offset_Radian();
+    inline float Get_Zero_Position();
+
+    inline void Set_Zero_Position(float __Zero_Position);
+    inline void Set_Transform_Radian(float __Transform_Radian);
+    inline void Set_Transform_Radian_Omega(float __Transform_Radian_Omega);
+
+    void MA600_Data_Process(Struct_CAN_Rx_Buffer *CAN_RxMessage);
+
+    void TIM_PID_PeriodElapsedCallback();
+
+protected :
+    struct {
+        float Single_Radian;
+        float Multi_Radian;
+        float Omega;
+    } MA600_Data;
+
+    float Transform_Radian = 0.0f;
+    float Transform_Radian_Omega = 0.0f;
+
+    //软件上的编码器零点    0 --- 2PI
+    float Zero_Position = 0.0f;
+    //相对软件0点的偏移 rad   0 --- 2PI
+    float Zero_Offset_Radian = 0.0f;
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -975,6 +1018,16 @@ void Class_DJI_Motor_C610::Set_Out(float __Out)
     Output();
 }
 
+void Class_DJI_Motor_C610::Set_Transform_Angle(float __Transform_Angle)
+{
+    Transform_Angle = __Transform_Angle;
+}
+
+void Class_DJI_Motor_C610::Set_Transform_Omega(float __Transform_Omega)
+{
+    Transform_Omega = __Transform_Omega;
+}
+
 
 /**
  * @brief 获取最大输出电流
@@ -1195,6 +1248,37 @@ void Class_DJI_Motor_C620::Set_Out(float __Out)
 {
     Out = __Out;
     Output();
+}
+
+void Class_DJI_Motor_C620::Set_Transform_Angle(float __Transform_Angle)
+{
+    Transform_Angle = __Transform_Angle;
+}
+
+void Class_DJI_Motor_C620::Set_Transform_Omega(float __Transform_Omega)
+{
+    Transform_Omega = __Transform_Omega;
+}
+
+inline float Class_DJI_Motor_C620_Steer::Get_Now_Zero_Offset_Radian(){
+    return Zero_Offset_Radian;
+}
+
+inline float Class_DJI_Motor_C620_Steer::Get_Zero_Position(){
+    return Zero_Position;
+}
+
+inline void Class_DJI_Motor_C620_Steer::Set_Zero_Position(float __Zero_Position){
+    Zero_Position = Normalize_Angle_Radian_PI_to_PI(__Zero_Position);
+}
+
+inline void Class_DJI_Motor_C620_Steer::Set_Transform_Radian(float __Transform_Radian)
+{
+    Transform_Radian = __Transform_Radian;
+}
+
+inline void Class_DJI_Motor_C620_Steer::Set_Transform_Radian_Omega(float __Transform_Radian_Omega){
+    Transform_Radian_Omega = __Transform_Radian_Omega;
 }
 
 #endif
