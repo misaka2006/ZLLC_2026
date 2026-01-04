@@ -434,24 +434,36 @@ void Class_Mecanum_Chassis::Init(float __Velocity_X_Max, float __Velocity_Y_Max,
     // 斜坡函数加减速角速度
     Slope_Omega.Init(0.05f, 0.05f);
 
-    // 电机PID初始化
-    Mecanum_Wheels[0].PID_Omega.Init(850.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[0].Get_Output_Max(), Mecanum_Wheels[0].Get_Output_Max());
-    Mecanum_Wheels[1].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[1].Get_Output_Max(), Mecanum_Wheels[1].Get_Output_Max());
-    Mecanum_Wheels[2].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[2].Get_Output_Max(), Mecanum_Wheels[2].Get_Output_Max());
-    Mecanum_Wheels[3].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[3].Get_Output_Max(), Mecanum_Wheels[3].Get_Output_Max());
-    Track_Motor[0].PID_Omega.Init(650.0f, 0.0f, 0.0f, 0.0f, Track_Motor[0].Get_Output_Max(), Track_Motor[0].Get_Output_Max());
-    Track_Motor[1].PID_Omega.Init(650.0f, 0.0f, 0.0f, 0.0f, Track_Motor[1].Get_Output_Max(), Track_Motor[1].Get_Output_Max());
+    // // 电机PID初始化
+    // Mecanum_Wheels[0].PID_Omega.Init(850.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[0].Get_Output_Max(), Mecanum_Wheels[0].Get_Output_Max());
+    // Mecanum_Wheels[1].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[1].Get_Output_Max(), Mecanum_Wheels[1].Get_Output_Max());
+    // Mecanum_Wheels[2].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[2].Get_Output_Max(), Mecanum_Wheels[2].Get_Output_Max());
+    // Mecanum_Wheels[3].PID_Omega.Init(800.0f, 0.0f, 0.0f, 0.0f, Mecanum_Wheels[3].Get_Output_Max(), Mecanum_Wheels[3].Get_Output_Max());
+    
+    // 抬升电机PID初始化
+    for(int i = 0; i < 4; i++)
+    {
+        Uplift_Motor[i].PID_Omega.Init(1200.0f, 0.0f, 0.0f, 0.0f, Uplift_Motor[i].Get_Output_Max(), Uplift_Motor[i].Get_Output_Max());
+        Uplift_Motor[i].PID_Angle.Init(4.5f, 0.0f, 0.0f, 0.0f,0.0f, 7.0f * PI);
+    }
 
-    // 麦轮轮组电机ID初始化
-    Mecanum_Wheels[0].Init(&hfdcan1, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
-    Mecanum_Wheels[1].Init(&hfdcan1, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
-    Mecanum_Wheels[2].Init(&hfdcan1, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
-    Mecanum_Wheels[3].Init(&hfdcan1, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
-    Track_Motor[0].Init(&hfdcan2, DJI_Motor_ID_0x201);
-    Track_Motor[1].Init(&hfdcan2, DJI_Motor_ID_0x202);
+    // // 麦轮轮组电机ID初始化
+    // Mecanum_Wheels[0].Init(&hfdcan1, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
+    // Mecanum_Wheels[1].Init(&hfdcan1, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
+    // Mecanum_Wheels[2].Init(&hfdcan1, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
+    // Mecanum_Wheels[3].Init(&hfdcan1, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_OMEGA, 3591.0f / 187.0f);
 
+    // 抬升电机ID初始化
+    Uplift_Motor[0].Init(&hfdcan2, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_ANGLE);
+    Uplift_Motor[1].Init(&hfdcan2, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_ANGLE);
+    Uplift_Motor[2].Init(&hfdcan2, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_ANGLE);
+    Uplift_Motor[3].Init(&hfdcan2, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_ANGLE);
+    
     // 底盘控制方式初始化
     Chassis_Control_Type = Chassis_Control_Type_DISABLE;
+
+    // 抬升状态机传指针
+    Calibration_FSM.Chassis = this;
 }
 
 void Class_Mecanum_Chassis::Speed_Resolution()
@@ -555,6 +567,28 @@ void Class_Mecanum_Chassis::Speed_Resolution()
     }
 }
 
+void Class_Mecanum_Chassis::Output()
+{
+    if(Chassis_Control_Type == Chassis_Control_Type_DISABLE)
+    {
+        for(int i = 0; i < 4; i++){
+            Uplift_Motor[i].Set_Out(0.0f);
+        }
+    }
+    else
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            Uplift_Motor[i].Set_Target_Radian(Target_Uplift_Motor_Radian[i]);
+        }
+
+        for(int i = 0; i < 4; i++)
+        {
+            Uplift_Motor[i].TIM_PID_PeriodElapsedCallback();
+        }
+    }
+}
+
 /**
  * @brief TIM定时器中断计算回调函数
  *
@@ -562,22 +596,25 @@ void Class_Mecanum_Chassis::Speed_Resolution()
 void Class_Mecanum_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Status __Sprint_Status)
 {
     // 斜坡函数计算用于速度解算初始值获取
-    Slope_Velocity_X.Set_Target(Target_Velocity_X);
-    Slope_Velocity_X.TIM_Calculate_PeriodElapsedCallback();
+    // Slope_Velocity_X.Set_Target(Target_Velocity_X);
+    // Slope_Velocity_X.TIM_Calculate_PeriodElapsedCallback();
 
-    Slope_Velocity_Y.Set_Target(Target_Velocity_Y);
-    Slope_Velocity_Y.TIM_Calculate_PeriodElapsedCallback();
+    // Slope_Velocity_Y.Set_Target(Target_Velocity_Y);
+    // Slope_Velocity_Y.TIM_Calculate_PeriodElapsedCallback();
 
-    Slope_Omega.Set_Target(Target_Omega);
-    Slope_Omega.TIM_Calculate_PeriodElapsedCallback();
+    // Slope_Omega.Set_Target(Target_Omega);
+    // Slope_Omega.TIM_Calculate_PeriodElapsedCallback();
 
-    // 速度解算
-    Speed_Resolution();
-    // 电机PID计算
-    for (int i = 0; i < 4; i++)
-    {
-        Mecanum_Wheels[i].TIM_PID_PeriodElapsedCallback();
-    }
+    // // 速度解算
+    // Speed_Resolution();
+    // // 电机PID计算
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     Mecanum_Wheels[i].TIM_PID_PeriodElapsedCallback();
+    // }
+
+    // 将角度赋值给底盘中的电机，以及PID计算
+    Output();
 
     /***************************超级电容*********************************/
     Supercap.Set_Limit_Power(Referee->Get_Chassis_Power_Max());
@@ -600,5 +637,90 @@ void Class_Mecanum_Chassis::TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Stat
     Power_Limit.Set_Chassis_Buffer(Referee->Get_Chassis_Energy_Buffer());
     Power_Limit.TIM_Adjust_PeriodElapsedCallback(Mecanum_Wheels);
 #endif
+}
+
+/**
+ * @brief 单编码器电机校准状态机
+ *
+ */
+void Class_FSM_Calibration_Chassis::Reload_TIM_Status_PeriodElapsedCallback()
+{
+    Status[Now_Status_Serial].Time++;
+    switch (Now_Status_Serial)
+    {
+    case (0):
+        /*校准状态*/
+        {
+            bool all_cali_status = true;
+            for(int i = 0; i < 4; i++)
+            {
+                if(Chassis->Uplift_Motor[i].Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE && !uplift_cali_status[i])
+                {
+                    uplift_cali_status[i] = Motor_Calibration(Chassis->Uplift_Motor + i, i, uplift_cali_torque, uplift_locked_cnt[i]);
+                }
+
+                if(uplift_cali_status[i])
+                {
+                    Chassis->Uplift_Max_Radian[i] = uplift_offset[i] - 2.0f;
+                    Chassis->Uplift_Min_Radian[i] = Chassis->Uplift_Max_Radian[i] - (i < 2 ? 26.5f : 20.0f);
+                }
+
+                all_cali_status = all_cali_status && uplift_cali_status[i];
+            }
+
+            if(all_cali_status)
+            {
+                Set_Status(1);
+            }
+
+            break;
+        }
+    case (1):
+        /*校准完成状态*/
+        {
+            bool online_status = true;
+            for(int i = 0; i < 4; i++)
+            {
+                online_status = online_status && (Chassis->Uplift_Motor[i].Get_DJI_Motor_Status() == DJI_Motor_Status_ENABLE);
+            }
+
+            if(!online_status)
+            {
+                Set_Status(0);
+            }
+
+            break;
+        }
+    }
+}
+
+/**
+ * @brief 校准执行函数 C610 - 2006
+ *
+ */
+bool Class_FSM_Calibration_Chassis::Motor_Calibration(Class_DJI_Motor_C620 *Motor, uint8_t i, float locked_torque, uint16_t &locked_cnt)
+{
+    Motor->Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+    Motor->Set_Target_Radian(30.0f);
+
+    if ((fabs(Motor->Get_Now_Torque()) >= locked_torque) && (Motor->Get_Now_Omega_Radian() <= 0.01f))
+    {
+        locked_cnt++;
+        if (locked_cnt >= 50)
+        {
+            locked_cnt = 0;
+
+            uplift_offset[i] = Motor->Get_Now_Radian();
+
+            Motor->Set_Target_Radian(uplift_offset[i] - 2.0f); // 校准完成后稍微松开一点，避免一直堵转，校准是往张开的方向动的，所以这里往加紧的方向动一下
+
+            return true;
+        }
+    }
+    else
+    {
+        locked_cnt = 0;
+    }
+    return false;
 }
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

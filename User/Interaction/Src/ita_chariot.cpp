@@ -21,6 +21,9 @@
 float last_gripper_value = 0.0f;
 // 测试单圈设置函数用，测完删
 float single_radian = 0.0f;
+
+static uint32_t cal_cnt = 0;
+float calculate_s;
 /* Private function declarations ---------------------------------------------*/
 
 /* Function prototypes -------------------------------------------------------*/
@@ -477,32 +480,43 @@ void Class_Chariot::Chassis_Test_Control()
     // 底盘坐标系速度目标值 float
     float chassis_velocity_x = 0, chassis_velocity_y = 0;
     float chassis_omega = 0;
+    float target_uplift_rad[4] = {0.0f};
+
+    // 获取当前的抬升机构高度用于做增量
+    for (int i = 0; i < 4; i++)
+    {
+        target_uplift_rad[i] = Chassis.Get_Target_Uplift_Radian(i);
+    }
 
     // 排除遥控器死区
     dr16_l_x = (Math_Abs(DR16.Get_Left_X()) > DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
     dr16_l_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
     dr16_r_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
 
+    dr16_l_x = -dr16_l_x;
+    dr16_l_y = -dr16_l_y;
+    dr16_r_x = -dr16_r_x;
+
     // 遥控器操作逻辑
     volatile int DR16_Left_Switch_Status = DR16.Get_Left_Switch();
     volatile int DR16_Right_Switch_Status = DR16.Get_Right_Switch();
     switch (DR16_Left_Switch_Status)
     {
-    case (DR16_Switch_Status_MIDDLE): // 左中 控制底盘，正常模式，无斜坡
+    case (DR16_Switch_Status_MIDDLE): // 左中 底盘正常控制模式，最大速度为底盘初始化设置的速度
     {
-        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL);
         Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
         break;
     }
-    case (DR16_Switch_Status_DOWN): // 左下，斜坡速度曲线模式
+    case (DR16_Switch_Status_DOWN): // 左下 底盘正常控制模式，最大速度设置为1.0f
     {
-        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SLOPE);
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_SLOPE);
         Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
         break;
     }
     default:
     {
-        //Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
         Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
         break;
     }
@@ -549,8 +563,9 @@ void Class_Chariot::Chassis_Test_Control()
     // Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
     // Chassis.Set_Target_Omega(chassis_omega);
 
-    volatile int Chassis_control_type = Force_Chassis.Get_Chassis_Control_Type();
-    switch (Chassis_control_type)
+    // 力控底盘控制逻辑
+    volatile int Force_Chassis_control_type = Force_Chassis.Get_Chassis_Control_Type();
+    switch (Force_Chassis_control_type)
     {
     case (Chassis_Control_Type_DISABLE__):
     { // 失能
@@ -561,19 +576,27 @@ void Class_Chariot::Chassis_Test_Control()
     }
     case (Chassis_Control_Type_NORMAL__):
     {
-        if (DR16_Right_Switch_Status == DR16_Switch_Status_DOWN)
-        // 右下低速模式
+        if (DR16_Left_Switch_Status == DR16_Switch_Status_DOWN)
+        // 左下低速模式
         {
-            chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * 0.5f;
-            chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * 0.5f;
-            chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * 0.5f;
+            chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * 1.0f;
+            chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * 1.0f;
+            chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * 1.0f;
         }
-        else
+        else if (DR16_Left_Switch_Status == DR16_Switch_Status_MIDDLE)
+        // 左中正常速度
         {
             // 设定矩形到圆形映射进行控制，velocity_x为前，velocity_y为左
             chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
             chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
             chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * Chassis.Get_Omega_Max();
+        }
+        else
+        // 其他跳变状态
+        {
+            chassis_velocity_x = 0.0f;
+            chassis_velocity_y = 0.0f;
+            chassis_omega = 0.0f;
         }
         break;
     }
@@ -587,6 +610,81 @@ void Class_Chariot::Chassis_Test_Control()
     Force_Chassis.Set_Target_Velocity_X(chassis_velocity_x);
     Force_Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
     Force_Chassis.Set_Target_Omega(chassis_omega);
+
+    // 原底盘类中履带和抬升的控制逻辑
+    volatile int Chassis_control_type = Chassis.Get_Chassis_Control_Type();
+    switch (Chassis_control_type)
+    {
+    case (Chassis_Control_Type_DISABLE):
+    { // 失能，目标履带速度置0
+
+        break;
+    }
+    case (Chassis_Control_Type_SLOPE):
+    {
+        switch (DR16_Right_Switch_Status)
+        {
+        case (DR16_Switch_Status_MIDDLE):
+        {
+            break;
+        }
+        case (DR16_Switch_Status_UP):
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                target_uplift_rad[i] = Chassis.Uplift_Touch_Radian[i];
+            }
+            break;
+        }
+        case (DR16_Switch_Status_DOWN):
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                target_uplift_rad[i] -= PI * 0.01f;
+            }
+            break;
+        }
+        default:
+        {
+        }
+        }
+    }
+    case (Chassis_Control_Type_NORMAL):
+    {
+        // 底盘在线状态下遥控器控制履带和抬升机构
+
+        // 抬升机构控制逻辑
+        switch (DR16_Right_Switch_Status)
+        {
+        case (DR16_Switch_Status_UP):
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                target_uplift_rad[i] += PI * 0.01f;
+            }
+            break;
+        }
+
+        case (DR16_Switch_Status_DOWN):
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                target_uplift_rad[i] -= PI * 0.01f;
+            }
+            break;
+        }
+
+        default:
+        {
+        }
+        }
+    }
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+        Chassis.Set_Target_Uplift_Radian(i, target_uplift_rad[i]);
+    }
 }
 #endif
 
@@ -734,20 +832,24 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
 
 #ifdef CHASSIS_TEST // 底盘测试用
     if (DR16.Get_DR16_Status() == DR16_Status_DISABLE)
+    // 遥控器关闭，所有电机输出置0
     {
         for (int i = 0; i < 4; i++)
         {
-            //Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
+            // Chassis.Mecanum_Wheels[i].Set_Out(0.0f);
             Force_Chassis.Motor_Wheel[i].Set_Target_Current(0.0f);
+            Chassis.Uplift_Motor[i].Set_Out(0.0f);
         }
     }
     else
     {
-        //Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+        // 原底盘的定时器回调，主要用于获取当前功率以及抬升机构和履带类的PID计算
+        Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
 
         static uint8_t ms_cnt = 0;
         ms_cnt++;
         if (ms_cnt % 2 == 0)
+        // 力控底盘定时器回调，轮组电机的PID
         {
             Force_Chassis.TIM_2ms_Resolution_PeriodElapsedCallback();
             Force_Chassis.TIM_2ms_Control_PeriodElapsedCallback();
@@ -851,13 +953,18 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
         }
 #else
         Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
+
         // 力控底盘中的超电存活检测函数
         Force_Chassis.Supercap.TIM_Alive_PeriodElapsedCallback();
+
+        // 力控底盘中轮组电机的存活检测以及底盘类中抬升电机的存活检测
         for (int i = 0; i < 4; i++)
         {
-            Chassis.Mecanum_Wheels[i].TIM_Alive_PeriodElapsedCallback();
+            // Chassis.Mecanum_Wheels[i].TIM_Alive_PeriodElapsedCallback();
             Force_Chassis.Motor_Wheel[i].TIM_100ms_Alive_PeriodElapsedCallback();
+            Chassis.Uplift_Motor[i].TIM_Alive_PeriodElapsedCallback();
         }
+
         if (mod50_mod3 % 3 == 0)
         {
             TIM1msMod50_Gimbal_Communicate_Alive_PeriodElapsedCallback();
@@ -1209,12 +1316,12 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
     case (1):
     {
         // 离线保护
-        //Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+        Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
         Chariot->Force_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
 
         if (Chariot->DR16.Get_DR16_Status() == DR16_Status_ENABLE)
         {
-            //Chariot->Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type());
+            Chariot->Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type());
             Chariot->Force_Chassis.Set_Chassis_Control_Type(Chariot->Get_Pre_Chassis_Control_Type__());
             Status[Now_Status_Serial].Time = 0;
             Set_Status(2);
@@ -1243,7 +1350,7 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
     case (3):
     {
         // 记录离线检测前控制模式
-        //Chariot->Set_Pre_Chassis_Control_Type(Chariot->Chassis.Get_Chassis_Control_Type());
+        Chariot->Set_Pre_Chassis_Control_Type(Chariot->Chassis.Get_Chassis_Control_Type());
         Chariot->Set_Pre_Chassis_Control_Type__(Chariot->Force_Chassis.Get_Chassis_Control_Type());
 
         // 无条件转移到 离线检测状态
@@ -1369,19 +1476,28 @@ void Class_FSM_Alive_Control_VT13::Reload_TIM_Status_PeriodElapsedCallback()
 void Class_Chariot::Init_Motor_Test_Chassis()
 {
     // 电机PID初始化
-    Test_Motor.PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, Test_Motor.Get_Output_Max(), Test_Motor.Get_Output_Max());
-    Test_Motor.PID_Angle.Init(0.0f, 0.0f, 0.0f, 0.0f, 0, 1.5f * PI);
+    Test_Motor.PID_Omega.Init(0.0f, 0.0f, 0.0f, 0.0f, Test_Motor.Get_Output_Max(), Test_Motor.Get_Output_Max() / 4);
+    Test_Motor.PID_Angle.Init(0.0f, 0.0f, 0.0f, 0.0f, 0, 4.0f * PI);
     // 电机ID初始化
-    Test_Motor.Init(&hfdcan2, DJI_Motor_ID_0x201, DJI_Motor_Control_Method_OMEGA);
+    Test_Motor.Init(&hfdcan2, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_OMEGA);
 }
 
 void Class_Chariot::Output_Motor_Test_Chassis()
 {
+    // static uint8_t ms_cnt = 0;
+    // ms_cnt++;
+
     Test_Motor.Set_DJI_Motor_Control_Method(Test_Method);
     Test_Motor.Set_Target_Radian(target_angle);
     Test_Motor.Set_Target_Omega_Radian(target_omega);
 
+    // 模拟实际中的电机通信，500hz，每2ms与一个电机通信一次
+    // if(ms_cnt % 2 == 0)
+    // {
+    calculate_s = DWT_GetDeltaT(&cal_cnt);
     Test_Motor.TIM_PID_PeriodElapsedCallback();
+    // ms_cnt = 0;
+    //}
 }
 #endif
 

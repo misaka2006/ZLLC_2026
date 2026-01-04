@@ -27,6 +27,7 @@
 #include "dvc_supercap.h"
 #include "config.h"
 #include "dvc_minipc.h"
+#include "alg_fsm.h"
 /* Exported macros -----------------------------------------------------------*/
 #define wheel_diameter 0.14100000f   // 轮子直径，m
 #define half_width 0.159f            // m
@@ -54,8 +55,7 @@
 
 #define RAD_TO_8191 8191.0f / PI / 2.0f
 
-#define RAD2MM 2*PI / 5
-#define MM2RAD 1 / RAD2MM
+#define RAD2MM (280.0f / 26.5f)
 /* Exported types ------------------------------------------------------------*/
 
 /**
@@ -490,6 +490,27 @@ void Class_Tricycle_Chassis::Set_Supercap_Mode(Enum_Supercap_Mode __Supercap_Mod
     Supercap_Mode = __Supercap_Mode;
 }
 
+class Class_Mecanum_Chassis;
+class Class_FSM_Calibration_Chassis : public Class_FSM
+{
+public:
+    Class_Mecanum_Chassis *Chassis;
+    void Reload_TIM_Status_PeriodElapsedCallback();
+
+    /*电机校准执行函数*/
+    bool Motor_Calibration(Class_DJI_Motor_C620 *Motor, uint8_t index, float locked_torque, uint16_t &locked_cnt);
+    
+    inline bool Get_Uplift_cali_status(uint8_t index);
+
+protected:
+    /*抬升校准状态机相关变量*/
+    float uplift_offset[4] = {0.0f};
+    float uplift_cali_torque = 10000.0f;       //待测
+    bool uplift_cali_status[4] = {false};
+
+    uint16_t uplift_locked_cnt[4] = {0};// 抬升堵转时间计数
+};
+
 class Class_Mecanum_Chassis
 {
 public:
@@ -510,10 +531,14 @@ public:
 
     // 下方转动电机，顺时针方向编号
     Class_DJI_Motor_C620 Mecanum_Wheels[4];
-    // 履带电机
+    // 主动轮电机
     Class_DJI_Motor_C620 Track_Motor[2];
-    Class_DJI_Motor_C620_Uplift Uplift_Motor[2];
-    // Class_DJI_Motor_C620_Steer Motor_Steer[4];    //后期改成抬升机构和履带电机类（使用继承）
+    // 抬升机构电机
+    Class_DJI_Motor_C620 Uplift_Motor[4];
+
+    // 抬升机构校准状态机
+    Class_FSM_Calibration_Chassis Calibration_FSM;
+    friend class Class_FSM_Calibration_Chassis;
 
     void Init(float __Velocity_X_Max = 4.0f, float __Velocity_Y_Max = 4.0f, float __Omega_Max = 8.0f);
 
@@ -528,7 +553,7 @@ public:
     inline float Get_Target_Velocity_Y();
     inline float Get_Target_Omega();
     inline float Get_Target_Track_Omega();
-    inline float Get_Target_Uplift_Height(uint8_t index);
+    inline float Get_Target_Uplift_Radian(uint8_t index);
     inline Enum_Supercap_Mode Get_Supercap_Mode();
 
     inline void Set_Chassis_Control_Type(Enum_Chassis_Control_Type __Chassis_Control_Type);
@@ -539,7 +564,7 @@ public:
     inline void Set_Now_Velocity_Y(float __Now_Velocity_Y);
     inline void Set_Now_Omega(float __Now_Omega);
     inline void Set_Target_Track_Omega(float __Target_Track_Omega);
-    inline void Set_Target_Uplift_Height(uint8_t index, float __Target_Uplift_Height);
+    inline void Set_Target_Uplift_Radian(uint8_t index, float __Target_Uplift_Radian);
     inline void Set_Supercap_Mode(Enum_Supercap_Mode __Supercap_Mode);
 
     inline void Set_Velocity_Y_Max(float __Velocity_Y_Max);
@@ -547,6 +572,9 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Status __Sprint_Status);
 
+    // 着地时的角度，相对于Min_Radian
+    float Uplift_Touch_Radian[4] = {20.5f, 20.5f, 17.0f, 17.0f};
+    
 protected:
     // 初始化相关常量
 
@@ -558,10 +586,17 @@ protected:
     float Omega_Max;
     // 底盘电机最大转速
     float Wheels_Omega_Max = 31.416f; // 300rpm
-    // 抬升机构最大高度 m
-    float Uplift_Height_Max = 250 * 0.001; 
-    // 抬升电机最大角度，rad
-    float Uplift_Radian_Max = Uplift_Height_Max * 1000 * MM2RAD;
+    // 抬升机构最大高度 mm
+    float Uplift_Height_Max = 280; 
+    // 抬升电机校准后的最大角度，以电机返回的角度作为抬升高度的上限
+    float Uplift_Max_Radian[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    // 抬升电机基于校准后最大角度而言的最低角度，差值为26.5rad
+    float Uplift_Min_Radian[4] = {
+                                  Uplift_Max_Radian[0] - 28.5f,
+                                  Uplift_Max_Radian[1] - 28.5f,
+                                  Uplift_Max_Radian[2] - 22.5f,
+                                  Uplift_Max_Radian[3] - 22.5f
+                                 };
 
     // 常量
 
@@ -573,8 +608,10 @@ protected:
     float Target_Motor_Omega[4];
     // 履带电机目标角速度，rad/s
     float Target_Track_Omega[2];
-    // 抬升电机目标角度
-    float Target_Uplift_Radian[4];
+    // 传给抬升电机的实际目标角度
+    float Target_Uplift_Motor_Radian[4];
+    // 用于和Uplift_Min_Radian相加得到电机目标角度的值，也就是加offset之前的目标角度，主要用于遥控器逻辑，初始在最高点，设为最小值和最大值之间的差值，此时赋给电机的角度应为0.0f
+    float Target_Uplift_Radian[4] = {28.5f, 28.5f, 22.5f, 22.5f};
 
     // 读变量
 
@@ -612,6 +649,7 @@ protected:
 
     // 内部函数
     void Speed_Resolution();
+    void Output();
 };
 
 /* Exported function declarations --------------------------------------------*/
@@ -727,13 +765,15 @@ float Class_Mecanum_Chassis::Get_Target_Wheel_Power()
 }
 
 /**
- * @brief 获取目标抬升高度
+ * @brief 获取目标抬升角度
  * @param index 目标抬升机构的索引，从0开始
- * @return float 目标抬升高度
+ * @return float 目标抬升角度，为
  */
-float Class_Mecanum_Chassis::Get_Target_Uplift_Height(uint8_t index)
+float Class_Mecanum_Chassis::Get_Target_Uplift_Radian(uint8_t index)
 {
-    return (Target_Uplift_Height[index]);
+    if(index >= 4) return 13.0f;
+    
+    return (Target_Uplift_Radian[index]);
 }
 
 Enum_Supercap_Mode Class_Mecanum_Chassis::Get_Supercap_Mode()
@@ -842,19 +882,20 @@ void Class_Mecanum_Chassis::Set_Velocity_X_Max(float __Velocity_X_Max)
 }
 
 /**
- * @brief 设定抬升机构目标高度，m，会自动把目标高度转成电机的目标角度
+ * @brief 设定抬升机构目标角度，rad，会自动加上offset赋给用于发给电机的目标角度
  *
  * @param index 目标抬升机构的索引，从0开始
- * @param __Target_Height 目标抬升高度，m
+ * @param __Target_Radian 目标抬升角度，rad
  */
-void Class_Mecanum_Chassis::Set_Target_Uplift_Height(uint8_t index, float __Target_Height)
+void Class_Mecanum_Chassis::Set_Target_Uplift_Radian(uint8_t index, float __Target_Radian)
 {
-    Target_Uplift_Height[index] = __Target_Height;
-    Target_Uplift_Radian[index] = Target_Uplift_Height[index] * 1000 * MM2RAD;
+    if(index >= 4) return;
 
-    // 对转出来的角度限幅
-    if(Target_Uplift_Radian[index] < 0) Target_Uplift_Radian[index] = 0;
-    else if(Target_Uplift_Radian[index] > Uplift_Radian_Max) Target_Uplift_Radian[index] = Uplift_Radian_Max;
+    Target_Uplift_Radian[index] = __Target_Radian;
+    Target_Uplift_Motor_Radian[index] = Uplift_Min_Radian[index] + Target_Uplift_Radian[index];
+
+    Math_Constrain(Target_Uplift_Radian + index, 0.0f, Uplift_Max_Radian[index] - Uplift_Min_Radian[index]);
+    Math_Constrain(Target_Uplift_Motor_Radian + index, Uplift_Min_Radian[index], Uplift_Max_Radian[index]);
 }
 
 void Class_Mecanum_Chassis::Set_Supercap_Mode(Enum_Supercap_Mode __Supercap_Mode)

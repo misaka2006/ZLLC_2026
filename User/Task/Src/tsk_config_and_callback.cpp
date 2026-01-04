@@ -80,6 +80,11 @@ float start_xyz[3];
 float start_rpy[3];
 #endif
 
+#ifdef MOTOR_TEST_CHASSIS
+uint32_t delta_cnt = 0;     // DWT测用时的计数值
+float delta_s = 0.0f;       // DWT测得的用时
+#endif
+
 /* Private function declarations ---------------------------------------------*/
 /* Function prototypes -------------------------------------------------------*/
 
@@ -195,7 +200,7 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     switch (CAN_RxMessage->Header.Identifier)
     {
 #ifdef MOTOR_TEST_CHASSIS
-    case (0x201):
+    case (0x204):
     {
         chariot.Test_Motor.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
@@ -203,12 +208,22 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 #else
     case (0x201):
     {
-        chariot.Chassis.Track_Motor[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Chassis.Uplift_Motor[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x202):
     {
-        chariot.Chassis.Track_Motor[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Chassis.Uplift_Motor[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x203):
+    {
+        chariot.Chassis.Uplift_Motor[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x204):
+    {
+        chariot.Chassis.Uplift_Motor[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
 #endif
@@ -749,7 +764,7 @@ extern "C" void Task_Init()
 
     /********************************* 交互层初始化 *********************************/
 
-    // 遥控器四区给0.3f
+    // 遥控器死区给0.3f
     chariot.Init(0.3f);
 
     /********************************* 使能调度时钟 *********************************/
