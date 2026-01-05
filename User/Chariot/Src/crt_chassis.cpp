@@ -458,6 +458,10 @@ void Class_Mecanum_Chassis::Init(float __Velocity_X_Max, float __Velocity_Y_Max,
     Uplift_Motor[1].Init(&hfdcan2, DJI_Motor_ID_0x202, DJI_Motor_Control_Method_ANGLE);
     Uplift_Motor[2].Init(&hfdcan2, DJI_Motor_ID_0x203, DJI_Motor_Control_Method_ANGLE);
     Uplift_Motor[3].Init(&hfdcan2, DJI_Motor_ID_0x204, DJI_Motor_Control_Method_ANGLE);
+
+    // 主动轮电机ID初始化
+    Track_Motor[0].Init(&hfdcan2, DM_Motor_ID_0xA1, DM_Motor_Control_Method_OMEGA);
+    Track_Motor[1].Init(&hfdcan2, DM_Motor_ID_0xA2, DM_Motor_Control_Method_OMEGA);
     
     // 底盘控制方式初始化
     Chassis_Control_Type = Chassis_Control_Type_DISABLE;
@@ -522,10 +526,6 @@ void Class_Mecanum_Chassis::Speed_Resolution()
             Mecanum_Wheels[i].Set_Target_Omega_Radian(Target_Motor_Omega[i]);
         }
 
-        // 给履带电机设置目标角速度
-        Track_Motor[0].Set_Target_Omega_Radian(Target_Track_Omega[0]);
-        Track_Motor[1].Set_Target_Omega_Radian(Target_Track_Omega[1]);
-
         break;
     }
     case (Chassis_Control_Type_SLOPE):
@@ -558,10 +558,6 @@ void Class_Mecanum_Chassis::Speed_Resolution()
             Mecanum_Wheels[i].Set_Target_Omega_Radian(Target_Motor_Omega[i]);
         }
 
-        // 给履带电机设置目标角速度
-        Track_Motor[0].Set_Target_Omega_Radian(Target_Track_Omega[0]);
-        Track_Motor[1].Set_Target_Omega_Radian(Target_Track_Omega[1]);
-
         break;
     }
     }
@@ -571,12 +567,18 @@ void Class_Mecanum_Chassis::Output()
 {
     if(Chassis_Control_Type == Chassis_Control_Type_DISABLE)
     {
+        // 抬升电机
         for(int i = 0; i < 4; i++){
             Uplift_Motor[i].Set_Out(0.0f);
         }
+
+        // 主动轮电机，直接设置为失能，如果是为了防止打滑，可以换成目标速度设为0
+        Track_Motor[0].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
+        Track_Motor[1].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
     }
     else
     {
+        // 抬升电机
         for(int i = 0; i < 4; i++)
         {
             Uplift_Motor[i].Set_Target_Radian(Target_Uplift_Motor_Radian[i]);
@@ -586,7 +588,15 @@ void Class_Mecanum_Chassis::Output()
         {
             Uplift_Motor[i].TIM_PID_PeriodElapsedCallback();
         }
+
+        // 主动轮电机
+        Track_Motor[0].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        Track_Motor[0].Set_Target_Omega(Target_Track_Omega);
+
+        Track_Motor[1].Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
+        Track_Motor[1].Set_Target_Omega(-Target_Track_Omega);
     }
+
 }
 
 /**

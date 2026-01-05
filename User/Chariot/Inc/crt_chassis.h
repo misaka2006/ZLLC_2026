@@ -23,6 +23,7 @@
 #include "alg_slope.h"
 #include "dvc_referee.h"
 #include "dvc_djimotor.h"
+#include "dvc_dmmotor.h"
 #include "alg_power_limit.h"
 #include "dvc_supercap.h"
 #include "config.h"
@@ -531,8 +532,8 @@ public:
 
     // 下方转动电机，顺时针方向编号
     Class_DJI_Motor_C620 Mecanum_Wheels[4];
-    // 主动轮电机
-    Class_DJI_Motor_C620 Track_Motor[2];
+    // 主动轮电机 - 2325 速度环不需要校准
+    Class_DM_Motor_J4310 Track_Motor[2];
     // 抬升机构电机
     Class_DJI_Motor_C620 Uplift_Motor[4];
 
@@ -606,8 +607,8 @@ protected:
     // 麦轮轮组电机目标线速度与角速度
     float Target_Motor_Velocity[4];
     float Target_Motor_Omega[4];
-    // 履带电机目标角速度，rad/s
-    float Target_Track_Omega[2];
+    // 履带电机目标角速度，rad/s，两边保持一致
+    float Target_Track_Omega;
     // 传给抬升电机的实际目标角度
     float Target_Uplift_Motor_Radian[4];
     // 用于和Uplift_Min_Radian相加得到电机目标角度的值，也就是加offset之前的目标角度，主要用于遥控器逻辑，初始在最高点，设为最小值和最大值之间的差值，此时赋给电机的角度应为0.0f
@@ -731,7 +732,7 @@ float Class_Mecanum_Chassis::Get_Target_Omega()
  */
 float Class_Mecanum_Chassis::Get_Target_Track_Omega()
 {
-    return (Target_Track_Omega[0]);
+    return (Target_Track_Omega);
 }
 
 /**
@@ -827,8 +828,7 @@ void Class_Mecanum_Chassis::Set_Target_Omega(float __Target_Omega)
  */
 void Class_Mecanum_Chassis::Set_Target_Track_Omega(float __Target_Track_Omega)
 {
-    Target_Track_Omega[0] = __Target_Track_Omega;
-    Target_Track_Omega[1] = __Target_Track_Omega;
+    Target_Track_Omega = __Target_Track_Omega;
 }
 
 /**

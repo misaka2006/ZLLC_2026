@@ -476,11 +476,12 @@ void Class_Chariot::Control_Chassis()
 void Class_Chariot::Chassis_Test_Control()
 {
     // 遥控器摇杆值
-    float dr16_l_x, dr16_l_y, dr16_r_x;
+    float dr16_l_x, dr16_l_y, dr16_r_x, dr16_r_y;
     // 底盘坐标系速度目标值 float
     float chassis_velocity_x = 0, chassis_velocity_y = 0;
     float chassis_omega = 0;
     float target_uplift_rad[4] = {0.0f};
+    float track_omega = 0.0f;
 
     // 获取当前的抬升机构高度用于做增量
     for (int i = 0; i < 4; i++)
@@ -492,10 +493,12 @@ void Class_Chariot::Chassis_Test_Control()
     dr16_l_x = (Math_Abs(DR16.Get_Left_X()) > DR16_Dead_Zone) ? DR16.Get_Left_X() : 0;
     dr16_l_y = (Math_Abs(DR16.Get_Left_Y()) > DR16_Dead_Zone) ? DR16.Get_Left_Y() : 0;
     dr16_r_x = (Math_Abs(DR16.Get_Right_X()) > DR16_Dead_Zone) ? DR16.Get_Right_X() : 0;
+    dr16_r_y = (Math_Abs(DR16.Get_Right_Y()) > DR16_Dead_Zone) ? DR16.Get_Right_Y() : 0;
 
     dr16_l_x = -dr16_l_x;
     dr16_l_y = -dr16_l_y;
-    dr16_r_x = -dr16_r_x;
+    dr16_r_x = dr16_r_x;
+    dr16_r_y = -dr16_r_y;
 
     // 遥控器操作逻辑
     volatile int DR16_Left_Switch_Status = DR16.Get_Left_Switch();
@@ -572,6 +575,7 @@ void Class_Chariot::Chassis_Test_Control()
         chassis_velocity_x = 0;
         chassis_velocity_y = 0;
         chassis_omega = 0;
+        track_omega = 0.0f;
         break;
     }
     case (Chassis_Control_Type_NORMAL__):
@@ -590,6 +594,8 @@ void Class_Chariot::Chassis_Test_Control()
             chassis_velocity_y = -dr16_l_x * sqrt(1.0f - dr16_l_y * dr16_l_y / 2.0f) * Chassis.Get_Velocity_X_Max();
             chassis_velocity_x = dr16_l_y * sqrt(1.0f - dr16_l_x * dr16_l_x / 2.0f) * Chassis.Get_Velocity_Y_Max();
             chassis_omega = -dr16_r_x * sqrt(1.0f - dr16_r_x * dr16_r_x / 2.0f) * Chassis.Get_Omega_Max();
+            
+            track_omega = dr16_r_y * sqrt(1.0f - dr16_r_y * dr16_r_y / 2.0f) * 25.0f;
         }
         else
         // 其他跳变状态
@@ -597,6 +603,7 @@ void Class_Chariot::Chassis_Test_Control()
             chassis_velocity_x = 0.0f;
             chassis_velocity_y = 0.0f;
             chassis_omega = 0.0f;
+            track_omega = 0.0f;
         }
         break;
     }
@@ -610,6 +617,8 @@ void Class_Chariot::Chassis_Test_Control()
     Force_Chassis.Set_Target_Velocity_X(chassis_velocity_x);
     Force_Chassis.Set_Target_Velocity_Y(chassis_velocity_y); // 前x左y正
     Force_Chassis.Set_Target_Omega(chassis_omega);
+
+    Chassis.Set_Target_Track_Omega(track_omega);
 
     // 原底盘类中履带和抬升的控制逻辑
     volatile int Chassis_control_type = Chassis.Get_Chassis_Control_Type();
@@ -840,6 +849,9 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
             Force_Chassis.Motor_Wheel[i].Set_Target_Current(0.0f);
             Chassis.Uplift_Motor[i].Set_Out(0.0f);
         }
+
+        Chassis.Track_Motor[0].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
+        Chassis.Track_Motor[1].Set_DM_Control_Status(DM_Motor_Control_Status_DISABLE);
     }
     else
     {
@@ -964,6 +976,10 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             Force_Chassis.Motor_Wheel[i].TIM_100ms_Alive_PeriodElapsedCallback();
             Chassis.Uplift_Motor[i].TIM_Alive_PeriodElapsedCallback();
         }
+
+        // 主动轮电机存活检测
+        Chassis.Track_Motor[0].TIM_Alive_PeriodElapsedCallback();
+        Chassis.Track_Motor[1].TIM_Alive_PeriodElapsedCallback();
 
         if (mod50_mod3 % 3 == 0)
         {

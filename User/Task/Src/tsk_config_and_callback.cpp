@@ -226,6 +226,17 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
         chariot.Chassis.Uplift_Motor[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
+
+    case (0xA1):
+    {
+        chariot.Chassis.Track_Motor[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0xA2):
+    {
+        chariot.Chassis.Track_Motor[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
 #endif
 
 #ifdef AGV
@@ -623,6 +634,11 @@ void Task1ms_TIM5_Callback()
         mod5++;
         mod100++;
         mod68++;
+        if (mod5 == 4)
+        {
+            chariot.Chassis.Track_Motor[0].TIM_Process_PeriodElapsedCallback();
+            chariot.Chassis.Track_Motor[1].TIM_Process_PeriodElapsedCallback();
+        }
         if (mod5 == 5)
         {
             // 上位机

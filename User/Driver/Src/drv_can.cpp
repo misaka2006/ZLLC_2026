@@ -339,7 +339,7 @@ void TIM_CAN_PeriodElapsedCallback()
         CAN_Send_Data(&hfdcan2, 0x1fe, CAN2_0x1fe_Tx_Data, 8);
         #endif
     }
-    
+
     if (mod100 == 10) //10Hz
     {
         CAN_Send_Data(&hfdcan3, 0x191, CAN3_Chassis_Tx_Data_G, 8);
