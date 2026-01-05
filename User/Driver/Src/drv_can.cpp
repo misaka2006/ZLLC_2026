@@ -27,6 +27,7 @@ Struct_CAN_Manage_Object CAN3_Manage_Object = {0};
 uint8_t CAN1_0x1ff_Tx_Data[8];
 uint8_t CAN1_0x1fe_Tx_Data[8];
 uint8_t CAN1_0x200_Tx_Data[8];
+uint8_t CAN1_0x2fe_Tx_Data[8];
 uint8_t CAN1_0x2ff_Tx_Data[8];
 uint8_t CAN1_0xxf1_Tx_Data[8];
 uint8_t CAN1_0xxf2_Tx_Data[8];
@@ -40,6 +41,7 @@ uint8_t CAN1_0xxf8_Tx_Data[8];
 uint8_t CAN2_0x1ff_Tx_Data[8];
 uint8_t CAN2_0x1fe_Tx_Data[8];
 uint8_t CAN2_0x200_Tx_Data[8];
+uint8_t CAN2_0x2fe_Tx_Data[8];
 uint8_t CAN2_0x2ff_Tx_Data[8];
 uint8_t CAN2_0xxf1_Tx_Data[8];
 uint8_t CAN2_0xxf2_Tx_Data[8];
@@ -351,8 +353,8 @@ void TIM_CAN_PeriodElapsedCallback()
         mod5 = 0;
         
         #ifdef TRACK_LEG
-        CAN_Send_Data(&hfdcan2, 0x200, CAN2_0x200_Tx_Data, 8);//履带驱动电机
-        CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8);//3508 
+        CAN_Send_Data(&hfdcan2, 0x200, CAN2_0x200_Tx_Data, 8);//履带3508电机
+        CAN_Send_Data(&hfdcan1, 0x200, CAN1_0x200_Tx_Data, 8);//行进3508电机
         #endif
         #ifdef AGV
         //6020

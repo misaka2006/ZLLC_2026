@@ -169,45 +169,37 @@ void Class_DM_Motor_J4310::Init(FDCAN_HandleTypeDef *hcan, Enum_DM_Motor_ID __CA
  * @brief 数据处理过程
  *
  */
-void Class_DM_Motor_J4310::Data_Process()
+void Class_DM_Motor_J4310::Data_Process(uint8_t* Rx_Data)
 {
-    //数据处理过程
-    int32_t delta_position;
-    uint16_t tmp_position, tmp_omega, tmp_torque;
-    Struct_DM_Motor_CAN_Rx_Data *tmp_buffer = (Struct_DM_Motor_CAN_Rx_Data *)CAN_Manage_Object->Rx_Buffer.Data;
 
-    //处理大小端
-    Math_Endian_Reverse_16((void *)&tmp_buffer->Position_Reverse, &tmp_position);
-    tmp_omega = (tmp_buffer->Omega_11_4 << 4) | (tmp_buffer->Omega_3_0_Torque_11_8 >> 4);
-    tmp_torque = ((tmp_buffer->Omega_3_0_Torque_11_8 & 0x0f) << 8) | (tmp_buffer->Torque_7_0);
+    int16_t delta_position = 0;
+    int16_t tmp_omega, tmp_torque;
+    int16_t tmp_position;
+    uint8_t DM_Rx_Data[8];
+    memcpy(DM_Rx_Data,Rx_Data, 8);
+				
+        tmp_position=(DM_Rx_Data[1] << 8) | (DM_Rx_Data[2]);
+        tmp_omega = (DM_Rx_Data[3] << 4) | (DM_Rx_Data[4] >> 4);
+        tmp_torque = ((DM_Rx_Data[4] & 0x0f) << 8) | (DM_Rx_Data[5]);
 
-    Data.CAN_ID = tmp_buffer->CAN_ID;
+        Data.CAN_ID = (Enum_DM_Motor_ID)(DM_Rx_Data[0] & 0x0f);
+        Data.ErrorCode = (Enum_DM_Motor_ErrorCode)(DM_Rx_Data[0] >> 4);
 
-    //计算圈数与总角度值
-    delta_position = tmp_position - Data.Pre_Position;
-    if (delta_position < -(Position_Max / 2))
-    {
-        //正方向转过了一圈
-        Data.Total_Round++;
-    }
-    else if (delta_position > (Position_Max / 2))
-    {
-        //反方向转过了一圈
-        Data.Total_Round--;
-    }
-    Data.Total_Position = Data.Total_Round * Position_Max + tmp_position + Position_Offset;
+        //计算圈数与总角度值
+        //delta_position = (float)tmp_position / 65536.0f * 360.0f - Data.Pre_Position;
 
-    //计算电机本身信息
-    //Data.Now_Angle = (float)Data.Total_Position / (float)Position_Max * 2.0f * PI;
-    Data.Now_Angle = ((float)tmp_position / (float)Position_Max * 2.0f * PI - PI) * Transform_To_True_Angle;
-    Data.Now_Angle_DEG = ((float)tmp_position / (float)Position_Max * 360.0f - 360.0f) * Transform_To_True_Angle;
-    Data.Now_Omega = Math_Int_To_Float(tmp_omega, 0, (1 << 12) - 1, -Omega_Max, Omega_Max);
-    Data.Now_Torque = Math_Int_To_Float(tmp_torque, 0, (1 << 12) - 1, -Torque_Max, Torque_Max);
-    Data.Now_MOS_Temperature = tmp_buffer->MOS_Temperature + CELSIUS_TO_KELVIN;
-    Data.Now_Rotor_Temperature = tmp_buffer->Rotor_Temperature + CELSIUS_TO_KELVIN;
+        //计算电机本身信息
+        Data.Now_Angle = (float)tmp_position/65536.0f * 360.0f;//PMAX为3.125
+        Data.Now_Radian = (float)tmp_position/65536.0f * 2.0f * PI;
+        //Data.Now_Angle=((tmp_position%16384)/16384.0f)*360.0f-180.0f;//上位机PMAX为12.5
+        //Data.Now_Angle = (float)tmp_position /65536.0f * 360.0f ;//uint_to_float(tmp_position,-1.0f, 1.0f, 16) * 180.0f;
+        Data.Now_Omega_Radian = Math_Int_To_Float(tmp_omega, 0, (1 << 12) - 1, -30.0f, 30.0f);
+        Data.Now_Torque = Math_Int_To_Float(tmp_torque, 0, (1 << 12) - 1, -10.0, 10.0);
+        Data.Now_MOS_Temperature = DM_Rx_Data[6];
+        Data.Now_Rotor_Temperature = DM_Rx_Data[7];
 
-    //存储预备信息
-    Data.Pre_Position = tmp_position;
+        //存储预备信息
+        Data.Pre_Position = Data.Now_Angle;    
 }
 
 /**
@@ -219,8 +211,8 @@ void Class_DM_Motor_J4310::CAN_RxCpltCallback(uint8_t *Rx_Data)
 {
     //滑动窗口, 判断电机是否在线
     this->Flag += 1;
-
-    Data_Process();
+		
+    Data_Process(Rx_Data);
 }
 
 /**
@@ -241,74 +233,78 @@ void Class_DM_Motor_J4310::TIM_Alive_PeriodElapsedCallback()
         DM_Motor_Status = DM_Motor_Status_ENABLE;
     }
 
-    //控制电机使能或失能
-    switch (DM_Motor_Control_Status)
-    {
-    case (DM_Motor_Control_Status_DISABLE):
-    {
-        switch (DM_Motor_Control_Method)
-        {
-        case (DM_Motor_Control_Method_MIT_POSITION):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_MIT_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_MIT_TORQUE):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_POSITION_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x1f0, DM_Motor_CAN_Message_Exit, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x2f0, DM_Motor_CAN_Message_Exit, 8);
-        }
-        break;
-        }
-    }
-    break;
-    case (DM_Motor_Control_Status_ENABLE):
-    {
-        switch (DM_Motor_Control_Method)
-        {
-        case (DM_Motor_Control_Method_MIT_POSITION):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_MIT_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_MIT_TORQUE):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_POSITION_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x1f0, DM_Motor_CAN_Message_Enter, 8);
-        }
-        break;
-        case (DM_Motor_Control_Method_OMEGA):
-        {
-            CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x2f0, DM_Motor_CAN_Message_Enter, 8);
-        }
-        break;
-        }
-    }
-    break;
-    }
+		// if(DM_Motor_Status == DM_Motor_Status_DISABLE)
+		// {
+		// 	CAN_Send_Data(&hfdcan2,0x03,DM_Motor_CAN_Message_Enter,8);
+		// }
+   //控制电机使能或失能
+   switch (DM_Motor_Control_Status)
+   {
+   case (DM_Motor_Control_Status_DISABLE):
+   {
+       switch (DM_Motor_Control_Method)
+       {
+       case (DM_Motor_Control_Method_MIT_POSITION):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_MIT_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_MIT_TORQUE):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Exit, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_POSITION_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x1f0, DM_Motor_CAN_Message_Exit, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x2f0, DM_Motor_CAN_Message_Exit, 8);
+       }
+       break;
+       }
+   }
+   break;
+   case (DM_Motor_Control_Status_ENABLE):
+   {
+       switch (DM_Motor_Control_Method)
+       {
+       case (DM_Motor_Control_Method_MIT_POSITION):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_MIT_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_MIT_TORQUE):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0xf0, DM_Motor_CAN_Message_Enter, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_POSITION_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x1f0, DM_Motor_CAN_Message_Enter, 8);
+       }
+       break;
+       case (DM_Motor_Control_Method_OMEGA):
+       {
+           CAN_Send_Data(CAN_Manage_Object->CAN_Handler, static_cast<Enum_DM_Motor_ID>(CAN_ID) + 0x2f0, DM_Motor_CAN_Message_Enter, 8);
+       }
+       break;
+       }
+   }
+   break;
+   }
 
     Pre_Flag = Flag;
 }

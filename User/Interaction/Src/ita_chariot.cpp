@@ -33,12 +33,16 @@ void Class_Chariot::Init(float __DR16_Dead_Zone)
     
         //裁判系统
         Referee.Init(&huart10);
+        //遥控器离线控制 状态机
+        FSM_Alive_Control.Chariot = this;
+        FSM_Alive_Control.Init(5, 0);
         //遥控器
         DR16.Init(&huart5,&huart1);
-        DR16_Dead_Zone = __DR16_Dead_Zone;   
+        DR16_Dead_Zone = __DR16_Dead_Zone;
         //底盘
         Chassis.Referee = &Referee;
         Chassis.Init();
+        Force_Control_Chassis.Init();
         #ifdef AGV
         // 底盘随动PID环初始化
         PID_Chassis_Fllow.Init(6.0f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.001f); // Kp=3
@@ -749,19 +753,7 @@ void Class_Chariot::Control_Chassis()
         {
             // 底盘随动
             Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_FLLOW);
-            #ifdef Angle_Locked
-            if (DR16.Get_Right_Switch() == DR16_Switch_Status_TRIG_MIDDLE_DOWN)
-            {
-                Chassis.Set_Pose_Control_Type(Pose_STANDBY);
-            }
-            else if (DR16.Get_Right_Switch() == DR16_Switch_Status_TRIG_DOWN_MIDDLE)
-            {
-                Chassis.Set_Pose_Control_Type(Pose_ENABLE);
-            }
-            #endif
-            #ifdef Angle_UnLocked
-            
-            #endif
+
         }
         Chassis.Set_Target_Velocity_X(chassis_velocity_x);
         Chassis.Set_Target_Velocity_Y(chassis_velocity_y);
@@ -879,7 +871,10 @@ void Class_Chariot::Control_Chassis()
     float dr16_l_x, dr16_l_y, dr16_r_x, dr16_f_yaw;
     // 云台坐标系速度目标值 float
     float chassis_velocity_x = 0, chassis_velocity_y = 0;
+    // 目标角速度
     float chassis_omega = 0;
+    // 底盘控制类型
+    Enum_Chassis_Control_Type chassis_control_type;
     if (DR16_Control_Type == DR16_Control_Type_REMOTE)
     {
         // 排除遥控器死区
@@ -911,8 +906,8 @@ void Class_Chariot::Control_Chassis()
         if (DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN) //左下 位姿切换
         {
             // 底盘随动
-            Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
-            #ifdef Angle_Locked
+            Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_FLLOW);
+            #ifdef LOCKED_SWITCH
             if (DR16.Get_Right_Switch() == DR16_Switch_Status_TRIG_MIDDLE_DOWN)
             {
                 Chassis.Set_Pose_Control_Type(Pose_STANDBY);
@@ -922,13 +917,65 @@ void Class_Chariot::Control_Chassis()
                 Chassis.Set_Pose_Control_Type(Pose_ENABLE);
             }
             #endif
-            #ifdef Angle_UnLocked
-            
+            #ifdef AUTO_SWITCH
+            if(DR16.Get_Right_Switch() == DR16_Switch_Status_DOWN)//
+            {
+                //右拨杆向下,开启履带驱动电机
+                Chassis.Motor_Track[0].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+                Chassis.Motor_Track[1].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
+                Chassis.Motor_Track[0].Set_Target_Omega_Radian(-PI2);
+                Chassis.Motor_Track[1].Set_Target_Omega_Radian(PI2);
+            }
+            else
+            {
+                //关闭履带驱动电机
+                Chassis.Motor_Track[0].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OPENLOOP);
+                Chassis.Motor_Track[1].Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OPENLOOP);
+                // Chassis.Motor_Track[0].Set_Target_Omega_Radian(0.0f);
+                // Chassis.Motor_Track[1].Set_Target_Omega_Radian(0.0f);
+                Chassis.Motor_Track[0].Set_Target_Torque(0.0f);
+                Chassis.Motor_Track[1].Set_Target_Torque(0.0f);
+            }
+            //遥控器直接控制伸缩腿逻辑：从中到下状态-伸腿;从下到中状态-缩腿
+            if (DR16.Get_Right_Switch() == DR16_Switch_Status_TRIG_MIDDLE_DOWN)
+            {
+                Chassis.Set_Pose_Control_Type(Pose_ENABLE);
+            }
+            else if (DR16.Get_Right_Switch() == DR16_Switch_Status_TRIG_DOWN_MIDDLE)
+            {
+                Chassis.Set_Pose_Control_Type(Pose_STANDBY);
+            }
+            if(DR16.Get_Right_Switch() == DR16_Switch_Status_UP)
+            {
+                Chassis.Set_Pose_Control_Type(Pose_DISABLE);//失能
+            }
             #endif
         }
         Chassis.Set_Target_Velocity_X(chassis_velocity_x);
         Chassis.Set_Target_Velocity_Y(chassis_velocity_y);
         Chassis.Set_Target_Omega(chassis_omega);
+        //力控底盘任务
+        chassis_control_type = Chassis.Get_Chassis_Control_Type();
+        if(chassis_control_type == Chassis_Control_Type_DISABLE)
+        {
+            Force_Control_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
+        }
+        else
+        {
+            Force_Control_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_NORMAL__);
+            chassis_omega = -dr16_r_x * Chassis.Get_Omega_Max();
+            if(chassis_control_type == Chassis_Control_Type_SPIN_Positive)
+            {
+                chassis_omega = Chassis_Spin_Omega;
+            }
+            else if(chassis_control_type == Chassis_Control_Type_SPIN_Negative)
+            {
+                chassis_omega = -Chassis_Spin_Omega;
+            }
+        }
+        Force_Control_Chassis.Set_Target_Velocity_X(chassis_velocity_y);
+        Force_Control_Chassis.Set_Target_Velocity_Y(-chassis_velocity_x);
+        Force_Control_Chassis.Set_Target_Omega(chassis_omega);
     }
 }
 #endif
@@ -1112,6 +1159,15 @@ void Class_Chariot::TIM_Calculate_PeriodElapsedCallback()
         // Control_Chassis_Omega_TIM_PeriodElapsedCallback();
         //底盘解算控制
         Chassis.TIM_Calculate_PeriodElapsedCallback(Sprint_Status);
+        static uint8_t mod2 = 0;
+        mod2++;
+        if (mod2 == 2)
+        {
+            //补充力控底盘
+            Force_Control_Chassis.TIM_2ms_Control_PeriodElapsedCallback();
+            Force_Control_Chassis.TIM_2ms_Resolution_PeriodElapsedCallback();
+            mod2 = 0;
+        }
     #endif	
     #elif defined(GIMBAL)
 
@@ -1197,6 +1253,8 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             Chassis.Motor_Joint[1].TIM_Alive_PeriodElapsedCallback();
             Chassis.Motor_Track[0].TIM_Alive_PeriodElapsedCallback();
             Chassis.Motor_Track[1].TIM_Alive_PeriodElapsedCallback();
+            //力控底盘
+            Force_Control_Chassis.TIM_100ms_Alive_PeriodElapsedCallback();
             #endif
             if(mod50_mod3%3 == 0)
             {
@@ -1205,6 +1263,8 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
             }  
             #ifdef Only_Chassis
             DR16.TIM1msMod50_Alive_PeriodElapsedCallback();	
+            //Force_Control_Chassis.Boardc_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
+            Chassis.BoardDM_BMI.TIM1msMod50_Alive_PeriodElapsedCallback();
             #ifdef defined(USE_DR16)
                 #ifdef DEBUG
                     if (DR16.Get_DR16_Status() == DR16_Status_DISABLE)
@@ -1520,6 +1580,8 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
         {
             //离线保护
             Chariot->Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE);
+            Chariot->Force_Control_Chassis.Set_Chassis_Control_Type(Chassis_Control_Type_DISABLE__);
+            Chariot->Chassis.Set_Pose_Control_Type(Pose_DISABLE);
 
             if(Chariot->DR16.Get_DR16_Status() == DR16_Status_ENABLE)
             {
