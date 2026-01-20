@@ -18,6 +18,8 @@
 #define PI 3.1415926535f
 #endif
 
+#define PITCH_RATIO (35.0f / 17.0f) // pitch轴减速比17:35
+
 /* Includes ------------------------------------------------------------------*/
 
 #include "dvc_djimotor.h"
@@ -228,11 +230,9 @@ public:
     /*电机校准执行函数*/
     bool Motor_Calibration(Class_DM_Motor_J4310 *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
     bool Motor_Calibration(Class_DJI_Motor_C610 *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
-    bool Motor_Calibration(Class_DJI_Motor_C620_Uplift *Motor, float Cali_Omega, float locked_torque, uint16_t &locked_cnt);
-    
+
     inline bool Get_roll_cali_status();
     inline bool Get_Gripper_cali_status();
-    inline bool Get_Uplift_cali_status(uint8_t index);
 
 protected:
     /*roll轴校准相关变量*/
@@ -240,17 +240,17 @@ protected:
     float locked_torque = 4.5f;    // 堵转力矩
     bool roll_cali_status = false; // 校准状态，初始为false
 
-    float gripper_offset = 0.0f;    //夹爪校准后的偏差角度，rad
-    float gripper_locked_torque = 1600.0f; //暂定为8.0f，待测
+    float gripper_offset = 0.0f;           // 夹爪校准后的偏差角度，rad
+    float gripper_locked_torque = 1600.0f; // 暂定为8.0f，待测
     bool gripper_cali_status = false;
 
     float uplift_offset[2] = {0.0f};
-    float uplift_cali_torque;       //待测
+    float uplift_cali_torque; // 待测
     bool uplift_cali_status[2] = {false};
 
-    uint16_t locked_cnt = 0;       // 堵转时间计数
-    uint16_t gripper_locked_cnt = 0;// 夹爪堵转时间计数
-    uint16_t uplift_locked_cnt[2] = {0};// 抬升堵转时间计数
+    uint16_t locked_cnt = 0;             // 堵转时间计数
+    uint16_t gripper_locked_cnt = 0;     // 夹爪堵转时间计数
+    uint16_t uplift_locked_cnt[2] = {0}; // 抬升堵转时间计数
 };
 
 /**
@@ -265,15 +265,27 @@ public:
 
     Class_MiniPC *MiniPC;
 
-    Class_DM_Motor_J4310 Motor_DM_J0_Yaw;     // J0 - DM4310
-    Class_DM_Motor_J4310 Motor_DM_J1_Pitch;   // J1 - DM8009P
-    Class_DM_Motor_J4310 Motor_DM_J2_Pitch_2; // J2 - DM4340
-    Class_DM_Motor_J4310 Motor_DM_J3_Roll;    // J3 - DM2325
-    Class_DM_Motor_J4310 Motor_DM_J4_Pitch_3; // J4 - DM4340
-    Class_DJI_Motor_GM6020 Motor_6020_J5_Roll_2;//J5 - DJI-G6020
-    Class_DJI_Motor_C610 Motor_C610_Gripper;    //夹爪 - C610
+    #ifdef PUMA
+    /*PUMA臂*/
+    Class_DM_Motor_J4310 Motor_DM_J0_Yaw;        // J0 - DM4310
+    Class_DM_Motor_J4310 Motor_DM_J1_Pitch;      // J1 - DM8009P
+    Class_DM_Motor_J4310 Motor_DM_J2_Pitch_2;    // J2 - DM4340
+    Class_DM_Motor_J4310 Motor_DM_J3_Roll;       // J3 - DM2325
+    Class_DM_Motor_J4310 Motor_DM_J4_Pitch_3;    // J4 - DM4340
+    Class_DJI_Motor_GM6020 Motor_6020_J5_Roll_2; // J5 - DJI-G6020
+    #endif
 
-    Class_FSM_Calibration Calibration_FSM;      //校准状态机类
+    Class_DJI_Motor_C610 Motor_C610_Gripper;     // 夹爪 - C610
+
+    /*SCARA臂*/
+    Class_DM_Motor_J4310 J0_Pitch_4340;
+    Class_DM_Motor_J4310 J1_Yaw_8009P;
+    Class_DM_Motor_J4310 J2_Yaw_4340P;
+    Class_DM_Motor_J4310 J3_Yaw_4340P;
+    Class_DM_Motor_J4310 J4_Pitch_4340P;
+    Class_DM_Motor_J4310 J5_Yaw_4340P;
+
+    Class_FSM_Calibration Calibration_FSM; // 校准状态机类
     friend class Class_FSM_Calibration;
 
     /*机械臂DH建模*/
@@ -283,6 +295,7 @@ public:
 
     void Init();
 
+    #ifdef PUMA
     inline float Get_Target_Yaw_Angle();
     inline float Get_Target_Yaw_Radian();
 
@@ -303,6 +316,14 @@ public:
     inline float Get_Target_Roll_2_Angle();
     inline float Get_Target_Roll_2_Radian();
     inline float Get_Target_Roll_2_Radian_Single();
+    #endif
+
+    inline float Get_Target_J0_Pitch_Radian();
+    inline float Get_Target_J1_Yaw_Radian();
+    inline float Get_Target_J2_Yaw_Radian();
+    inline float Get_Target_J3_Yaw_Radian();
+    inline float Get_Target_J4_Pitch_Radian();
+    inline float Get_Target_J5_Yaw_Radian();
 
     inline float Get_Target_Gripper_Angle();
     inline float Get_Target_Gripper_Radian();
@@ -312,6 +333,7 @@ public:
 
     inline void Set_Gimbal_Control_Type(Enum_Gimbal_Control_Type __Gimbal_Control_Type);
 
+    #ifdef PUMA
     inline void Set_Target_Yaw_Angle(float __Target_Yaw_Angle);
     inline void Set_Target_Yaw_Radian(float __Target_Yaw_Radian);
 
@@ -330,6 +352,14 @@ public:
     inline void Set_Target_Roll_2_Angle(float __Target_Roll_2_Angle);
     inline void Set_Target_Roll_2_Radian(float __Target_Roll_2_Radian);
     inline void Set_Target_Roll_2_Radian_Single(float Target_Roll_2_Radian_Single);
+    #endif
+
+    inline void Set_Target_J0_Pitch_Radian(float __Target_J0_Pitch_Radian);
+    inline void Set_Target_J1_Yaw_Radian(float __Target_J1_Yaw_Radian);
+    inline void Set_Target_J2_Yaw_Radian(float __Target_J2_Yaw_Radian);
+    inline void Set_Target_J3_Yaw_Radian(float __Target_J3_Yaw_Radian);
+    inline void Set_Target_J4_Pitch_Radian(float __Target_J4_Pitch_Radian);
+    inline void Set_Target_J5_Yaw_Radian(float __Target_J5_Yaw_Radian);
 
     inline void Set_Target_Gripper_Angle(float __Target_Gripper_Angle);
     inline void Set_Target_Gripper_Radian(float __Target_Gripper_Radian);
@@ -339,29 +369,29 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-    #ifdef MY_DEBUG
+#ifdef MY_DEBUG
     /*dh建模和解算相关变量，后期移到arm_model类中*/
-    float target_pos[3] = {5.2006f, 2.9150f, 77.7629f};      //目标xyz
-    float target_rpy[3] = {1.5704f, 0.6867f, 0.1338f};      //目标欧拉角
-    Matrixf<6, 1> solutions[8];     //解析法求解的8组解
-    uint8_t valid_IK_cnt = 0;       //合法的逆解个数
-    bool valid_solution[8] = {0};   //逆解合法性数组
-    uint8_t solution_index = 0;      //当前采用的解的索引
-    float control_result[6] = {0};  //转换得到的用于电机控制的角度，调用Set_Target_Radian实现
-    float model_result[6] = {0};    //正解算结果，用于和目标位置对比
-    float pos_move_result[3] = {0.0f};  //平移后的目标xyz
-    uint8_t axis = 0;               //平移的轴选择，0-x,1-y,2-z 
-    float s = 0.0f;                 //平移距离，单位mm
+    float target_pos[3] = {5.2006f, 2.9150f, 77.7629f}; // 目标xyz
+    float target_rpy[3] = {1.5704f, 0.6867f, 0.1338f};  // 目标欧拉角
+    Matrixf<6, 1> solutions[8];                         // 解析法求解的8组解
+    uint8_t valid_IK_cnt = 0;                           // 合法的逆解个数
+    bool valid_solution[8] = {0};                       // 逆解合法性数组
+    uint8_t solution_index = 0;                         // 当前采用的解的索引
+    float control_result[6] = {0};                      // 转换得到的用于电机控制的角度，调用Set_Target_Radian实现
+    float model_result[6] = {0};                        // 正解算结果，用于和目标位置对比
+    float pos_move_result[3] = {0.0f};                  // 平移后的目标xyz
+    uint8_t axis = 0;                                   // 平移的轴选择，0-x,1-y,2-z
+    float s = 0.0f;                                     // 平移距离，单位mm
 
-    uint8_t move_test_flag = 0; //用于测试平移功能的标志位
-    float q_solution[600][6];        // 逆解结果数组，测试用
-    float move_start_q[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f};   //平移测试起始角度，模型角度
-    float move_init_control_angle[6]; //用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
-    float move_control_angle[6];      //用于测试平移功能的目标角度，通过将模型角度转换得到，是用来发给电机的角度
-    uint32_t valid_solution_cnt = 0; // 有效解的数量
+    uint8_t move_test_flag = 0;                                   // 用于测试平移功能的标志位
+    float q_solution[600][6];                                     // 逆解结果数组，测试用
+    float move_start_q[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f}; // 平移测试起始角度，模型角度
+    float move_init_control_angle[6];                             // 用于测试平移功能的初始角度，通过将模型角度转换得到，是用来发给电机的角度
+    float move_control_angle[6];                                  // 用于测试平移功能的目标角度，通过将模型角度转换得到，是用来发给电机的角度
+    uint32_t valid_solution_cnt = 0;                              // 有效解的数量
     bool is_low_speed[6] = {false};
     float now_pos[3];
-    #endif
+#endif
 
 #ifdef MOTOR_TEST
 
@@ -383,7 +413,7 @@ public:
 
     /*6020直接发角度*/
     float debug_j5_target_angle = 0.0f;
-    float debug_j5_target_omega = 0.0f;     //角度制
+    float debug_j5_target_omega = 0.0f; // 角度制
 
     float debug_gripper_target_omega = 0.0f;
     float debug_gripper_target_angle = 0.0f;
@@ -397,7 +427,7 @@ public:
 
 protected:
     // 电机CAN通信优先级变量
-    static inline uint32_t can_priority_cnt = 0;     // 电机CAN通信优先级计数器，前面写inline是为了能保持变量是类内部静态变量的同时可以自动初始化
+    static inline uint32_t can_priority_cnt = 0; // 电机CAN通信优先级计数器，前面写inline是为了能保持变量是类内部静态变量的同时可以自动初始化
 
     // 初始化相关常量
     float Gimbal_Head_Angle;
@@ -405,8 +435,10 @@ protected:
     float CRUISE_SPEED_YAW = 100.f;
     float CRUISE_SPEED_PITCH = 70.f;
 
-    //Yaw轴，同步带减速比为2
-    // yaw轴最小值，deg
+#ifdef PUMA
+    /*PUMA臂*/
+    // Yaw轴，同步带减速比为2
+    //  yaw轴最小值，deg
     float Min_Yaw_Angle = -360.0f;
     // yaw轴最大值，deg
     float Max_Yaw_Angle = 360.0f;
@@ -422,8 +454,8 @@ protected:
     float Min_Pitch_Radian = 0.0f;
     float Max_Pitch_Radian = 1.90f;
 
-    //pitch2，同步带减速比45:30
-    // pitch2轴最小值与最大值，degree
+    // pitch2，同步带减速比45:30
+    //  pitch2轴最小值与最大值，degree
     float Min_Pitch_2_Angle = 0.0f;
     float Max_Pitch_2_Angle = 110.0f;
     // rad
@@ -437,18 +469,37 @@ protected:
     float Min_Pitch_3_Radian = -2.561f;
     float Max_Pitch_3_Radian = 0.0f;
 
-    //roll 电机减速比25:1，同步带减速比2:1，总减速比50:1
-    // roll校准角度，默认为0
+    // roll 电机减速比25:1，同步带减速比2:1，总减速比50:1
+    //  roll校准角度，默认为0
     float roll_cali_offset = 0.0f;
     // roll轴最小值与最大值
     float Min_Roll_Radian = roll_cali_offset * 50.0f;
     float Max_Roll_Radian = Min_Roll_Radian + 300.0f;
+#endif
 
-    //gripper校准角度，默认为0
+    // gripper校准角度，默认为0
     float gripper_cali_offset = 0.0f;
     float Min_gripper_Radian = gripper_cali_offset;
-    float Max_gripper_Radian = gripper_cali_offset + 0.95f; //最大角度，完全闭合时为0.95f
+    float Max_gripper_Radian = gripper_cali_offset + 0.95f; // 最大角度，完全闭合时为0.95f
 
+    /*SCARA臂*/
+    float J0_Pitch_Min_Radian = -1.0297f * PITCH_RATIO;
+    float J0_Pitch_Max_Radian = 0.5759f * PITCH_RATIO;
+
+    float J1_Yaw_Min_Radian = -0.8726f;
+    float J1_Yaw_Max_Radian = 0.8726f;
+
+    float J2_Yaw_Min_Radian = -2.0943f;
+    float J2_Yaw_Max_Radian = 2.0943f;
+
+    float J3_Yaw_Min_Radian = -0.5f * PI;
+    float J3_Yaw_Max_Radian = 0.5f * PI;
+
+    float J4_Pitch_Min_Radian = -0.5f * PI;
+    float J4_Pitch_Max_Radian = 0.5f * PI;
+
+    float J5_Yaw_Min_Radian = -0.5f * PI;
+    float J5_Yaw_Max_Radian = 0.5f * PI;
     // 内部变量
 
     // 读变量
@@ -460,10 +511,12 @@ protected:
 
     // 读写变量
 
+#ifdef PUMA
+    /*PUMA臂*/
     // yaw轴角度 degree & yaw轴角速度 rad/s
     float Target_Yaw_Angle = 0.0f;
     float Target_Yaw_Radian = 0.0f;
-    float Target_Yaw_Omega = 0.5f * PI; //作为和基座相连接的yaw，你还是动得慢一点比较好
+    float Target_Yaw_Omega = 0.5f * PI; // 作为和基座相连接的yaw，你还是动得慢一点比较好
     // pitch轴角度 degree
     float Target_Pitch_Angle = 0.0f;
     float Target_Pitch_Radian = 0.0f;
@@ -484,37 +537,77 @@ protected:
     float Target_Roll_Radian = 0.0f;
     float Target_Roll_Omega = 0.5f * PI;
 
-    //roll_2角度 degree
+    // roll_2角度 degree
     float Target_Roll_2_Angle = 0.0f;
     float Target_Roll_2_Radian = 0.0f;
     float Target_Roll_2_Omega = 1.5f * PI;
+#endif
 
-    //夹爪角度，degree
+    // 不带减速比，Set函数中会自己乘减速比
+    float Target_J0_Pitch_Radian = 0.0f;
+    float Target_J0_Pitch_Omega = PI * PITCH_RATIO;
+
+    float Target_J1_Yaw_Radian = J1_Yaw_Max_Radian;
+    float Target_J1_Yaw_Omega = PI;
+
+    float Target_J2_Yaw_Radian = J2_Yaw_Max_Radian;
+    float Target_J2_Yaw_Omega = PI;
+
+    float Target_J3_Yaw_Radian = 0.0f;
+    float Target_J3_Yaw_Omega = PI;
+
+    float Target_J4_Pitch_Radian = 0.0f;
+    float Target_J4_Pitch_Omega = PI;
+
+    float Target_J5_Yaw_Radian = 0.0f;
+    float Target_J5_Yaw_Omega = PI;
+
+    // 夹爪角度，degree
     float Target_Gripper_Angle = 0.0f;
     float Target_Gripper_Radian = 0.0f;
     float Target_Gripper_Omega = 0.75f;
 
-    //建模解算测试用
+    // 建模解算测试用
     float model_angle[6] = {0.0f, 0.0f, 2.0f, 0.0f, 0.5f, 0.0f};
     float model_degree[6];
     float control_angle[6] = {0};
-    float xyz[3] = {0};      //正解算结果
+    float xyz[3] = {0}; // 正解算结果
     float rpy[3] = {0};
 
-    #ifdef MY_DEBUG
-    float debug_radian[6] = {0.0f};    //测试电机控制角度映射专用
-    #endif
+#ifdef MY_DEBUG
+    float debug_radian[6] = {0.0f}; // 测试电机控制角度映射专用
+#endif
     float delta_time = 0.0f; // 用DWT测得的时间间隔，用这个看解析解的计算速度
 
     // 内部函数
     void Output();
-    
 };
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported function declarations --------------------------------------------*/
 
+/**
+ * @brief 获取云台控制类型
+ *
+ * @return Enum_Gimbal_Control_Type 获取云台控制类型
+ */
+Enum_Gimbal_Control_Type Class_Gimbal::Get_Gimbal_Control_Type()
+{
+    return (Gimbal_Control_Type);
+}
+
+/**
+ * @brief 设定云台状态
+ *
+ * @param __Gimbal_Control_Type 云台状态
+ */
+void Class_Gimbal::Set_Gimbal_Control_Type(Enum_Gimbal_Control_Type __Gimbal_Control_Type)
+{
+    Gimbal_Control_Type = __Gimbal_Control_Type;
+}
+
+#ifdef PUMA
 /**
  * @brief 获取yaw轴角度
  *
@@ -616,7 +709,7 @@ float Class_Gimbal::Get_Target_Roll_2_Radian()
 float Class_Gimbal::Get_Target_Roll_2_Radian_Single()
 {
     float single_radian = fmod(Target_Roll_2_Radian, 2.0f * PI);
-    if(single_radian < 0.0f)
+    if (single_radian < 0.0f)
     {
         single_radian += 2.0f * PI;
     }
@@ -645,26 +738,6 @@ float Class_Gimbal::Get_Target_Gripper_Radian()
 float Class_Gimbal::Get_Gripper_Min_Radian()
 {
     return (Min_gripper_Radian);
-}
-
-/**
- * @brief 获取云台控制类型
- *
- * @return Enum_Gimbal_Control_Type 获取云台控制类型
- */
-Enum_Gimbal_Control_Type Class_Gimbal::Get_Gimbal_Control_Type()
-{
-    return (Gimbal_Control_Type);
-}
-
-/**
- * @brief 设定云台状态
- *
- * @param __Gimbal_Control_Type 云台状态
- */
-void Class_Gimbal::Set_Gimbal_Control_Type(Enum_Gimbal_Control_Type __Gimbal_Control_Type)
-{
-    Gimbal_Control_Type = __Gimbal_Control_Type;
 }
 
 /**
@@ -732,7 +805,7 @@ void Class_Gimbal::Set_Target_Pitch_3_Radian(float __Target_Pitch_3_Radian)
  *
  */
 void Class_Gimbal::Set_Target_Roll_Angle(float __Target_Roll_Angle)
-//设置Degree制的**关节**角度，希望关节转动45°，就直接赋45.0f
+// 设置Degree制的**关节**角度，希望关节转动45°，就直接赋45.0f
 {
     Target_Roll_Angle = __Target_Roll_Angle;
     // 关节角度(deg) -> 关节角度(rad) -> 电机角度(rad) -> 调用Set_Target_Roll_Radian自动加上Offset和限位
@@ -741,7 +814,7 @@ void Class_Gimbal::Set_Target_Roll_Angle(float __Target_Roll_Angle)
     Set_Target_Roll_Radian(motor_rad);
 }
 void Class_Gimbal::Set_Target_Roll_Radian(float __Target_Roll_Radian)
-//设置2325的目标角度，使用Target_Radian赋值给电机，控制的是**转子端**的角度，这里传入函数的Target_Roll_Radian不用手动加偏移，在函数里会自己加
+// 设置2325的目标角度，使用Target_Radian赋值给电机，控制的是**转子端**的角度，这里传入函数的Target_Roll_Radian不用手动加偏移，在函数里会自己加
 {
     Target_Roll_Radian = __Target_Roll_Radian + Min_Roll_Radian;
     Math_Constrain(&Target_Roll_Radian, Min_Roll_Radian, Max_Roll_Radian);
@@ -766,25 +839,25 @@ void Class_Gimbal::Set_Target_Roll_2_Radian(float __Target_Roll_2_Radian)
  */
 void Class_Gimbal::Set_Target_Roll_2_Radian_Single(float Target_Roll_2_Radian_Single)
 {
-    //电机对象传回的总角度，可能为负数
+    // 电机对象传回的总角度，可能为负数
     float current_total_radian = Motor_6020_J5_Roll_2.Get_Now_Radian();
-    //先对2PI取模
+    // 先对2PI取模
     float current_single_radian = fmod(current_total_radian, 2.0f * PI);
 
-    if(current_single_radian < 0.0f)
-    //如果是负数的话转成正数，这样就转成了单圈角度
+    if (current_single_radian < 0.0f)
+    // 如果是负数的话转成正数，这样就转成了单圈角度
     {
         current_single_radian += 2.0f * PI;
     }
 
-    //偏差值，加到总圈数上进行设置
+    // 偏差值，加到总圈数上进行设置
     float delta = Target_Roll_2_Radian_Single - current_single_radian;
 
-    if(delta > PI)
+    if (delta > PI)
     {
         delta -= 2.0f * PI;
     }
-    else if(delta < -PI)
+    else if (delta < -PI)
     {
         delta += 2.0f * PI;
     }
@@ -799,9 +872,77 @@ bool Class_FSM_Calibration::Get_roll_cali_status()
     return roll_cali_status;
 }
 
+#endif
+
 bool Class_FSM_Calibration::Get_Gripper_cali_status()
 {
     return gripper_cali_status;
+}
+
+float Class_Gimbal::Get_Target_J0_Pitch_Radian()
+{
+    return (Target_J0_Pitch_Radian);
+}
+
+float Class_Gimbal::Get_Target_J1_Yaw_Radian()
+{
+    return (Target_J1_Yaw_Radian);
+}
+
+float Class_Gimbal::Get_Target_J2_Yaw_Radian()
+{
+    return (Target_J2_Yaw_Radian);
+}
+
+float Class_Gimbal::Get_Target_J3_Yaw_Radian()
+{
+    return (Target_J3_Yaw_Radian);
+}
+
+float Class_Gimbal::Get_Target_J4_Pitch_Radian()
+{
+    return (Target_J4_Pitch_Radian);
+}
+
+float Class_Gimbal::Get_Target_J5_Yaw_Radian()
+{
+    return (Target_J5_Yaw_Radian);
+}
+
+void Class_Gimbal::Set_Target_J0_Pitch_Radian(float __Target_J0_Pitch_Radian)
+{
+    Target_J0_Pitch_Radian = __Target_J0_Pitch_Radian * PITCH_RATIO;
+    Math_Constrain(&Target_J0_Pitch_Radian, J0_Pitch_Min_Radian, J0_Pitch_Max_Radian);
+}
+
+void Class_Gimbal::Set_Target_J1_Yaw_Radian(float __Target_J1_Yaw_Radian)
+{
+    Target_J1_Yaw_Radian = __Target_J1_Yaw_Radian;
+    Math_Constrain(&Target_J1_Yaw_Radian, J1_Yaw_Min_Radian, J1_Yaw_Max_Radian);
+}
+
+void Class_Gimbal::Set_Target_J2_Yaw_Radian(float __Target_J2_Yaw_Radian)
+{
+    Target_J2_Yaw_Radian = __Target_J2_Yaw_Radian;
+    Math_Constrain(&Target_J2_Yaw_Radian, J2_Yaw_Min_Radian, J2_Yaw_Max_Radian);
+}
+
+void Class_Gimbal::Set_Target_J3_Yaw_Radian(float __Target_J3_Yaw_Radian)
+{
+    Target_J3_Yaw_Radian = __Target_J3_Yaw_Radian;
+    Math_Constrain(&Target_J3_Yaw_Radian, J3_Yaw_Min_Radian, J3_Yaw_Max_Radian);
+}
+
+void Class_Gimbal::Set_Target_J4_Pitch_Radian(float __Target_J4_Pitch_Radian)
+{
+    Target_J4_Pitch_Radian = __Target_J4_Pitch_Radian;
+    Math_Constrain(&Target_J4_Pitch_Radian, J4_Pitch_Min_Radian, J4_Pitch_Max_Radian);
+}
+
+void Class_Gimbal::Set_Target_J5_Yaw_Radian(float __Target_J5_Yaw_Radian)
+{
+    Target_J5_Yaw_Radian = __Target_J5_Yaw_Radian;
+    Math_Constrain(&Target_J5_Yaw_Radian, J5_Yaw_Min_Radian, J5_Yaw_Max_Radian);
 }
 
 /**

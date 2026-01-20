@@ -29,10 +29,12 @@
 #include "config.h"
 #include "dvc_minipc.h"
 #include "alg_fsm.h"
+#include "dvc_dr16.h"
+#include "dvc_dwt.h"
 /* Exported macros -----------------------------------------------------------*/
-#define wheel_diameter 0.14100000f   // 轮子直径，m
-#define half_width 0.159f            // m
-#define half_length 0.152f           // m
+#define wheel_diameter 0.14100000f  // 轮子直径，m
+#define half_width 0.159f           // m
+#define half_length 0.152f          // m
 #define ROTATION_CENTER_OFFSET 0.0f // 旋转中心位置偏移量，现在只有y方向上的偏移，且向y负方向偏移，这个偏移量为绝对值
 
 #define THETA_A atan((half_length + ROTATION_CENTER_OFFSET) / half_width) // 转向轮在坐标系下与y轴的夹角（锐角）
@@ -211,8 +213,8 @@ protected:
 
 /* Exported variables --------------------------------------------------------*/
 #ifdef ENGINEER
-//工程底盘参数
-// 轮子直径 单位m
+// 工程底盘参数
+//  轮子直径 单位m
 const float WHELL_DIAMETER = 0.141f; // m
 // 线速度转角速度 rad/s
 const float VEL2RAD = 1.0f / (WHELL_DIAMETER / 2.0f); // v = omega * r, omega = v / r， v与r单位保持一致，使用m
@@ -500,17 +502,50 @@ public:
 
     /*电机校准执行函数*/
     bool Motor_Calibration(Class_DJI_Motor_C620 *Motor, uint8_t index, float locked_torque, uint16_t &locked_cnt);
-    
+
     inline bool Get_Uplift_cali_status(uint8_t index);
 
     bool uplift_cali = false;
+
 protected:
     /*抬升校准状态机相关变量*/
     float uplift_offset[4] = {0.0f};
     float uplift_cali_torque = 10000.0f;
     bool uplift_cali_status[4] = {false};
 
-    uint16_t uplift_locked_cnt[4] = {0};// 抬升堵转时间计数
+    uint16_t uplift_locked_cnt[4] = {0}; // 抬升堵转时间计数
+};
+
+class Class_FSM_Ledder : public Class_FSM
+{
+public:
+    Class_Mecanum_Chassis *Chassis;
+    
+    Enum_DR16_Switch_Status DR16_Right;
+    Enum_DR16_Switch_Status DR16_Pre_Right;
+    Enum_DR16_Switch_Status Switch_Status;
+
+    float Yaw = 0.0f;
+    float Yaw_Delta_s = 0.0f;
+
+    uint8_t TRIGGER_CNT = 0;
+    uint16_t Yaw_cnt = 0;
+
+    void Reload_TIM_Status_PeriodElapsedCallback();
+
+protected:
+    /*上台阶相关角度*/
+    float ledder_prepare[3] = {22.0f, 20.0f, 20.0f};
+
+    float ledder_1_touch[3] = {18.0f, 17.5f, 17.5f};
+    float ledder_1_uplift[3] = {0.0f, 1.5f, 1.5f};
+    float ledder_1_over[3] = {22.0f, 20.0f, 20.0f};
+
+    float ledder_2_touch[3] = {12.5f, 17.0f, 17.0f};
+    float ledder_2_uplift[3] = {0.0f, 2.5f, 2.5f};
+    float ledder_2_over[3] = {22.0f, 20.0f, 20.0f};
+
+    Enum_DR16_Switch_Status Judge_DR16_Switch_Status(Enum_DR16_Switch_Status Now_Status, Enum_DR16_Switch_Status Pre_Status);
 };
 
 class Class_Mecanum_Chassis
@@ -536,11 +571,15 @@ public:
     // 主动轮电机 - 2325 速度环不需要校准
     Class_DM_Motor_J4310 Track_Motor[2];
     // 抬升机构电机
-    Class_DJI_Motor_C620 Uplift_Motor[4];
+    Class_DJI_Motor_C620 Uplift_Motor[3];
 
     // 抬升机构校准状态机
     Class_FSM_Calibration_Chassis Calibration_FSM;
     friend class Class_FSM_Calibration_Chassis;
+
+    // 上台阶状态机
+    Class_FSM_Ledder Ledder_FSM;
+    friend class Class_FSM_Ledder;
 
     void Init(float __Velocity_X_Max = 4.0f, float __Velocity_Y_Max = 4.0f, float __Omega_Max = 8.0f);
 
@@ -575,8 +614,8 @@ public:
     void TIM_Calculate_PeriodElapsedCallback(Enum_Sprint_Status __Sprint_Status);
 
     // 着地时的角度，相对于Min_Radian
-    float Uplift_Touch_Radian[4] = {20.5f, 20.5f, 17.0f, 17.0f};
-    
+    float Uplift_Touch_Radian[3] = {18.5f, 17.0f, 17.0f};
+
 protected:
     // 初始化相关常量
 
@@ -589,16 +628,14 @@ protected:
     // 底盘电机最大转速
     float Wheels_Omega_Max = 31.416f; // 300rpm
     // 抬升机构最大高度 mm
-    float Uplift_Height_Max = 280; 
+    float Uplift_Height_Max = 280;
     // 抬升电机校准后的最大角度，以电机返回的角度作为抬升高度的上限
-    float Uplift_Max_Radian[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float Uplift_Max_Radian[3] = {0.0f, 0.0f, 0.0f};
     // 抬升电机基于校准后最大角度而言的最低角度，差值为26.5rad
-    float Uplift_Min_Radian[4] = {
-                                  Uplift_Max_Radian[0] - 28.5f,
-                                  Uplift_Max_Radian[1] - 28.5f,
-                                  Uplift_Max_Radian[2] - 22.5f,
-                                  Uplift_Max_Radian[3] - 22.5f
-                                 };
+    float Uplift_Min_Radian[3] = {
+        Uplift_Max_Radian[0] - 28.5f,
+        Uplift_Max_Radian[1] - 21.15f,
+        Uplift_Max_Radian[2] - 21.15f,};
 
     // 常量
 
@@ -611,9 +648,9 @@ protected:
     // 履带电机目标角速度，rad/s，两边保持一致
     float Target_Track_Omega;
     // 传给抬升电机的实际目标角度
-    float Target_Uplift_Motor_Radian[4];
+    float Target_Uplift_Motor_Radian[3];
     // 用于和Uplift_Min_Radian相加得到电机目标角度的值，也就是加offset之前的目标角度，主要用于遥控器逻辑，初始在最高点，设为最小值和最大值之间的差值，此时赋给电机的角度应为0.0f
-    float Target_Uplift_Radian[4] = {28.5f, 28.5f, 22.5f, 22.5f};
+    float Target_Uplift_Radian[3] = {28.5f, 21.15f, 21.15f};
 
     // 读变量
 
@@ -773,8 +810,9 @@ float Class_Mecanum_Chassis::Get_Target_Wheel_Power()
  */
 float Class_Mecanum_Chassis::Get_Target_Uplift_Radian(uint8_t index)
 {
-    if(index >= 4) return 13.0f;
-    
+    if (index >= 3)
+        return 22.5f;
+
     return (Target_Uplift_Radian[index]);
 }
 
@@ -890,7 +928,8 @@ void Class_Mecanum_Chassis::Set_Velocity_X_Max(float __Velocity_X_Max)
  */
 void Class_Mecanum_Chassis::Set_Target_Uplift_Radian(uint8_t index, float __Target_Radian)
 {
-    if(index >= 4) return;
+    if (index >= 3)
+        return;
 
     Target_Uplift_Radian[index] = __Target_Radian;
     Target_Uplift_Motor_Radian[index] = Uplift_Min_Radian[index] + Target_Uplift_Radian[index];

@@ -81,8 +81,8 @@ float start_rpy[3];
 #endif
 
 #ifdef MOTOR_TEST_CHASSIS
-uint32_t delta_cnt = 0;     // DWT测用时的计数值
-float delta_s = 0.0f;       // DWT测得的用时
+uint32_t delta_cnt = 0; // DWT测用时的计数值
+float delta_s = 0.0f;   // DWT测得的用时
 #endif
 
 /* Private function declarations ---------------------------------------------*/
@@ -108,25 +108,25 @@ void Chassis_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     // 麦克纳姆轮组
     case (0x201):
     {
-        //chariot.Chassis.Mecanum_Wheels[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        // chariot.Chassis.Mecanum_Wheels[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x202):
     {
-        //chariot.Chassis.Mecanum_Wheels[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        // chariot.Chassis.Mecanum_Wheels[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x203):
     {
-        //chariot.Chassis.Mecanum_Wheels[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        // chariot.Chassis.Mecanum_Wheels[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x204):
     {
-        //chariot.Chassis.Mecanum_Wheels[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        // chariot.Chassis.Mecanum_Wheels[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
         chariot.Force_Chassis.Motor_Wheel[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
@@ -200,30 +200,25 @@ void Chassis_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     switch (CAN_RxMessage->Header.Identifier)
     {
 #ifdef MOTOR_TEST_CHASSIS
-    case (0x204):
+    case (0x202):
     {
         chariot.Test_Motor.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
 #else
-    case (0x201):
+    case (0x202):
     {
         chariot.Chassis.Uplift_Motor[0].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
-    case (0x202):
+    case (0x203):
     {
         chariot.Chassis.Uplift_Motor[1].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
-    case (0x203):
-    {
-        chariot.Chassis.Uplift_Motor[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
-    }
-    break;
     case (0x204):
     {
-        chariot.Chassis.Uplift_Motor[3].CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Chassis.Uplift_Motor[2].CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
 
@@ -322,6 +317,7 @@ void Chassis_Device_CAN3_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 #ifdef GIMBAL
 void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
+#ifdef PUMA
     switch (CAN_RxMessage->Header.Identifier)
     {
     case (0xA1): // J0 - DM4310 (Yaw)
@@ -348,6 +344,34 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     }
     break;
     }
+#endif
+
+    switch (CAN_RxMessage->Header.Identifier)
+    {
+    case (0xA1): // J0 - 4340 - Pitch
+    {
+        chariot.Gimbal.J0_Pitch_4340.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    case (0xA2): // J1 - 8009P - Yaw
+    {
+        chariot.Gimbal.J1_Yaw_8009P.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    case (0xA3): // J2 - 4340P - Yaw
+    {
+        chariot.Gimbal.J2_Yaw_4340P.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+
+    case (0xA4): // J3 - 4340P - Yaw
+    {
+        chariot.Gimbal.J3_Yaw_4340P.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    }
 }
 #endif
 
@@ -359,6 +383,7 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 #ifdef GIMBAL
 void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
+#ifdef PUMA
     switch (CAN_RxMessage->Header.Identifier)
     {
     case (0x205):
@@ -374,6 +399,26 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
     case (0xA5): // J4 - 4340
     {
         chariot.Gimbal.Motor_DM_J4_Pitch_3.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    }
+#endif
+
+    switch (CAN_RxMessage->Header.Identifier)
+    {
+    case (0xA5):  // J4 - 4340P - Pitch
+    {
+        chariot.Gimbal.J4_Pitch_4340P.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        break;
+    }
+    case (0xA6): // J5 - 4340P - Yaw
+    {
+        chariot.Gimbal.J5_Yaw_4340P.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    case (0x206):
+    {
+        chariot.Gimbal.Motor_C610_Gripper.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        break;
     }
     break;
     }
@@ -481,13 +526,13 @@ void Referee_UART10_Callback(uint8_t *Buffer, uint16_t Length)
 #if defined CHASSIS
 void SuperCAP_UART1_Callback(uint8_t *Buffer, uint16_t Length)
 {
-    //chariot.Chassis.Supercap.UART_RxCpltCallback(Buffer);
+    // chariot.Chassis.Supercap.UART_RxCpltCallback(Buffer);
     chariot.Force_Chassis.Supercap.UART_RxCpltCallback(Buffer);
     /*紫板子功率计*/
     int16_t tmp_power;
-    memcpy(&tmp_power,&Buffer[6],sizeof(int16_t));
+    memcpy(&tmp_power, &Buffer[6], sizeof(int16_t));
 
-    chariot.Force_Chassis.Supercap.Set_Now_Power((float)tmp_power/75.0f);
+    chariot.Force_Chassis.Supercap.Set_Now_Power((float)tmp_power / 75.0f);
 }
 #endif
 /**
@@ -523,6 +568,8 @@ void MiniPC_UART_Callback(uint8_t *Buffer, uint16_t Length)
 extern Referee_Rx_A_t CAN3_Chassis_Rx_Data_A;
 void Task100us_TIM4_Callback()
 {
+    // 测试
+    chariot.Force_Chassis.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();
 #ifdef CHASSIS
 
 #elif defined(GIMBAL)
@@ -607,10 +654,6 @@ void Task1ms_TIM5_Callback()
             // 强制使能云台
             chariot.Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
 
-            chariot.Gimbal.Motor_DM_J0_Yaw.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
-            chariot.Gimbal.Motor_DM_J1_Pitch.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
-            chariot.Gimbal.Motor_DM_J2_Pitch_2.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
-            chariot.Gimbal.Motor_DM_J4_Pitch_3.Set_DM_Control_Status(DM_Motor_Control_Status_ENABLE);
         }
         else
 #endif

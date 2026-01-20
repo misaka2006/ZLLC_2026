@@ -23,6 +23,9 @@
 //调试或比赛状态
 #define DEBUG
 
+// 机械臂类型选择
+//#define PUMA
+#define SCARA
 //之前写的机械臂电机测试入口
 //#define MOTOR_TEST
 
