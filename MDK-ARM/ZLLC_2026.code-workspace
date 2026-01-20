@@ -4,6 +4,12 @@
             "path": "."
         }
     ],
-    "settings": {},
+    "settings": {
+        "files.associations": {
+            "main.h": "c",
+            "cstddef": "cpp",
+            "limits": "cpp"
+        }
+    },
     "extensions": {}
 }

@@ -13,6 +13,7 @@
 #include "dvc_boardc_bmi088_reg.h"
 #include "dvc_dwt.h"
 #include "math.h"
+#include "kalman_filter.h"
 
 float BMI088_ACCEL_SEN = BMI088_ACCEL_3G_SEN;
 float BMI088_GYRO_SEN = BMI088_GYRO_2000_SEN;
@@ -98,7 +99,9 @@ uint8_t Class_BoardC_BMI::BMI088_Init(IMU_Data_t *__BMI088)
 //    {
 //        error |= BMI088_Gyro_Init();
 //    }
-
+    kalman_init(&kalman_gyroDiff[0],0.0f);
+    kalman_init(&kalman_gyroDiff[1],0.0f);
+    kalman_init(&kalman_gyroDiff[2],0.0f);
     if (caliOffset)
         Calibrate_MPU_Offset(__BMI088);
     else
@@ -200,7 +203,12 @@ void Class_BoardC_BMI::Calibrate_MPU_Offset(IMU_Data_t *bmi088)
             // 数据差异过大认为收到外界干扰，需重新校准
             gNormDiff = gNormMax - gNormMin;
             for (uint8_t j = 0; j < 3; j++)
+            {
                 gyroDiff[j] = gyroMax[j] - gyroMin[j];
+                kalman_update(&kalman_gyroDiff[j], gyroDiff[j]);
+                gyroDiff[j] = kalman_gyroDiff[j].x;
+            }
+            
             if (gNormDiff > 0.5f ||
                 gyroDiff[0] > 0.15f ||
                 gyroDiff[1] > 0.15f ||
@@ -222,7 +230,7 @@ void Class_BoardC_BMI::Calibrate_MPU_Offset(IMU_Data_t *bmi088)
         bmi088->TempWhenCali = bmi088_raw_temp * BMI088_TEMP_FACTOR + BMI088_TEMP_OFFSET;
 
         caliCount++;
-    } while (gNormDiff > 0.5f ||
+    } while (gNormDiff > 0.2f ||
              fabsf(bmi088->gNorm - 9.8f) > 0.5f ||
              gyroDiff[0] > 0.15f ||
              gyroDiff[1] > 0.15f ||

@@ -30,7 +30,7 @@
 void Class_Gimbal::Init()
 {
     // imu初始化
-    Boardc_BMI.Init();
+    //Boardc_BMI.Init();
 
     // yaw轴电机
     Motor_Yaw.PID_Angle.Init(30.f, 0.0f, 0.0f, 0.0f, 500, 500);

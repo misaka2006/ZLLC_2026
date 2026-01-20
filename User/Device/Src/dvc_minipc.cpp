@@ -394,28 +394,42 @@ float Class_MiniPC::calc_distance(float x, float y, float z)
 
 /**
  * 计算给定向量的俯仰角（pitch）。
- * 
+ *
  * @param x 向量的x分量
  * @param y 向量的y分量
  * @param z 向量的z分量
  * @return 计算得到的俯仰角（以角度制表示）
  */
-//extern Referee_Rx_E_t CAN3_Chassis_Rx_Data_E;
-float Class_MiniPC::calc_pitch(float x, float y, float z) 
+// extern Referee_Rx_E_t CAN3_Chassis_Rx_Data_E;
+float Class_MiniPC::calc_pitch(float x, float y, float z, uint8_t mode)
 {
-#ifdef OLD
+  float tmp_g = 0.0f;
+  switch (mode)
+  {
+  case 0:
+  {
+    tmp_g = g;
+  }
+  break;
+  case 1:
+  {
+    tmp_g = g * cos(Now_Angle_Roll);
+  }
+  break;
+  }
   // 根据 x、y 分量计算的平面投影的模长和 z 分量计算的反正切值，得到弧度制的俯仰角
   float pitch = atan2f(z, sqrtf(x * x + y * y));
-  //使用重力加速度模型迭代更新俯仰角
-  for (size_t i = 0; i < 20; i++) {
+  // 使用重力加速度模型迭代更新俯仰角
+  for (size_t i = 0; i < 20; i++)
+  {
     float v_x = bullet_v * cosf(pitch);
     float v_y = bullet_v * sinf(pitch);
     // 计算子弹飞行时间
     float t = sqrtf(x * x + y * y) / v_x;
-    float h = v_y * t - 0.5 * g * t * t;
+    float h = v_y * t - 0.5 * tmp_g * t * t;
     float dz = z - h;
 
-    if (abs(dz) < 0.01) 
+    if (abs(dz) < 0.01)
     {
       break;
     }
@@ -427,34 +441,33 @@ float Class_MiniPC::calc_pitch(float x, float y, float z)
   pitch = -(pitch * 180 / PI); // 向上为负，向下为正
 
   return pitch;
-#endif
-// std::由于进行了函数重载，可以根据传入数据的类型选择合适的返回值类型
-    // std::hypot就是根下平方和相加，只不过多了防精度溢出机制，无法使用请替换
-    // c++11有了std::hypot(x, y)，c++17才有std::hypot(x, y, z)
-    float d = calc_distance(x, y, z);
-    if (d < a_d)
-    {
-        // return 当前pitch，因为无解1
-		return IMU->Get_Angle_Pitch();
-		
-    }
+  // // std::由于进行了函数重载，可以根据传入数据的类型选择合适的返回值类型
+  //     // std::hypot就是根下平方和相加，只不过多了防精度溢出机制，无法使用请替换
+  //     // c++11有了std::hypot(x, y)，c++17才有std::hypot(x, y, z)
+  //     float d = calc_distance(x, y, z);
+  //     if (d < a_d)
+  //     {
+  //         // return 当前pitch，因为无解1
+  // 		return IMU->Get_Angle_Pitch();
 
-    float v0 =
-        Referee->Get_Referee_Status() == Referee_Status_ENABLE &&
-                Referee->Get_Shoot_Speed()
-            ? Referee->Get_Shoot_Speed()
-            : bullet_v;
-    
-    // 初始估值一定偏小一点点
-    float t = (d - a_d) / v0;
-    const float t1 = 2.0f * a_d * v0, t2 = v0 * v0 - z * g;
-    
-    // 牛顿迭代法，可省略，最好两次
-    t -= (d * d - a_d * a_d + t * (-t1 + t * (-t2 + 0.25f * g * g * t * t))) / (-t1 + t * (-2.0f * t2 + g * g * t * t));
-    t -= (d * d - a_d * a_d + t * (-t1 + t * (-t2 + 0.25f * g * g * t * t))) / (-t1 + t * (-2.0f * t2 + g * g * t * t));
-    
-    // pitch向下为正，加负号
-    return 180.0f * atanf((z + 0.5 * g * t * t) / sqrtf(x * x + y * y)) / PI;
+  //     }
+
+  //     float v0 =
+  //         Referee->Get_Referee_Status() == Referee_Status_ENABLE &&
+  //                 Referee->Get_Shoot_Speed()
+  //             ? Referee->Get_Shoot_Speed()
+  //             : bullet_v;
+
+  //     // 初始估值一定偏小一点点
+  //     float t = (d - a_d) / v0;
+  //     const float t1 = 2.0f * a_d * v0, t2 = v0 * v0 - z * g;
+
+  //     // 牛顿迭代法，可省略，最好两次
+  //     t -= (d * d - a_d * a_d + t * (-t1 + t * (-t2 + 0.25f * g * g * t * t))) / (-t1 + t * (-2.0f * t2 + g * g * t * t));
+  //     t -= (d * d - a_d * a_d + t * (-t1 + t * (-t2 + 0.25f * g * g * t * t))) / (-t1 + t * (-2.0f * t2 + g * g * t * t));
+
+  //     // pitch向下为正，加负号
+  //     return 180.0f * atanf((z + 0.5 * g * t * t) / sqrtf(x * x + y * y)) / PI;
 }
 
 /**
@@ -488,11 +501,27 @@ float Class_MiniPC::Calc_Error(float x, float y, float z, float now_yaw, float n
 void Class_MiniPC::Auto_aim(float x, float y, float z, float *yaw, float *pitch, float *distance)
 {
     *yaw = calc_yaw(x, y, z);//第一次标- 现改为正
-    *pitch = calc_pitch(x, y, z);//第一次标- 现改为正
+    *pitch = calc_pitch(x, y, z,0);//第一次标- 现改为正
     *distance = calc_distance(x, y, z);
      //这里的z为上位机直接发的z，不是弹道解算后的z1，判断时存在一定误差（瞄准误差允许范围为5cm时，不影响10m内打弹）
 }
-
+void Class_MiniPC::Auto_aim_Add_Roll(float x, float y, float z, float *yaw, float *pitch, float *distance)
+{
+  if (fabs(Now_Angle_Roll) > 0.001f) {
+        // 将点从视觉坐标系转换到云台坐标系
+        float x_rotated = x;
+        float y_rotated = y * cosf(Now_Angle_Roll) + z * sinf(Now_Angle_Roll);//符合右手定则 x轴指向
+        float z_rotated = - y * sinf(Now_Angle_Roll) + z * cosf(Now_Angle_Roll);
+        *yaw = calc_yaw(x_rotated, y_rotated, z_rotated);
+        *pitch = calc_pitch(x_rotated, y_rotated, z_rotated,1);
+        *distance = calc_distance(x_rotated, y_rotated, z_rotated);
+    } else {
+        // 没有roll角度，使用原始坐标
+        *yaw = calc_yaw(x, y, z);
+        *pitch = calc_pitch(x, y, z,0);
+        *distance = calc_distance(x, y, z);
+    }
+}
 float Class_MiniPC::meanFilter(float input) 
 {
     static float buffer[5] = {0};

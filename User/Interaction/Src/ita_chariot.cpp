@@ -149,10 +149,10 @@ void Class_Chariot::CAN_Chassis_Tx_Gimbal_Callback()
     supercap_proportion = Chassis.Supercap.Get_Supercap_Proportion();
     Self_Position_X = (int16_t)(Referee.Get_Location_X() * 100.f);
     Self_Position_Y = (int16_t)(Referee.Get_Location_Y() * 100.f);
-    Target_Position_X = (int16_t)(Referee.Get_Radar_Send_Coordinate_X() * 100.f);
-    Target_Position_Y = (int16_t)(Referee.Get_Radar_Send_Coordinate_Y() * 100.f);
+    // Target_Position_X = (int16_t)(Referee.Get_Radar_Send_Coordinate_X() * 100.f);
+    // Target_Position_Y = (int16_t)(Referee.Get_Radar_Send_Coordinate_Y() * 100.f);
     radar_info = Referee.Get_Radar_Info();
-    dart_target = Referee.Get_Dart_Command_Target() | (0x01 & Referee.Get_Sentry_Info_1() >> 19) << 2;
+    //dart_target = Referee.Get_Dart_Command_Target() | (0x01 & Referee.Get_Sentry_Info_1() >> 19) << 2;
 
     for(int i = 0;i < 6;i++)//无敌状态辨认
     {
@@ -168,14 +168,14 @@ void Class_Chariot::CAN_Chassis_Tx_Gimbal_Callback()
         }
     }
 
-    Position[0] = Referee.Get_Hero_Position_X();
-    Position[1] = Referee.Get_Hero_Position_Y();
-    Position[2] = Referee.Get_Sentry_Position_X();
-    Position[3] = Referee.Get_Sentry_Position_Y();
-    Position[4] = Referee.Get_Infantry_3_Position_X();
-    Position[5] = Referee.Get_Infantry_3_Position_Y();
-    Position[6] = Referee.Get_Infantry_4_Position_X();
-    Position[7] = Referee.Get_Infantry_4_Position_Y();
+    // Position[0] = Referee.Get_Hero_Position_X();
+    // Position[1] = Referee.Get_Hero_Position_Y();
+    // Position[2] = Referee.Get_Sentry_Position_X();
+    // Position[3] = Referee.Get_Sentry_Position_Y();
+    // Position[4] = Referee.Get_Infantry_3_Position_X();
+    // Position[5] = Referee.Get_Infantry_3_Position_Y();
+    // Position[6] = Referee.Get_Infantry_4_Position_X();
+    // Position[7] = Referee.Get_Infantry_4_Position_Y();
 
     //发送数据给云台
     //A包
@@ -228,7 +228,7 @@ void Class_Chariot::CAN_Chassis_Tx_Gimbal_Callback()
  * @brief can回调函数处理云台发来的数据
  *
  */
-Struct_CAN_Referee_Rx_Data_t CAN_Referee_Rx_Data;
+//Struct_CAN_Referee_Rx_Data_t CAN_Referee_Rx_Data;
 #ifdef CHASSIS    
 //控制类型字节
 uint8_t control_type;
@@ -280,7 +280,7 @@ void Class_Chariot::CAN_Chassis_Rx_Gimbal_Callback(uint8_t *Rx_Data)
         }
         case (0x95):
         {
-            memcpy(&CAN_Referee_Rx_Data,&CAN_Manage_Object->Rx_Buffer.Data,sizeof(Struct_CAN_Referee_Rx_Data_t));
+            //memcpy(&CAN_Referee_Rx_Data,&CAN_Manage_Object->Rx_Buffer.Data,sizeof(Struct_CAN_Referee_Rx_Data_t));
             break;
         }
     }

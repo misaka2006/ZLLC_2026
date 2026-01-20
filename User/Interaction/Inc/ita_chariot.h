@@ -24,7 +24,7 @@
 #include "crt_chassis.h"
 #include "config.h"
 #include "alg_filter.h"
-
+#include "dvc_dmimu.h"
 /* Exported macros -----------------------------------------------------------*/
 class Class_Chariot;
 /* Exported types ------------------------------------------------------------*/
@@ -161,7 +161,8 @@ public:
         Class_Gimbal Gimbal;
         //发射机构
         Class_Booster Booster;
-
+        //
+        Class_DM_IMU IMU;
         //遥控器离线保护控制状态机
         Class_FSM_Alive_Control FSM_Alive_Control;
         friend class Class_FSM_Alive_Control;

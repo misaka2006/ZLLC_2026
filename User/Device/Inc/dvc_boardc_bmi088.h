@@ -123,6 +123,7 @@ enum
 
 class Class_BoardC_BMI{
 public:	
+    KalmanFilter kalman_gyroDiff[3];
     uint8_t init(SPI_HandleTypeDef *hspi ,IMU_Data_t *__BMI088);
     
     uint8_t BMI088_Init(IMU_Data_t *__BMI088);

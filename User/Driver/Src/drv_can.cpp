@@ -106,6 +106,9 @@ uint8_t CAN3_0x146_Tx_Data[8];
 uint8_t CAN3_0x147_Tx_Data[8];
 uint8_t CAN3_0x148_Tx_Data[8];
 
+/***************DM-IMU************* */
+uint8_t CAN3_0x01_Tx_Data[8];
+
 /* Private function declarations ---------------------------------------------*/
 
 /* function prototypes -------------------------------------------------------*/
@@ -444,5 +447,24 @@ void HAL_FDCAN_TxBufferCompleteCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t Bu
   /* NOTE: This function Should not be modified, when the callback is needed,
            the HAL_FDCAN_TxBufferCompleteCallback could be implemented in the user file
    */
+}
+/*
+处理canerror
+*/
+void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *hfdcan)
+{
+    if(hfdcan->Instance == FDCAN3)
+    {
+        uint32_t error = HAL_FDCAN_GetError(hfdcan);
+        if(error & HAL_FDCAN_ERROR_FIFO_FULL)
+    {
+        // 清空FIFO并重置
+        //HAL_FDCAN_ResetRxFifo(hfdcan, FDCAN_RX_FIFO0);
+        //H/AL_FDCAN_ResetRxFifo(hfdcan, FDCAN_RX_FIFO1);
+
+        // 重新激活通知
+        HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+    }
+    }
 }
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

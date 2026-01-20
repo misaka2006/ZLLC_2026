@@ -225,7 +225,6 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.Identifier)
     {
-
 	}
 }
 #endif
@@ -250,8 +249,12 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 void Gimbal_Device_CAN3_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage){
     switch (CAN_RxMessage->Header.Identifier)
     {
-
-	}
+    case (0x11):
+    {
+        chariot.IMU.IMU_UpdateData(CAN_RxMessage->Data);
+    }
+    break;
+    }
 }
 #endif
 /**
@@ -386,7 +389,15 @@ void Task100us_TIM4_Callback()
 
     #elif defined(GIMBAL)
         // 单给IMU消息开的定时器 ims
-        chariot.Gimbal.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();     
+        //chariot.Gimbal.Boardc_BMI.TIM_Calculate_PeriodElapsedCallback();  
+
+        static uint8_t mod2 = 0;
+        mod2++;
+        if(mod2%2 == 0)
+            chariot.IMU.IMU_RequestData(&hfdcan3,0x01,2);
+        else
+            chariot.IMU.IMU_RequestData(&hfdcan3,0x01,3);
+
     static int mod100 = 0;
     mod100++;
     if(mod100 = 100)
@@ -453,7 +464,7 @@ void Task1ms_TIM5_Callback()
     /************ 判断设备在线状态判断 50ms (所有device:电机，遥控器，裁判系统等) ***************/
     
     chariot.TIM1msMod50_Alive_PeriodElapsedCallback();
-    HAL_IWDG_Refresh(&hiwdg1);
+    //HAL_IWDG_Refresh(&hiwdg1);
 
     /****************************** 交互层回调函数 1ms *****************************************/
     if(start_flag==1)
@@ -465,9 +476,9 @@ void Task1ms_TIM5_Callback()
         
     /****************************** 驱动层回调函数 1ms *****************************************/ 
         //统一打包发送
-        TIM_CAN_PeriodElapsedCallback();
+        //TIM_CAN_PeriodElapsedCallback();
         
-        static int mod5 = 0,mod100 = 0,mod68 = 0;
+		static int mod5 = 0,mod100 = 0,mod68 = 0;
         mod5++;
         mod100++;
         mod68++;
@@ -484,7 +495,7 @@ void Task1ms_TIM5_Callback()
         {
             #ifdef CHASSIS
             // 裁判系统发送
-            chariot.Referee.TIM_UART_Tx_PeriodElapsedCallback();
+            //chariot.Referee.TIM_UART_Tx_PeriodElapsedCallback();
             #endif
             mod100 = 0;
         }
@@ -573,13 +584,25 @@ extern "C" void Task_Init()
  * @brief 前台循环任务
  *
  */
+//测试用,通过变量控制操作，当绘制前，需要先add 在UI界面看到初始化的图形后，才可change，后续可以加一键式刷新add的封装解决此问题
+Enum_Referee_Data_Interaction_Graphic_Operation control_add_or_change = Referee_Data_Interaction_Graphic_Operation_ADD;
  extern "C" void Task_Loop()
 {
     #ifdef GIMBAL
-
+    
     #endif
     #ifdef CHASSIS
+    Struct_Referee_Data_Interaction_Graphic_Config *graphic_capacitor_frame =  chariot.Referee.Set_Referee_UI_Rectangle(1, 0, Referee_Data_Interaction_Graphic_Color_YELLOW, 1, 760, 175, 1160, 209);
+    //chariot.Referee.UART_Send_Interaction_UI_Graphic_1(graphic_capacitor_frame);
 
+    static float  count = 0;
+    if(control_add_or_change == Referee_Data_Interaction_Graphic_Operation_CHANGE)
+        count += 0.1f;
+    if(count >= 500.0f)
+        count = 0;
+
+    Struct_Referee_Data_Interaction_Graphic_Config * graphic_test_float_data = chariot.Referee.Set_Referee_UI_Float(control_add_or_change,2,0,Referee_Data_Interaction_Graphic_Color_PURPLE,3,760,760,30,count); 
+    chariot.Referee.UART_Send_Interaction_UI_Graphic_2(graphic_capacitor_frame,graphic_test_float_data);
     #endif
 }
 
