@@ -72,7 +72,6 @@ virtualFolder:
         - path: ../User/Algorithm/Src/QuaternionEKF.cpp
         - path: ../User/Algorithm/Src/user_lib.cpp
         - path: ../User/Algorithm/Src/alg_SMC_Control.cpp
-        - path: ../User/Algorithm/Src/alg_new_power_limit.cpp
       folders: []
     - name: Application
       files: []
@@ -341,6 +340,7 @@ targets:
         - ../Drivers/CMSIS/Include
         - .cmsis/include
         - RTE/_ZLLC_2026
+        - ../Src
         - ../DSP/Include
       libList: []
     excludeList: []
@@ -355,6 +355,7 @@ targets:
           afterBuildTasks: []
           asm-compiler:
             $use: asm-auto
+            defines: []
             misc-controls: ""
           beforeBuildTasks: []
           c/cpp-compiler:

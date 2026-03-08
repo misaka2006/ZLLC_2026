@@ -26,12 +26,12 @@ void Class_IMU::Init()
     IMU_MahonyAHRS.init(INS_Quat);
  
     //EKF初始化
-    IMU_QuaternionEKF_Init(10, 0.001, 1000000, 1, 0.3 , 0.0f, &QEKF_INS);
+    IMU_QuaternionEKF_Init(10, 0.001, 1000000, 0.9996, 0.1, 0.0f, &QEKF_INS);
 
     INS.AccelLPF = 0.3;
 
     //初始化温控pid参数 积分和输出限幅是一周期满占空比的计数240M/24/10000=1000
-    PID_IMU_Tempture.Init(2000, 300, 0, 0.0, 500, 10000);
+    PID_IMU_Tempture.Init(200, 500, 0, 0.0, 800, 1000);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
 
 }
