@@ -710,12 +710,11 @@ struct Struct_Referee_Rx_Data_Robot_Status
  */
 struct Struct_Referee_Rx_Data_Robot_Power_Heat
 {
-    uint16_t Chassis_Voltage;
-    uint16_t Chassis_Current;
-    float Chassis_Power;
+    uint16_t Chassis_Voltage;//现已修改位保留位（没作用）
+    uint16_t Chassis_Current;//现已修改位保留位（没作用）
+    float Chassis_Power;//现已修改位保留位（没作用）
     uint16_t Chassis_Energy_Buffer;
     uint16_t Booster_17mm_1_Heat;
-    uint16_t Booster_17mm_2_Heat;
     uint16_t Booster_42mm_Heat;
     uint16_t CRC_16;
 } __attribute__((packed));
@@ -1174,7 +1173,6 @@ public:
     inline float Get_Chassis_Power();
     inline uint16_t Get_Chassis_Energy_Buffer();
     inline uint16_t Get_Booster_17mm_1_Heat();
-    inline uint16_t Get_Booster_17mm_2_Heat();
     inline uint16_t Get_Booster_42mm_Heat();
     inline float Get_Location_X();
     inline float Get_Location_Y();
@@ -1867,15 +1865,6 @@ uint16_t Class_Referee::Get_Booster_17mm_1_Heat()
     return (Robot_Power_Heat.Booster_17mm_1_Heat);
 }
 
-/**
- * @brief 获取17mm2热量
- *
- * @return uint16_t 17mm2热量
- */
-uint16_t Class_Referee::Get_Booster_17mm_2_Heat()
-{
-    return (Robot_Power_Heat.Booster_17mm_2_Heat);
-}
 
 /**
  * @brief 获取42mm热量
