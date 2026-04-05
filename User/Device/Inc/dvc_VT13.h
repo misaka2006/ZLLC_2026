@@ -1,13 +1,3 @@
-/**
- * @file VT13.h
- * @author cjw
- * @brief HX711  tension meter
- * @version 0.1
- * @date 2025-07-01 0.1 26赛季定稿
- *
- * @copyright ZLLC 2026
- *
- */
 #ifndef DVC_VT13_H
 
 #define DVC_VT13_H

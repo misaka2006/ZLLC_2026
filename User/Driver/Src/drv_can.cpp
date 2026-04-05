@@ -77,7 +77,8 @@ uint8_t CAN3_MiniPC_Tx_Data_C[8];   //下位机发送缓冲区
 uint8_t CAN3_MiniPC_Tx_Data_D[8];   //下位机发送缓冲区
 uint8_t CAN3_Gimbal_Tx_Chassis_Data[8];  //云台给底盘发送缓冲区
 uint8_t CAN3_Sentry_CMD_Data[8];   //云台给底盘发送缓冲区
-
+uint8_t CAN1_MiniPc_Tx_Data[8];    //迷你主机发送缓冲区
+uint8_t CAN2_MiniPc_Tx_Data[8];    //迷你主机发送缓冲区
 /*********LK电机 控制缓冲区***********/
 uint8_t CAN1_0x141_Tx_Data[8];
 uint8_t CAN1_0x142_Tx_Data[8];

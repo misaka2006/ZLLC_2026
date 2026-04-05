@@ -54,6 +54,11 @@ enum Enum_Friction_Control_Type
 };
 
 
+enum Enum_Booster_User_Control_Type
+{
+    Booster_User_Control_Type_SINGLE=0,
+    Booster_User_Control_Type_MULTI, // 连发
+};
 
 /**
  * @brief Specialized, 热量检测有限自动机
@@ -124,13 +129,14 @@ public:
     inline void Set_Friction_Control_Type(Enum_Friction_Control_Type __Friction_Control_Type);
     inline void Set_Friction_Omega(float __Friction_Omega);
     inline void Set_Driver_Omega(float __Driver_Omega);
-    inline void Set_Booster_Type(Enum_Booster_Type __Booster_Type);
     inline void Set_Heat(uint16_t __Heat);
     inline void Set_Cooling_Value(uint16_t __Cooling_Value);
 
     void TIM_Calculate_PeriodElapsedCallback();
 	void Output();
-		
+	
+    Enum_Booster_User_Control_Type Booster_User_Control_Type = Booster_User_Control_Type_MULTI;
+
 protected:
     //初始化相关常量
 
@@ -161,7 +167,6 @@ protected:
     //发射机构状态
     Enum_Booster_Control_Type Booster_Control_Type = Booster_Control_Type_CEASEFIRE;
     Enum_Friction_Control_Type Friction_Control_Type = Friction_Control_Type_DISABLE;
-    Enum_Booster_Type Booster_Type;
     //摩擦轮角速度
     float Friction_Omega = 650.0f;
     //拨弹盘实际的目标速度, 一圈八发子弹
@@ -237,10 +242,6 @@ void Class_Booster::Set_Friction_Control_Type(Enum_Friction_Control_Type __Frict
 }
 
 
-void Class_Booster::Set_Booster_Type(Enum_Booster_Type __Booster_Type)
-{
-    Booster_Type = __Booster_Type;
-}
 /**
  * @brief 获得发射机构状态
  *
