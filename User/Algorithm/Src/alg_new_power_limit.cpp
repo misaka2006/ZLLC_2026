@@ -124,6 +124,7 @@ float dir_max_power = 0.0f,mot_max_power = 0.0f;
 float power_pid_out = 0.0f,pre_pid_out = 0.0f;
 void Class_New_Power_Limit::Power_Task(Struct_Power_Management &power_management)
 {
+    #ifdef AGV
     float tmp_dirmotor_predic_power = 0.0f,tmp_motmotor_predic_power = 0.0f;
     float tmp_dir_needScaled_power = 0.f,tmp_mot_needScaled_power = 0.f;
 
@@ -276,6 +277,78 @@ void Class_New_Power_Limit::Power_Task(Struct_Power_Management &power_management
             power_management.Motor_Data[i].output = -16384;
         }
     }
+    #else
+    float theoretical_sum = 0.0f;                                       //预测的总功率
+    float NeedScaled_theoretical_sum = 0.0f;                            //需要分配的总功率
+    float scaled_sum = 0.0f;                                            
+
+    // 计算理论功率
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        power_management.Motor_Data[i].theoretical_power =
+            Calculate_Theoretical_Power(power_management.Motor_Data[i].feedback_omega,
+                                        power_management.Motor_Data[i].torque,
+                                        i);
+        theoretical_sum += power_management.Motor_Data[i].theoretical_power;
+        if (power_management.Motor_Data[i].theoretical_power > 0)
+        {
+            NeedScaled_theoretical_sum += power_management.Motor_Data[i].theoretical_power;
+        }
+        else
+        {
+            NeedScaled_theoretical_sum += 0.0;
+        }
+    }
+    power_management.Theoretical_Total_Power = theoretical_sum;
+    power_management.Needed_Scaled_Theoretical_Total_Power = NeedScaled_theoretical_sum;
+
+    //判断是否需要功率再分配
+    if(power_management.Max_Power >= power_management.Theoretical_Total_Power){
+        for (uint8_t i = 0; i < 4; i++){
+            power_management.Motor_Data[i].output = power_management.Motor_Data[i].pid_output;
+        }
+        return;         //函数直接结束即可
+    }
+    else{
+        // 计算收缩系数
+        power_management.Scale_Conffient[0] =
+                power_management.Max_Power / (power_management.Needed_Scaled_Theoretical_Total_Power);
+    }
+
+    // 应用收缩系数并更新输出
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        //反向电动势的功率作为缓冲使用，而不是直接利用
+        //当前电机是反向放电的话不参与功率再分配
+        if(power_management.Motor_Data[i].theoretical_power < 0){
+            power_management.Motor_Data[i].output = power_management.Motor_Data[i].pid_output;
+            continue;
+        }
+
+        //当前电机需要进行功率再分配
+        Calulate_Power_Allocate(power_management.Motor_Data[i], 0, 
+                                power_management.Max_Power, power_management.Scale_Conffient[0]);
+
+        scaled_sum += power_management.Motor_Data[i].scaled_power;
+
+        power_management.Motor_Data[i].output =
+            Calculate_Toque(power_management.Motor_Data[i].feedback_omega,
+                            power_management.Motor_Data[i].scaled_power,
+                            power_management.Motor_Data[i].torque,
+                            i) *
+            MOT_TORQUE_TO_CMD_CURRENT;
+
+        if ((power_management.Motor_Data[i].output) >= 16384)
+        {
+            power_management.Motor_Data[i].output = 16384;
+        }
+		if ((power_management.Motor_Data[i].output) <= -16384)
+        {
+            power_management.Motor_Data[i].output = -16384;
+        }
+    }
+    #endif
+
 }
 void Class_New_Power_Limit::Power_Allocate(float Power_Limit, float rate,float dir_predict_power,float mot_predict_power,float *dir_power_allocate,float *mot_power_allocate)
 {

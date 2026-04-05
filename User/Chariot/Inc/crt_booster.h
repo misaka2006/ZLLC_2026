@@ -154,7 +154,7 @@ protected:
     //读变量
 
     //拨弹盘默认速度, 一圈八发子弹, 此速度下与冷却均衡
-    float Default_Driver_Omega = -2.0f * PI;
+    float Default_Driver_Omega = -2.0f * PI * 2.0f;
 
     //写变量
 

@@ -23,7 +23,7 @@
 #include "alg_slope.h"
 #include "dvc_referee.h"
 #include "dvc_djimotor.h"
-#include "alg_power_limit.h"
+#include "alg_new_power_limit.h"
 #include "dvc_supercap.h"
 #include "config.h"
 #include "dvc_minipc.h"
@@ -97,8 +97,9 @@ public:
     Class_Supercap Supercap;
       
     //功率限制
-    Class_Power_Limit Power_Limit;
-    //Struct_Power_Management Power_Management;
+    Class_New_Power_Limit Power_Limit;
+
+    Struct_Power_Management Power_Management;
     
     //裁判系统
     Class_Referee *Referee;
