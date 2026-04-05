@@ -55,4 +55,5 @@ void VT13_UART_Callback(uint8_t *Buffer, uint16_t Length)
 - 开发环境为：keil5 、stm32cubemax、vscode、ozone
 - 整体架构适配于步兵，外设的接口、上下板通讯协议需要使用者自行修改。
 # 软件运行流程图
-[软件运行流程图](流程图.dio)
+需要在vscode的Draw.io Integration插件中才能打开流程图
+- [软件运行流程图](流程图.dio)
