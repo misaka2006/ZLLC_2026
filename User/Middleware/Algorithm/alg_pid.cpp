@@ -48,7 +48,7 @@ void Class_PID::Init(float __K_P, float __K_I, float __K_D, float __K_F, float _
     I_Variable_Speed_B = __I_Variable_Speed_B;
     I_Separate_Threshold = __I_Separate_Threshold;
     D_First = __D_First;
-    D_Filter.Init(-__Out_Max, __Out_Max, Filter_Fourier_Type_LOWPASS, 10, 0, 1000, 3);
+    D_Filter.Init(-__Out_Max, __Out_Max, Filter_Fourier_Type_LOWPASS, 5, 0, 1000, 3);
 }
 
 /**

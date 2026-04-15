@@ -253,22 +253,14 @@ struct Pack_tx_t
  */
 struct Pack_rx_t
 {
-#ifdef MINIPC_COMM_USB
-    uint8_t header;
-    float target_yaw;
-    float target_pitch;
-    float target_x;
-    float target_y;
-    float target_z;
-    uint8_t UP_flag;
-    uint16_t crc16;
-#endif
+    // int16_t target_x;
+    // int16_t target_y;
+    // int16_t target_z;
+    // int8_t  Fire;
+    int16_t yaw;
+    int16_t pitch;
+    int16_t Fire;
 
-#ifdef MINIPC_COMM_CAN
-    int16_t target_x;
-    int16_t target_y;
-    int16_t target_z;
-#endif
 } __attribute__((packed));
 
 /**
@@ -297,6 +289,7 @@ public:
     inline float Get_Rx_Pitch_Angle();
     inline float Get_Rx_Yaw_Angle();
     inline float Get_Distance();
+    inline uint8_t Get_Fire_Status();
     inline Enum_MiniPC_Type Get_MiniPC_Type();
     inline Enum_MiniPC_Move_Control_Mode Get_Move_Control_Mode();
 
@@ -351,6 +344,7 @@ protected:
     // 数据包尾标
     uint8_t Frame_Rear;
 
+    uint8_t Fire;
     // 常量
 
     // 内部变量
@@ -719,11 +713,15 @@ void Class_MiniPC::Set_Outpost_Protect_Status(Enum_MiniPC_Data_Status __Outpost_
  */
 void Class_MiniPC::Transform_Angle_Tx()
 {
-    Tx_Angle_Pitch = IMU->Get_Angle_Pitch();
-    Tx_Angle_Roll = IMU->Get_Angle_Roll();
+    Tx_Angle_Pitch = -IMU->Get_Angle_Roll();
+    Tx_Angle_Roll = IMU->Get_Angle_Pitch();
     Tx_Angle_Yaw = IMU->Get_Angle_Yaw();
 }
 
+inline uint8_t Class_MiniPC::Get_Fire_Status()
+{
+  return Fire;
+}
 
 #endif
 

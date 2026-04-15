@@ -252,6 +252,9 @@ protected:
     Struct_CAN_Manage_Object *CAN_Manage_Object;
     //收数据绑定的CAN ID, C6系列0x201~0x208, GM系列0x205~0x20b
     Enum_DJI_Motor_ID CAN_ID;
+
+    Class_Filter_Fourier Feedback_Omega_Filter;
+
     //发送缓存区
     uint8_t *CAN_Tx_Data;
     //减速比, 默认带减速箱

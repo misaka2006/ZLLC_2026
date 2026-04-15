@@ -179,16 +179,16 @@ void Gimbal_Device_CAN1_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 
     case (0x202):
     {
-        chariot.Booster.Motor_Friction_Left.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Booster.Motor_Friction_Left.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
     case (0x201):
     {
-        chariot.Booster.Motor_Friction_Right.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        //chariot.Booster.Motor_Friction_Right.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
 
-    case (0x208): // Yaw电机数据
+    case (YAW_FEEDBACK_IDENTIFIER): // Yaw电机数据
     {
         chariot.Gimbal.Motor_Yaw.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
@@ -213,25 +213,38 @@ void Gimbal_Device_CAN2_Callback(Struct_CAN_Rx_Buffer *CAN_RxMessage)
 {
     switch (CAN_RxMessage->Header.StdId)
     {
-
-    case (0x205): // Yaw电机数据
+    case (0x204):
     {
-        chariot.Gimbal.Motor_Yaw.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Booster.Motor_Driver.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
-
-    case (0x21):
+    case (0x201):
     {
-        chariot.Gimbal.Motor_Pitch_J4310.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Booster.Motor_Friction_Left.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
-
-    case (0xa0):
+    case (0x202):
     {
-        chariot.MiniPC.CAN_RxCpltCallback(CAN_RxMessage->Data);
+        chariot.Booster.Motor_Friction_Right.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
     break;
+    case (0x206):
+    {
+        chariot.Booster.Motor_Friction_Down.CAN_RxCpltCallback(CAN_RxMessage->Data);
     }
+    break;
+    case (0x205):
+    {
+        //chariot.Gimbal.Motor_Pitch.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+    case (0x141):
+    {
+        //chariot.Gimbal.Motor_Pitch_LK6010.CAN_RxCpltCallback(CAN_RxMessage->Data);
+    }
+    break;
+	}
+		
 }
 #endif
 /**

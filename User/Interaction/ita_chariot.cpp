@@ -277,7 +277,7 @@ void Class_Chariot::CAN_Gimbal_Tx_Chassis_Callback_1()
     uint16_t tmp_actual_bullet_num = 0;
     tmp_fric_omega_left = (uint16_t)abs(Booster.Motor_Friction_Left.Get_Now_Omega_Radian());
     tmp_fric_omega_right = (uint16_t)abs(Booster.Motor_Friction_Right.Get_Now_Omega_Radian());
-    tmp_actual_bullet_num = Booster.actual_bullet_num;
+    // tmp_actual_bullet_num = Booster.actual_bullet_num;
     CAN2_Gimbal_Tx_Chassis_Data_1[0] = MiniPC.Get_MiniPC_Type();
     // CAN2_Gimbal_Tx_Chassis_Data_1[1] = MiniPC.Get_Antispin_Type();
     memcpy(CAN2_Gimbal_Tx_Chassis_Data_1 + 2, &tmp_fric_omega_left, sizeof(uint16_t));
@@ -505,17 +505,18 @@ float minipc_yaw_offset = -5.0f;
 float tmp_gimbal_yaw, tmp_gimbal_pitch;
 float _tmp_gimbal_yaw, _tmp_gimbal_pitch;
 float __tmp_gimbal_yaw, __tmp_gimbal_pitch;
-float world_gimbal_pitch,world_gimbal_yaw;
+float world_gimbal_pitch, world_gimbal_yaw;
 float true_pitch = 0.0f, true_yaw = 0.0f;
-float dr16_pitch,dr16_yaw;
-bool init_finish_flag = false;
-bool position_init_flag = false;
+float dr16_pitch, dr16_yaw;
+bool init_finish_flag = true;
+bool position_init_flag = true;
+
 void Class_Chariot::Control_Gimbal()
 {
     // 角度目标值
     // float tmp_gimbal_yaw, tmp_gimbal_pitch;
     // 遥控器摇杆值
-    
+
     float dr16_y = 0, dr16_r_y = 0;
     float vt13_y = 0, vt13_r_y = 0;
     // 获取当前角度值
@@ -524,33 +525,27 @@ void Class_Chariot::Control_Gimbal()
     true_pitch = Gimbal.Motor_Pitch_J4310.Get_True_Angle_Pitch();
     true_yaw = Gimbal.Motor_Yaw.Get_True_Angle_Yaw();
 
-
-    if (Math_Abs(true_pitch - tmp_gimbal_pitch) <= 1.0 && Math_Abs(true_yaw - tmp_gimbal_yaw) <= 1.0)
-    {
-        init_finish_flag = true;
-    }
-
     // IMU:相对于地面系的姿态角
     // 将无人机系下的姿态角解算到地面系
-    if (init_finish_flag)
-    {
-        float roll = Gimbal.Boardc_BMI.Get_Rad_Roll();
-        float yaw = Gimbal.Get_Target_Yaw_Angle() * PI / 180;
-        float pitch = Gimbal.Get_Target_Pitch_Angle() * PI / 180;
+    // if (init_finish_flag)
+    // {
+    //     float roll = Gimbal.Boardc_BMI.Get_Rad_Roll();
+    //     float yaw = Gimbal.Get_Target_Yaw_Angle() * PI / 180;
+    //     float pitch = Gimbal.Get_Target_Pitch_Angle() * PI / 180;
 
-        float x_w = cosf(pitch) * cosf(yaw);
-        float y_w = sinf(pitch);
-        float z_w = cosf(pitch) * sinf(yaw);
+    //     float x_w = cosf(pitch) * cosf(yaw);
+    //     float y_w = sinf(pitch);
+    //     float z_w = cosf(pitch) * sinf(yaw);
 
-        float x_d = x_w;
-        float y_d = y_w * cosf(-roll) + z_w * sinf(-roll);
-        float z_d = -y_w * sinf(-roll) + z_w * cosf(-roll);
+    //     float x_d = x_w;
+    //     float y_d = y_w * cosf(-roll) + z_w * sinf(-roll);
+    //     float z_d = -y_w * sinf(-roll) + z_w * cosf(-roll);
 
-        tmp_gimbal_yaw = atan2f(z_d, x_d) * 180 / PI;
-        tmp_gimbal_pitch = atan2f(y_d, sqrtf(x_d * x_d + z_d * z_d)) * 180 / PI;
-        world_gimbal_pitch = tmp_gimbal_pitch;
-        world_gimbal_yaw = tmp_gimbal_yaw;
-    }
+    //     tmp_gimbal_yaw = atan2f(z_d, x_d) * 180 / PI;
+    //     tmp_gimbal_pitch = atan2f(y_d, sqrtf(x_d * x_d + z_d * z_d)) * 180 / PI;
+    //     world_gimbal_pitch = tmp_gimbal_pitch;
+    //     world_gimbal_yaw = tmp_gimbal_yaw;
+    // }
 
     // 先判断当前活动的控制器
     Judge_Active_Controller();
@@ -578,8 +573,8 @@ void Class_Chariot::Control_Gimbal()
         {
             Gimbal.Set_Gimbal_Control_Type(Gimbal_Control_Type_NORMAL);
             // 遥控器操作逻辑
-            tmp_gimbal_yaw -= dr16_y * DR16_Yaw_Angle_Resolution;
-            tmp_gimbal_pitch += dr16_r_y * DR16_Pitch_Angle_Resolution;
+            tmp_gimbal_yaw -= dr16_y * DR16_Yaw_Angle_Resolution * Get_Nonlinear_Angle_Resolution(dr16_y);
+            tmp_gimbal_pitch += dr16_r_y * DR16_Pitch_Angle_Resolution * Get_Nonlinear_Angle_Resolution(dr16_r_y);
         }
 
         if (Chassis.Get_Chassis_Control_Type() == Chassis_Control_Type_FLLOW &&
@@ -797,38 +792,38 @@ void Class_Chariot::Control_Gimbal()
     // 如果pitch为锁定状态
 
     // 设定角度
-    
-    if (init_finish_flag)
-    {
-        if (Gimbal.Get_Gimbal_Roll_Control_Type() == Gimbal_Roll_Control_Type_ROLL_LOCKED)
-        {
-            // 将地面系的姿态角解算为无人机系
-            float roll = Gimbal.Boardc_BMI.Get_Rad_Roll();
-            float yaw = tmp_gimbal_yaw * PI / 180;
-            float pitch = tmp_gimbal_pitch * PI / 180;
 
-            float x_w = cosf(pitch) * cosf(yaw);
-            float y_w = sinf(pitch);
-            float z_w = cosf(pitch) * sinf(yaw);
+    // if (init_finish_flag)
+    // {
+    //     if (Gimbal.Get_Gimbal_Roll_Control_Type() == Gimbal_Roll_Control_Type_ROLL_LOCKED)
+    //     {
+    //         // 将地面系的姿态角解算为无人机系
+    //         float roll = Gimbal.Boardc_BMI.Get_Rad_Roll();
+    //         float yaw = tmp_gimbal_yaw * PI / 180;
+    //         float pitch = tmp_gimbal_pitch * PI / 180;
 
-            float x_d = x_w;
-            float y_d = y_w * cosf(roll) + z_w * sinf(roll);
-            float z_d = -y_w * sinf(roll) + z_w * cosf(roll);
+    //         float x_w = cosf(pitch) * cosf(yaw);
+    //         float y_w = sinf(pitch);
+    //         float z_w = cosf(pitch) * sinf(yaw);
 
-            __tmp_gimbal_yaw = atan2f(z_d, x_d) * 180 / PI;
-            __tmp_gimbal_pitch = atan2f(y_d, sqrtf(x_d * x_d + z_d * z_d)) * 180 / PI;
-        }
-        else
-        {
-            __tmp_gimbal_yaw = tmp_gimbal_yaw;
-            __tmp_gimbal_pitch = tmp_gimbal_pitch;
-        }
-    }
+    //         float x_d = x_w;
+    //         float y_d = y_w * cosf(roll) + z_w * sinf(roll);
+    //         float z_d = -y_w * sinf(roll) + z_w * cosf(roll);
+
+    //         __tmp_gimbal_yaw = atan2f(z_d, x_d) * 180 / PI;
+    //         __tmp_gimbal_pitch = atan2f(y_d, sqrtf(x_d * x_d + z_d * z_d)) * 180 / PI;
+    //     }
+    //     else
+    //     {
+    //         __tmp_gimbal_yaw = tmp_gimbal_yaw;
+    //         __tmp_gimbal_pitch = tmp_gimbal_pitch;
+    //     }
+    // }
 
     if (Pitch_Control_Status == Pitch_Status_Control_Lock)
         tmp_gimbal_pitch = 0;
-    Gimbal.Set_Target_Yaw_Angle(__tmp_gimbal_yaw);
-    Gimbal.Set_Target_Pitch_Angle(__tmp_gimbal_pitch);
+    Gimbal.Set_Target_Yaw_Angle(tmp_gimbal_yaw);
+    Gimbal.Set_Target_Pitch_Angle(tmp_gimbal_pitch);
 }
 #endif
 
@@ -837,9 +832,12 @@ void Class_Chariot::Control_Gimbal()
  *
  */
 #ifdef GIMBAL
+Enum_Booster_Control_Type Test_Booster_Control_Type;
+bool Booster_Init_Flag = 0;
 void Class_Chariot::Control_Booster()
 {
     // 先判断当前活动的控制器
+    Test_Booster_Control_Type = Booster.Get_Booster_Control_Type();
     Judge_Active_Controller();
 
     /************************************遥控器控制逻辑*********************************************/
@@ -848,12 +846,27 @@ void Class_Chariot::Control_Booster()
         // 左上 开启摩擦轮和发射机构
         if (DR16.Get_Right_Switch() == DR16_Switch_Status_UP)
         {
+            // if (Booster_Init_Flag = 0)
+            // {
+            //     Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
+            //     Booster.Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
+            //     Fric_Status = Fric_Status_OPEN;
+            //     Booster_Init_Flag = 1;
+            // }
             Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
             Booster.Set_Friction_Control_Type(Friction_Control_Type_ENABLE);
             Fric_Status = Fric_Status_OPEN;
 
+            if (DR16.Get_Left_Switch() == DR16_Switch_Status_DOWN)
+            {                               // 自瞄模式火控 上位机控制打弹
+                if (DR16.Get_Yaw() < -0.8f) // 连发
+                {
+                    Booster.Set_Booster_Control_Type(Booster_Control_Type_SINGLE);
+                }
+            }
             if (DR16.Get_Yaw() > -0.2f && DR16.Get_Yaw() < 0.2f)
             {
+                Booster.Set_Booster_Control_Type(Booster_Control_Type_CEASEFIRE);
                 Shoot_Flag = 0;
             }
             if (DR16.Get_Yaw() < -0.8f && Shoot_Flag == 0) // 单发
@@ -861,9 +874,9 @@ void Class_Chariot::Control_Booster()
                 Booster.Set_Booster_Control_Type(Booster_Control_Type_SINGLE);
                 Shoot_Flag = 1;
             }
-            if (DR16.Get_Yaw() > 0.8f && Shoot_Flag == 0) // 五连发
+            if (DR16.Get_Yaw() > 0.8f) // 五连发
             {
-                Booster.Set_Booster_Control_Type(Booster_Control_Type_MULTI);
+                Booster.Set_Booster_Control_Type(Booster_Control_Type_REPEATED);
                 Shoot_Flag = 1;
             }
         }

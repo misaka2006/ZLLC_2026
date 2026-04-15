@@ -211,6 +211,8 @@ targets:
         - RTE/_infantry
       libList: []
     excludeList: []
+    settings:
+      debugger: cortex-debug
     toolchain: AC6
     toolchainConfigMap:
       AC6:
