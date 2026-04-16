@@ -843,7 +843,7 @@ void Class_Chariot::Control_Booster()
     /************************************遥控器控制逻辑*********************************************/
     if (Active_Controller == Controller_DR16 && DR16_Control_Type == DR16_Control_Type_REMOTE)
     {
-        // 左上 开启摩擦轮和发射机构
+        // 右上 开启摩擦轮和发射机构
         if (DR16.Get_Right_Switch() == DR16_Switch_Status_UP)
         {
             // if (Booster_Init_Flag = 0)
@@ -1517,6 +1517,8 @@ void Class_FSM_Alive_Control::Reload_TIM_Status_PeriodElapsedCallback()
         if (Chariot->DR16.Get_DR16_Status() == DR16_Status_DISABLE)
         {
             Status[Now_Status_Serial].Time = 0;
+
+
             Set_Status(3);
         }
     }

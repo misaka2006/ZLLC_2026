@@ -585,7 +585,7 @@ void Class_Gimbal::Init()
     // imu初始化
     Boardc_BMI.Init();
     // yaw轴6020电机
-    Motor_Yaw.PID_Angle.Init(35.0f, 0.01f, 0.75f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.001f);
+    Motor_Yaw.PID_Angle.Init(55.0f, 0.01f, 0.95f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.001f);
     Motor_Yaw.PID_Omega.Init(40.0f, 0.075f, 0.005f, 0.0f, 2000.0f, 20000.0f, 0.0f, 0.0f, 0.0f, 0.001f);
     Motor_Yaw.IMU = &Boardc_BMI;
     Motor_Yaw.Init(&hcan1, DJI_Motor_ID_0x205, DJI_Motor_Control_Method_IMU_ANGLE);
@@ -593,7 +593,7 @@ void Class_Gimbal::Init()
     // pitch轴4310电机
     //  Motor_Pitch_J4310.PID_Angle.Init(18.0f,1.0f,0.0f,0.0f,2000,4090,0.0f,0.0f,0,0.001f,0.0f,PID_D_First_ENABLE);
     //  Motor_Pitch_J4310.PID_Omega.Init(37.0f,0.0f,0.0f,0.0f,2000,4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.0f);
-    Motor_Pitch_J4310.PID_Angle.Init(19.0f, 1.0f, 0.01f, 0.0f, 1000, 4090, 0.0f, 0.0f, 0, 0.001f, 0.0f, PID_D_First_ENABLE);
+    Motor_Pitch_J4310.PID_Angle.Init(40.0f, 1.0f, 0.015f, 0.0f, 1000, 4090, 0.0f, 0.0f, 0, 0.001f, 0.0f, PID_D_First_ENABLE);
     Motor_Pitch_J4310.PID_Omega.Init(6.0f, 10.0f, 0.01f, 0.0f, 1000, 4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.5f);
     Motor_Pitch_J4310.IMU = &Boardc_BMI;
     Motor_Pitch_J4310.Init(&hcan1, (Enum_DM_Motor_ID)0x71, DM_Motor_Control_Method_MIT_IMU_Angle, 0, 20.94f, 5.0f);
