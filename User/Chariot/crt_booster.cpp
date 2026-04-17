@@ -339,49 +339,44 @@ void Class_Booster::Output()
     case (Booster_Control_Type_CEASEFIRE):
     {
         // 停火
-
         if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_ANGLE)
         {
             // Motor_Driver.Set_Target_Angle(Motor_Driver.Get_Now_Angle());
         }
         else if (Motor_Driver.Get_Control_Method() == DJI_Motor_Control_Method_OMEGA)
         {
+
+            Motor_Driver.Set_Target_Omega_Radian(0.0f);
             Drvier_Angle = Motor_Driver.Get_Now_Angle();
-            float Tmp_Drvier_Angle = convertToRange(Drvier_Angle);
-            Adjust_Radian = angleToTargetForm(Drvier_Angle, 2.0f * PI / 9.0f);
-            //Adjust_Radian = (2.0f * PI / 9.0f) - angleToTargetForm(Tmp_Drvier_Angle, 2.0f * PI / 9.0f);
-            if (Adjust_Radian <= 0.03 || Adjust_Radian >= (2.0f * PI / 9.0f) - 0.03)
+            Motor_Driver.PID_Angle.Set_Now(Motor_Driver.Get_Now_Angle());
+            Motor_Driver.PID_Angle.Set_Integral_Error(0.0f);
+            Motor_Driver.PID_Omega.Set_Integral_Error(0.0f);
+            Motor_Friction_Left.PID_Omega.Set_Integral_Error(0.0f);
+            Motor_Friction_Right.PID_Omega.Set_Integral_Error(0.0f);
+            Motor_Friction_Down.PID_Omega.Set_Integral_Error(0.0f);
+            float Tmp_Driver_Angle = Motor_Driver.Get_Now_Angle();
+            Drvier_Angle = Motor_Driver.Get_Now_Radian();
+            if (Swtich_To_Chasefire_Control_Flag)
             {
-                if (Swtich_To_Chasefire_Control_Flag = 1)
-                {
-                    Motor_Driver.Set_Target_Omega_Radian(0.0f);
-                    Drvier_Angle = Motor_Driver.Get_Now_Angle();
-                    Motor_Driver.PID_Angle.Set_Now(Motor_Driver.Get_Now_Angle());
-                    Motor_Driver.PID_Angle.Set_Integral_Error(0.0f);
-                    Motor_Driver.PID_Omega.Set_Integral_Error(0.0f);
-                    Motor_Friction_Left.PID_Omega.Set_Integral_Error(0.0f);
-                    Motor_Friction_Right.PID_Omega.Set_Integral_Error(0.0f);
-                    Motor_Friction_Down.PID_Omega.Set_Integral_Error(0.0f);
-                    Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
-                    Drvier_Angle = Motor_Driver.Get_Now_Angle();
-                    float Tmp_Drvier_Angle = convertToRange(Drvier_Angle);
-                    Adjust_Radian = angleToTargetForm(Tmp_Drvier_Angle, 2.0f * PI / 9.0f);
-                    if (Adjust_Radian >= 0.03)
-                        Adjust_Radian = (2.0f * PI / 9.0f) - angleToTargetForm(Tmp_Drvier_Angle, 2.0f * PI / 9.0f);
-                    else
-                        Adjust_Radian = 0.0f;
-                    Swtich_To_Chasefire_Control_Flag = 0;
-                    Motor_Driver.Set_Target_Angle(Drvier_Angle + 5 * 2.0f * PI / 9.0f);
-                    Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
-                }
+                Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
+                
+                //float Tmp_Drvier_Angle = convertToRange(Drvier_Angle);
+                Adjust_Radian = angleToTargetForm(Drvier_Angle, 2.0f * PI / 9.0f);
+                if (Adjust_Radian >= 0.03)
+                    Adjust_Radian = (2.0f * PI / 9.0f) - angleToTargetForm(Drvier_Angle, 2.0f * PI / 9.0f);
+                else
+                    Adjust_Radian = 0.0f;
+                Motor_Driver.Set_Target_Radian(Drvier_Angle + Adjust_Radian + (2.0f * PI / 9.0f));
+                Swtich_To_Chasefire_Control_Flag = 0;
+                
             }
+
         }
     }
     break;
     case (Booster_Control_Type_SINGLE):
     {
         // 单发模式
-
         Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_ANGLE);
         Motor_Friction_Left.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
         Motor_Friction_Right.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
@@ -441,6 +436,7 @@ void Class_Booster::Output()
     case (Booster_Control_Type_REPEATED):
     {
         // 连发模式
+        Motor_Driver.Set_Target_Omega_Radian(0.0f);
         Swtich_To_Angle_Control_Flag = 1;
         Swtich_To_Chasefire_Control_Flag = 1;
         Motor_Driver.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
@@ -449,6 +445,7 @@ void Class_Booster::Output()
         Motor_Friction_Down.Set_DJI_Motor_Control_Method(DJI_Motor_Control_Method_OMEGA);
 
         Motor_Driver.Set_Target_Omega_Radian(-Driver_Omega);
+        //Drvier_Angle = Motor_Driver.Get_Now_Radian();
     }
     break;
     }
