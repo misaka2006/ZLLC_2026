@@ -210,6 +210,8 @@ public:
     inline void Set_Pre_Gimbal_Control_Type(Enum_Gimbal_Control_Type __Gimbal_Control_Type);
     inline void Set_Pre_Booster_Control_Type(Enum_Booster_Control_Type __Booster_Control_Type);
 
+    inline float Get_Nonlinear_Angle_Resolution(float x);
+
     inline Enum_Chassis_Status Get_Chassis_Status();
     // inline Enum_DR16_Control_Type Get_DR16_Control_Type();
 
@@ -273,6 +275,7 @@ protected:
 #ifdef GIMBAL
     // 遥控器拨动的死区, 0~1
     float DR16_Dead_Zone;
+    float DR16_Nonlinear_Threshold = 0.5f;
     // 常量
     // 键鼠模式按住shift 最大速度缩放系数
     float DR16_Mouse_Chassis_Shift = 2.0f;
@@ -284,9 +287,9 @@ protected:
     float DR16_Keyboard_Chassis_Speed_Resolution_Big = 0.01f;
 
     // DR16云台yaw灵敏度系数(0.001PI表示yaw速度最大时为1rad/s)
-    float DR16_Yaw_Angle_Resolution = 0.013f * PI * 57.29577951308232;
+    float DR16_Yaw_Angle_Resolution = 0.043f * PI * 57.29577951308232;
     // DR16云台pitch灵敏度系数(0.001PI表示pitch速度最大时为1rad/s)
-    float DR16_Pitch_Angle_Resolution = 0.008f * PI * 57.29577951308232;
+    float DR16_Pitch_Angle_Resolution = -0.038f * PI * 57.29577951308232;
 
     // DR16云台yaw灵敏度系数(0.001PI表示yaw速度最大时为1rad/s)
     float DR16_Yaw_Resolution = 0.003f * PI;
@@ -467,6 +470,16 @@ void Class_Chariot::Clear_DR16_Offline_Cnt()
     DR16_Offline_Cnt = 0;
 }
 
+float Class_Chariot::Get_Nonlinear_Angle_Resolution(float x)
+{
+    x=Math_Abs(x);
+    if(x<=DR16_Dead_Zone) return 0.0f;
+    else if (x<=DR16_Nonlinear_Threshold)
+    {
+        return 0.2f;
+    }
+    else return 1.0f;
+}
 #endif
 
 #endif

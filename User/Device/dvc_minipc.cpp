@@ -67,29 +67,21 @@ float camera_distance_x =0;
  */
 void Class_MiniPC::Data_Process()
 {
-#ifdef MINIPC_COMM_USB
-  memcpy(&Pack_Rx, (Pack_rx_t *)USB_Manage_Object->Rx_Buffer, USB_Manage_Object->Rx_Buffer_Length);
-  float tmp_yaw, tmp_pitch;
-  Self_aim(Pack_Rx.target_x, Pack_Rx.target_y, Pack_Rx.target_z + camera_distance, &tmp_yaw, &tmp_pitch, &Distance);
-  Rx_Angle_Pitch = tmp_pitch;
-  Rx_Angle_Yaw = tmp_yaw;
-  Math_Constrain(&Rx_Angle_Pitch, -20.0f, 34.0f);
-  memset(USB_Manage_Object->Rx_Buffer, 0, USB_Manage_Object->Rx_Buffer_Length);
-#endif
-
-#ifdef MINIPC_COMM_CAN
   // CAN通信的数据处理
   float tmp_yaw, tmp_pitch;
-  // 将CAN接收到的数据转换为实际值 (除以1000转换回浮点数)
-  float target_x = Pack_Rx.target_x / 1000.0f;
-  float target_y = Pack_Rx.target_y / 1000.0f;
-  float target_z = Pack_Rx.target_z / 1000.0f;
+  // // 将CAN接收到的数据转换为实际值 (除以1000转换回浮点数)
+  // float target_x = Pack_Rx.target_x / 1000.0f;
+  // float target_y = Pack_Rx.target_y / 1000.0f;
+  // float target_z = Pack_Rx.target_z / 1000.0f;
+  tmp_yaw = Pack_Rx.yaw /1000.0f;
+  tmp_pitch = Pack_Rx.pitch /1000.0f;
+  Fire = Pack_Rx.Fire;
   
-  Self_aim(target_x, target_y, target_z, &tmp_yaw, &tmp_pitch, &Distance);
-  Rx_Angle_Pitch = tmp_pitch;
-  Rx_Angle_Yaw = tmp_yaw;
-  Math_Constrain(&Rx_Angle_Pitch, -19.5f, 38.5f);
-#endif
+  // Self_aim(target_x, target_y, target_z + camera_distance, &tmp_yaw, &tmp_pitch, &Distance);
+  // Self_aim(target_x, target_y, target_z, &tmp_yaw, &tmp_pitch, &Distance);
+  Rx_Angle_Pitch = tmp_pitch * 180 / PI;
+  Rx_Angle_Yaw = tmp_yaw * 180 / PI;
+  Math_Constrain(&Rx_Angle_Pitch, -45.0f, 15.0f);
 }
 
 /**
@@ -127,6 +119,8 @@ void Class_MiniPC::Output()
   Pack_Tx_CAN_B.game_stage = (Enum_MiniPC_Game_Stage)Referee->Get_Game_Stage();
   Pack_Tx_CAN_B.target_type = Get_MiniPC_Type();
 
+  // Pack_Tx_CAN_A.Roll = Tx_Angle_Roll*100.0f;
+  // Pack_Tx_CAN_A.Yaw = Tx_Angle_Yaw*100.0f;
   Pack_Tx_CAN_A.Roll = Tx_Angle_Roll*100.0f;
   Pack_Tx_CAN_A.Yaw = Tx_Angle_Yaw*100.0f;
   //Pack_Tx_CAN_A.Pitch = -1.0f * Tx_Angle_Pitch*100.0f; //左手螺旋

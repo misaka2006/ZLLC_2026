@@ -375,6 +375,7 @@ void Class_DJI_Motor_C610::Init(CAN_HandleTypeDef *hcan, Enum_DJI_Motor_ID __CAN
     Gearbox_Rate = __Gearbox_Rate;
     Torque_Max = __Torque_Max;
     CAN_Tx_Data = allocate_tx_data(hcan, __CAN_ID);
+    Feedback_Omega_Filter.Init(-114514, 114514, Filter_Fourier_Type_LOWPASS, 40, 0, 1000, 3);
 }
 
 /**
@@ -413,13 +414,20 @@ void Class_DJI_Motor_C610::Data_Process()
     Data.Total_Encoder = Data.Total_Round * Encoder_Num_Per_Round + tmp_encoder;
 
     //计算电机本身信息
+    float Now_Omega_Angle_Raw = 0.0f,Now_Omega_Radian_Raw = 0.0f;
+    float Now_Omega_Feedback_Raw = 0.0f;
     Data.Now_Angle = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round *360.f / Gearbox_Rate;
     Data.Now_Radian = (float)Data.Total_Encoder / (float)Encoder_Num_Per_Round * 2.0f * PI  / Gearbox_Rate;
     Data.Now_Omega_Radian = (float)tmp_omega * RPM_TO_RADPS / Gearbox_Rate;
     Data.Now_Omega_Angle = (float)tmp_omega * RPM_TO_DEG / Gearbox_Rate;
     Data.Now_Torque = tmp_torque;
     Data.Now_Temperature = tmp_temperature + CELSIUS_TO_KELVIN;
-
+    Now_Omega_Feedback_Raw = (float)tmp_omega;
+    // Feedback_Omega_Filter.Set_Now(Now_Omega_Angle_Raw);
+    // Feedback_Omega_Filter.TIM_Adjust_PeriodElapsedCallback();
+    // tmp_omega = (int16_t)Feedback_Omega_Filter.Get_Out();
+    Data.Now_Omega_Radian = (float)tmp_omega * RPM_TO_RADPS / Gearbox_Rate;
+    Data.Now_Omega_Angle = (float)tmp_omega * RPM_TO_DEG / Gearbox_Rate;
     //存储预备信息
     Data.Pre_Encoder = tmp_encoder;
     if(Start_Falg==0)  Start_Falg = 1;

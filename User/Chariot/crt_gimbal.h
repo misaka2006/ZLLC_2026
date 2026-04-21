@@ -123,7 +123,7 @@ protected:
     //常量
 
     // 重力补偿
-    float Gravity_Compensate = 110.0f;
+    float Gravity_Compensate = 0.35f;
 
     //内部变量
     float True_Rad_Pitch = 0.0f;
@@ -179,7 +179,7 @@ protected:
     //常量
 
     // 重力补偿
-    float Gravity_Compensate = 110.2f;
+    float Gravity_Compensate = 0.35f;
 
     //内部变量
     float True_Rad_Pitch = 0.0f;
@@ -285,7 +285,7 @@ protected:
     //常量
 
     // 重力补偿
-float Gravity_Compensate = 0.0f;
+float Gravity_Compensate = 0.55f;
 
     //内部变量 
    float True_Rad_Pitch = 0.0f;
@@ -360,18 +360,18 @@ protected:
 
     //常量
     // yaw轴最小值
-    float Min_Yaw_Angle = - 180.0f;
+    float Min_Yaw_Angle = - 54.0f;
     // yaw轴最大值
-    float Max_Yaw_Angle = 180.0f;
+    float Max_Yaw_Angle = 126.0f;
 
     //yaw总角度
     float Yaw_Total_Angle;
     float Yaw_Half_Turns;
 
     // pitch轴最小值
-    float Min_Pitch_Angle = 5.0f;
+    float Min_Pitch_Angle = -45.0f;
     // pitch轴最大值
-    float Max_Pitch_Angle = 65.0f ; //多10°
+    float Max_Pitch_Angle = 15.0f ; 
 
     //内部变量 
 
@@ -388,11 +388,9 @@ protected:
     // yaw轴角度
     float Target_Yaw_Angle = 0.0f;
     // pitch轴角度
-    float Target_Pitch_Angle = 70.0f;
+    float Target_Pitch_Angle = -45.0f;
     // pitch轴初始角度
-    float Initial_Pitch_Angle = 45.0f;
-    // yaw轴初始角度
-    float Initial_Yaw_Angle = 0.0f;
+    
 
     //内部函数
 
