@@ -510,6 +510,7 @@ float true_pitch = 0.0f, true_yaw = 0.0f;
 float dr16_pitch, dr16_yaw;
 bool init_finish_flag = true;
 bool position_init_flag = true;
+float test_gimbal_pitch = -45.0f;
 
 void Class_Chariot::Control_Gimbal()
 {
@@ -823,7 +824,7 @@ void Class_Chariot::Control_Gimbal()
     if (Pitch_Control_Status == Pitch_Status_Control_Lock)
         tmp_gimbal_pitch = 0;
     Gimbal.Set_Target_Yaw_Angle(tmp_gimbal_yaw);
-    Gimbal.Set_Target_Pitch_Angle(tmp_gimbal_pitch);
+    Gimbal.Set_Target_Pitch_Angle(test_gimbal_pitch);
 }
 #endif
 
@@ -1361,6 +1362,7 @@ void Class_Chariot::TIM1msMod50_Alive_PeriodElapsedCallback()
         // Booster.Motor_Driver.TIM_Alive_PeriodElapsedCallback();
         Booster.Motor_Friction_Left.TIM_Alive_PeriodElapsedCallback();
         Booster.Motor_Friction_Right.TIM_Alive_PeriodElapsedCallback();
+        Booster.Motor_Friction_Down.TIM_Alive_PeriodElapsedCallback();
 #endif
 
         mod50 = 0;
