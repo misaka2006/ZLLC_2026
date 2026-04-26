@@ -609,8 +609,8 @@ void Class_Gimbal::Init()
     // pitch轴4310电机
     //  Motor_Pitch_J4310.PID_Angle.Init(18.0f,1.0f,0.0f,0.0f,2000,4090,0.0f,0.0f,0,0.001f,0.0f,PID_D_First_ENABLE);
     //  Motor_Pitch_J4310.PID_Omega.Init(37.0f,0.0f,0.0f,0.0f,2000,4090, 0.0f, 0.0f, 0.0f, 0.001f, 0.0f);
-    Motor_Pitch_J4310.PID_Angle.Init(50.0f, 2.0f, 0.9f, 0.0f, 1000, 4096, 0.0f, 0.0f, 0, 0.001f, 0.0f, PID_D_First_ENABLE);
-    Motor_Pitch_J4310.PID_Omega.Init(4.0f, 14.0f, 0.002f, 0.0f, 1000, 4096, 0.0f, 0.0f, 0.0f, 0.001f, 0.5f);
+    Motor_Pitch_J4310.PID_Angle.Init(50.0f, 2.0f, 0.9f, 0.0f, 1000, 2048, 0.0f, 0.0f, 0, 0.001f, 0.0f, PID_D_First_ENABLE);
+    Motor_Pitch_J4310.PID_Omega.Init(4.0f, 14.0f, 0.002f, 0.0f, 1000, 2048, 0.0f, 0.0f, 0.0f, 0.001f, 0.5f);
     Motor_Pitch_J4310.IMU = &Boardc_BMI;
     Motor_Pitch_J4310.Init(&hcan1, (Enum_DM_Motor_ID)0x71, DM_Motor_Control_Method_MIT_IMU_Angle, 0, 20.94f, 5.0f);
     Motor_Pitch_J4310.PID_Angle.Set_I_Separate_Threshold(5.0f);
